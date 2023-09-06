@@ -44,9 +44,9 @@ DIM _color_y_tbl_hi(25) AS BYTE @ __color_y_tbl_hi
 DIM _color_y_tbl_lo(25) AS BYTE @ __color_y_tbl_lo
 
 ' REUSABLE ZERO-PAGE PSEUDO-REGISTERS
-DIM ZP_W0 AS WORD
-DIM ZP_B0 AS BYTE
-
+DIM ZP_B0 AS BYTE FAST
+DIM BASE AS WORD FAST
+DIM MASK AS BYTE FAST
 
 REM **********************
 REM *    DECLARATIONS    *
@@ -60,6 +60,7 @@ DECLARE SUB SetBitmapMemory(Ptr AS BYTE) SHARED STATIC
 
 'DECLARE SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
 'DECLARE SUB Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE) SHARED STATIC
+DECLARE SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB FillBitmap(Value AS BYTE) SHARED STATIC
 DECLARE SUB FillScreen(Value AS BYTE) SHARED STATIC
@@ -107,6 +108,13 @@ CALL DrawMC(159, 199, 109, 174, 2)
 CALL DrawMC(159, 199, 109, 149, 3)
 CALL DrawMC(159, 199, 134, 149, 2)
 CALL DrawMC(159, 199, 159, 149, 1)
+
+FOR T AS BYTE = 0 TO 159
+    CALL PlotMC(T, T, 1)
+    CALL PlotMC(159 - T, T, 2)
+    CALL PlotMC(T, 80, 3)
+    CALL PlotMC(80, T, 0)
+NEXT
 
 DO
 LOOP
@@ -238,18 +246,82 @@ SUB SetBitmapMemory(Ptr AS BYTE) SHARED STATIC
     CALL _calc_bitmap_table()
 END SUB
 
+SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
+    ASM
+        sta $400
+_plotmc_ram_in
+        lda $dd00
+        and #%00000011
+        bne _plotmc_init
+
+        sei
+        dec 1
+        dec 1
+
+_plotmc_init
+        lda #0
+        sta {BASE}+1
+
+        lda {y}             ; 4
+        and #7              ; 2 these cycles are needed to calculate the index to y table
+        tay                 ; 2 not needed if the table were 250 words long
+
+        eor {y}             ; 3
+        lsr                 ; 2
+        lsr                 ; 2
+        tax                 ; 2
+
+_plotmc_base
+        lda  {x}
+        and  #$FC
+        asl
+        rol  {BASE}+1
+        adc  {_bitmap_y_tbl},x
+        sta  {BASE}
+
+        lda  {_bitmap_y_tbl}+1,x
+        adc  {BASE}+1
+        sta  {BASE}+1
+
+_plotmc_mask
+        lda {x}
+        and #3
+        tax
+        lda {_mc_mask},x
+        sta {MASK}
+
+_plotmc_ink
+        ldx {Ink}
+        and {_mc_pattern},x
+        sta  {ZP_B0}
+
+_plotmc_draw
+        lda  {MASK}
+        eor  #$FF
+        and  ({BASE}),y
+        ora  {ZP_B0}
+        sta  ({BASE}),y
+
+_plotmc_ram_out:
+        lda 1
+        and #%00000011
+        bne  _plotmc_end
+        inc  1                          ; 6510 I/O register
+        inc  1                          ; 6510 I/O register
+        cli
+
+_plotmc_end:
+    END ASM
+END SUB
 
 SUB DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE) SHARED STATIC
-    DIM BASE AS WORD FAST
     DIM DISTANCE AS WORD FAST
     DIM COUNT AS BYTE FAST
-    DIM MASK AS BYTE FAST
     DIM PATTERN AS BYTE FAST
     DIM DX AS BYTE FAST
     DIM DY AS BYTE FAST
     DIM X_INC AS BYTE FAST
     DIM Y_INC AS BYTE FAST
-    DIM TEMP AS BYTE FAST
     ASM
         ;fast line draw
         ;passed: x1, y1, x2, y2
@@ -273,7 +345,6 @@ _drawmc_ram_in
         dec 1
 
 _drawmc_init
-        sta $400
         ldx  {Ink}
         lda  {_mc_pattern},x
         sta  {PATTERN}
@@ -334,11 +405,11 @@ _drawmc_store_dy:
         sta  {MASK}
 
         and  {PATTERN}
-        sta  {TEMP}
+        sta  {ZP_B0}
         lda  {MASK}
         eor  #$FF
         and  ({BASE}),y
-        ora  {TEMP}
+        ora  {ZP_B0}
         sta  ({BASE}),y
 
         lda  {DX}
@@ -436,11 +507,11 @@ _drawmc_x_store_base_hi:
 _drawmc_x_plot:
         lda  {MASK}
         and  {PATTERN}
-        sta  {TEMP}
+        sta  {ZP_B0}
         lda  {MASK}
         eor  #$FF
         and  ({BASE}),y
-        ora  {TEMP}
+        ora  {ZP_B0}
         sta  ({BASE}),y
 
         dec  {COUNT}
@@ -534,11 +605,11 @@ _drawmc_y_left:
 _drawmc_y_plot:
       lda  {MASK}
       and  {PATTERN}
-      sta  {TEMP}
+      sta  {ZP_B0}
       lda  {MASK}
       eor  #$FF
       and  ({BASE}),y
-      ora  {TEMP}
+      ora  {ZP_B0}
       sta  ({BASE}),y
 
       dec  {COUNT}
@@ -561,7 +632,7 @@ SUB _calc_bitmap_table() STATIC
         and #%00001000
         asl
         asl
-        sta {ZP_W0}+1
+        sta {BASE}+1
 
         lda $dd00           ; vic bank
         and #%00000011
@@ -569,28 +640,28 @@ SUB _calc_bitmap_table() STATIC
         lsr
         ror
         ror
-        ora {ZP_W0}+1
-        sta {ZP_W0}+1       ; bank + bitmap memory
+        ora {BASE}+1
+        sta {BASE}+1       ; bank + bitmap memory
 
         ldy #0
-        sty {ZP_W0}
+        sty {BASE}
 _calc_table_bitmap_loop
-        lda {ZP_W0}
+        lda {BASE}
         sta {_bitmap_y_tbl},y
         iny
-        lda {ZP_W0}+1
+        lda {BASE}+1
         sta {_bitmap_y_tbl},y
         iny
 
 _calc_table_bitmap_add_320
         clc
-        lda {ZP_W0}
+        lda {BASE}
         adc #$40
-        sta {ZP_W0}
+        sta {BASE}
 
-        lda {ZP_W0}+1
+        lda {BASE}+1
         adc #$1
-        sta {ZP_W0}+1
+        sta {BASE}+1
 
         cpy #50
         bne _calc_table_bitmap_loop
@@ -603,7 +674,7 @@ SUB _calc_screen_table() STATIC
         and #%11110000
         lsr
         lsr
-        sta {ZP_W0}+1
+        sta {BASE}+1
 
         lda $dd00           ; vic bank
         and #%00000011
@@ -611,24 +682,24 @@ SUB _calc_screen_table() STATIC
         lsr
         ror
         ror
-        ora {ZP_W0}+1
-        sta {ZP_W0}+1       ; bank + bitmap memory
+        ora {BASE}+1
+        sta {BASE}+1       ; bank + bitmap memory
 
         ldy #0
-        sty {ZP_W0}
+        sty {BASE}
 _calc_table_screen_loop
-        lda {ZP_W0}+1
+        lda {BASE}+1
         sta {_screen_y_tbl_hi},y
-        lda {ZP_W0}
+        lda {BASE}
         sta {_screen_y_tbl_lo},y
 
         clc
         adc #40
-        sta {ZP_W0}
+        sta {BASE}
 
-        lda {ZP_W0}+1
+        lda {BASE}+1
         adc #0
-        sta {ZP_W0}+1
+        sta {BASE}+1
 
         iny
         cpy #25
