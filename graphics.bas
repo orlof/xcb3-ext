@@ -49,7 +49,7 @@ DIM _color_y_tbl_lo(25) AS BYTE @ __color_y_tbl_lo
 
 ' REUSABLE ZERO-PAGE PSEUDO-REGISTERS
 DIM BASE AS WORD FAST
-DIM DISTANCE AS WORD FAST
+DIM DISTANCE AS INT FAST
 
 DIM DX AS WORD FAST         ' BYTE FOR MULTICOLOR
 DIM DY AS BYTE FAST
@@ -77,6 +77,10 @@ DECLARE SUB DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE) 
 DECLARE SUB FillBitmap(Value AS BYTE) SHARED STATIC
 DECLARE SUB FillScreen(Value AS BYTE) SHARED STATIC
 DECLARE SUB FillColorRam(Value AS BYTE) SHARED STATIC
+DECLARE FUNCTION Check AS BYTE(X AS WORD, Y AS BYTE) SHARED STATIC
+DECLARE FUNCTION CheckMC AS BYTE(X AS BYTE, Y AS BYTE) SHARED STATIC
+DECLARE SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
+DECLARE SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
 
 'DECLARE SUB SetBackgroundColor1(ColorCode AS BYTE) SHARED STATIC
 'DECLARE SUB SetBackgroundColor2(ColorCode AS BYTE) SHARED STATIC
@@ -88,75 +92,102 @@ DECLARE SUB _calc_screen_table() STATIC
 REM **********************
 REM *        MAIN        *
 REM **********************
+SUB Demo() SHARED STATIC
+    CALL SetVideoBank(3)
+    CALL SetBitmapMemory(1)
+    CALL SetScreenMemory(0)
+    CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
+    CALL FillBitmap(0)
+    CALL FillScreen(SHL(1, 4) OR 2)
 
-CALL SetVideoBank(3)
-CALL SetBitmapMemory(1)
-CALL SetScreenMemory(0)
-CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
-CALL FillBitmap(0)
-CALL FillScreen(SHL(1, 4) OR 2)
-CALL FillColorRam(3)
-
-'CALL DrawMC(0, 0, 50, 0, 1)
-'CALL DrawMC(0, 0, 50, 25, 2)
-'CALL DrawMC(0, 0, 50, 50, 3)
-'CALL DrawMC(0, 0, 25, 50, 2)
-'CALL DrawMC(0, 0, 0, 50, 1)
-
-'CALL DrawMC(0, 199, 50, 199, 1)
-'CALL DrawMC(0, 199, 50, 174, 2)
-'CALL DrawMC(0, 199, 50, 149, 3)
-'CALL DrawMC(0, 199, 25, 149, 2)
-'CALL DrawMC(0, 199, 0, 149, 1)
-
-'CALL DrawMC(159, 0, 109, 0, 1)
-'CALL DrawMC(159, 0, 109, 25, 2)
-'CALL DrawMC(159, 0, 109, 50, 3)
-'CALL DrawMC(159, 0, 134, 50, 2)
-'CALL DrawMC(159, 0, 159, 50, 1)
-
-'CALL DrawMC(159, 199, 109, 199, 1)
-'CALL DrawMC(159, 199, 109, 174, 2)
-'CALL DrawMC(159, 199, 109, 149, 3)
-'CALL DrawMC(159, 199, 134, 149, 2)
-'CALL DrawMC(159, 199, 159, 149, 1)
-
-CALL Draw(0,0,50,0,1)
-CALL Draw(0,0,50,25,1)
-CALL Draw(0,0,50,50,1)
-CALL Draw(0,0,25,50,1)
-CALL Draw(0,0,0,50,1)
-
-CALL Draw(319,0,269,0,1)
-CALL Draw(319,0,269,25,1)
-CALL Draw(319,0,269,50,1)
-CALL Draw(319,0,294,50,1)
-CALL Draw(319,0,319,50,1)
-
-CALL Draw(0,199,50,199,1)
-CALL Draw(0,199,50,174,1)
-CALL Draw(0,199,50,149,1)
-CALL Draw(0,199,25,149,1)
-CALL Draw(0,199,0,149,1)
-
-CALL Draw(319,199,269,199,1)
-CALL Draw(319,199,269,174,1)
-CALL Draw(319,199,269,149,1)
-CALL Draw(319,199,294,149,1)
-CALL Draw(319,199,319,149,1)
-
-CALL Draw(0,0,319,199,1)
-CALL Draw(319,0,0,199,1)
+    FOR T AS WORD = 0 TO 65535
 
 
-DO
-LOOP
+END SUB
+
+SUB TestSuite() SHARED STATIC
+    CALL SetVideoBank(3)
+    CALL SetBitmapMemory(1)
+    CALL SetScreenMemory(0)
+    CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
+    CALL FillBitmap(0)
+    CALL FillScreen(SHL(1, 4) OR 2)
+    CALL FillColorRam(3)
+
+    FOR X AS BYTE = 0 TO 159
+        FOR Y AS BYTE = 80 TO 120
+            CALL PlotMC(X, Y, (Y XOR X) AND 3)
+        NEXT
+    NEXT
+
+    FOR R AS BYTE = 5 TO 75 STEP 5
+        CALL CircleMC(80, 100, R, 2)
+    NEXT
+
+    CALL DrawMC(0, 0, 50, 0, 1)
+    CALL DrawMC(0, 0, 50, 25, 2)
+    CALL DrawMC(0, 0, 50, 50, 3)
+    CALL DrawMC(0, 0, 25, 50, 2)
+    CALL DrawMC(0, 0, 0, 50, 1)
+    CALL DrawMC(0, 199, 50, 199, 1)
+    CALL DrawMC(0, 199, 50, 174, 2)
+    CALL DrawMC(0, 199, 50, 149, 3)
+    CALL DrawMC(0, 199, 25, 149, 2)
+    CALL DrawMC(0, 199, 0, 149, 1)
+    CALL DrawMC(159, 0, 109, 0, 1)
+    CALL DrawMC(159, 0, 109, 25, 2)
+    CALL DrawMC(159, 0, 109, 50, 3)
+    CALL DrawMC(159, 0, 134, 50, 2)
+    CALL DrawMC(159, 0, 159, 50, 1)
+    CALL DrawMC(159, 199, 109, 199, 1)
+    CALL DrawMC(159, 199, 109, 174, 2)
+    CALL DrawMC(159, 199, 109, 149, 3)
+    CALL DrawMC(159, 199, 134, 149, 2)
+    CALL DrawMC(159, 199, 159, 149, 1)
+    CALL DrawMC(0, 0, 159, 199, 1)
+    CALL DrawMC(159, 0, 0, 199, 1)
+
+    CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
+    CALL FillBitmap(0)
+    CALL FillScreen(SHL(1, 4) OR 2)
+
+    FOR XW AS WORD = 0 TO 319
+        FOR Y = 80 TO 120
+            CALL Plot(XW, Y, (XW XOR Y) AND 1)
+        NEXT
+    NEXT
+
+    FOR R = 5 TO 95 STEP 5
+        CALL Circle(160, 100, R, 1)
+    NEXT
+
+    CALL Draw(0,0,50,0,1)
+    CALL Draw(0,0,50,25,1)
+    CALL Draw(0,0,50,50,1)
+    CALL Draw(0,0,25,50,1)
+    CALL Draw(0,0,0,50,1)
+    CALL Draw(319,0,269,0,1)
+    CALL Draw(319,0,269,25,1)
+    CALL Draw(319,0,269,50,1)
+    CALL Draw(319,0,294,50,1)
+    CALL Draw(319,0,319,50,1)
+    CALL Draw(0,199,50,199,1)
+    CALL Draw(0,199,50,174,1)
+    CALL Draw(0,199,50,149,1)
+    CALL Draw(0,199,25,149,1)
+    CALL Draw(0,199,0,149,1)
+    CALL Draw(319,199,269,199,1)
+    CALL Draw(319,199,269,174,1)
+    CALL Draw(319,199,269,149,1)
+    CALL Draw(319,199,294,149,1)
+    CALL Draw(319,199,319,149,1)
+    CALL Draw(0,0,319,199,1)
+    CALL Draw(319,0,0,199,1)
+END SUB
+
+CALL TestSuite()
 
 END
-
-REM **********************
-REM *  GLOBAL ASSEMBLER  *
-REM **********************
 
 REM **********************
 REM *     FUNCTIONS      *
@@ -209,6 +240,7 @@ SUB SetGraphicsMode(Mode AS BYTE) SHARED STATIC
         sta {TEMP}
 
         lda $d011
+        and #%10011111
         ora {TEMP}
         sta $d011
 
@@ -217,6 +249,7 @@ SUB SetGraphicsMode(Mode AS BYTE) SHARED STATIC
         sta {TEMP}
 
         lda $d016
+        and #%11101111
         ora {TEMP}
         sta $d016
     END ASM
@@ -277,6 +310,102 @@ SUB SetBitmapMemory(Ptr AS BYTE) SHARED STATIC
         sta $d018
     END ASM
     CALL _calc_bitmap_table()
+END SUB
+
+FUNCTION Check AS BYTE(X AS WORD, Y AS BYTE) SHARED STATIC
+    ASM
+check
+        lda #$ff
+        sta {Check}
+
+        lda {Y}
+        cmp #200
+        bcs _check_end
+
+        lda {X}+1
+        cmp #$1
+        bcc _check_ok
+        bne _check_end
+        lda {X}
+        cmp #$40
+        bcs _check_end
+_check_ok
+        inc {Check}
+_check_end
+    END ASM
+END FUNCTION
+
+FUNCTION CheckMC AS BYTE(X AS BYTE, Y AS BYTE) SHARED STATIC
+    ASM
+checkmc
+        lda #$ff
+        sta {CheckMC}
+
+        lda {Y}
+        cmp #200
+        bcs _check_end
+
+        lda {X}
+        cmp #160
+        bcs _check_end
+_checkmc_ok
+        inc {CheckMC}
+_checkmc_end
+    END ASM
+END FUNCTION
+
+SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
+    ' WE USE X_INC AND Y_INC BECAUSE THOSE ARE CONVENIENTLY FREE BYTE VARIABLES
+    X_INC = Radius
+    Y_INC = 0
+    DISTANCE = X_INC / 2
+
+    DO
+        Y_INC = Y_INC + 1
+        DISTANCE = DISTANCE - Y_INC
+        IF DISTANCE < 0 THEN X_INC = X_INC - 1: DISTANCE = DISTANCE + X_INC
+
+        CALL PlotMC(X0+X_INC, Y0+Y_INC, Ink)
+        CALL PlotMC(X0+X_INC, Y0-Y_INC, Ink)
+        CALL PlotMC(X0-X_INC, Y0+Y_INC, Ink)
+        CALL PlotMC(X0-X_INC, Y0-Y_INC, Ink)
+        CALL PlotMC(X0+Y_INC, Y0+X_INC, Ink)
+        CALL PlotMC(X0+Y_INC, Y0-X_INC, Ink)
+        CALL PlotMC(X0-Y_INC, Y0+X_INC, Ink)
+        CALL PlotMC(X0-Y_INC, Y0-X_INC, Ink)
+    LOOP UNTIL X_INC <= Y_INC
+
+    CALL PlotMC(X0+Radius, Y0, Ink)
+    CALL PlotMC(X0-Radius, Y0, Ink)
+    CALL PlotMC(X0, Y0+Radius, Ink)
+    CALL PlotMC(X0, Y0-Radius, Ink)
+END SUB
+
+SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
+    ' WE USE DX AND DY BECAUSE THOSE ARE CONVENIENTLY FREE WORD AND BYTE VARIABLES
+    DX = Radius
+    DY = 0
+    DISTANCE = DX / 2
+
+    DO
+        DY = DY + 1
+        DISTANCE = DISTANCE - DY
+        IF DISTANCE < 0 THEN DX = DX - 1: DISTANCE = DISTANCE + DX
+
+        CALL Plot(X0+DX, Y0+DY, Mode)
+        CALL Plot(X0+DX, Y0-DY, Mode)
+        CALL Plot(X0-DX, Y0+DY, Mode)
+        CALL Plot(X0-DX, Y0-DY, Mode)
+        CALL Plot(X0+DY, Y0+DX, Mode)
+        CALL Plot(X0+DY, Y0-DX, Mode)
+        CALL Plot(X0-DY, Y0+DX, Mode)
+        CALL Plot(X0-DY, Y0-DX, Mode)
+    LOOP UNTIL DX <= DY
+
+    CALL Plot(X0 + Radius, Y0, Mode)
+    CALL Plot(X0 - Radius, Y0, Mode)
+    CALL Plot(X0, Y0 + Radius, Mode)
+    CALL Plot(X0, Y0 - Radius, Mode)
 END SUB
 
 SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
@@ -622,8 +751,8 @@ SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
     ASM
 _plotmc_ram_in
         sei
-        lda %00110100
-        sta 1
+        dec 1
+        dec 1
 
 _plotmc_init
         lda #0
@@ -670,8 +799,8 @@ _plotmc_draw
         sta  ({BASE}),y
 
 _plotmc_ram_out:
-        lda %00110110
-        sta 1
+        inc 1
+        inc 1
         cli
 
 _plotmc_end:
@@ -680,22 +809,19 @@ END SUB
 
 SUB DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE) SHARED STATIC
     ASM
-        ;fast line draw
-        ;passed: x1, y1, x2, y2
-
         ;altered:
-        ;dx   = DX      delta x 16
-        ;dy   = DY      delta y 8
-        ;xi   = X_INC
-        ;yi   = Y_INC
-        ;base = BASE   base of pixel addr 16
-        ;m    = MASK   pixel mask 8
-        ;c    = COUNT   count 16
-        ;r    = DISTANCE   16
+        ;  DX 8
+        ;  DY 8
+        ;  X_INC 8
+        ;  Y_INC 8
+        ;  BASE 16
+        ;  MASK 8
+        ;  COUNT 8
+        ;  DISTANCE 16
 _drawmc_ram_in
         sei
-        lda %00110100
-        sta 1
+        dec 1
+        dec 1
 
 _drawmc_init
         ldx  {Ink}
@@ -969,8 +1095,8 @@ _drawmc_y_plot:
       bne  _drawmc_y_loop
 
 _drawmc_ram_out:
-        lda %00110110
-        sta 1
+        inc 1
+        inc 1
         cli
 _drawmc_end:
     END ASM

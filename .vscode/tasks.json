@@ -9,8 +9,7 @@
             "osx": {
                 "command": "./bin/macOS/xcbasic3",
                 "args": [
-                    "-p=False",
-                    "-k",
+                    "-k=True",
                     "${file}",
                     "${fileDirname}/${fileBasenameNoExtension}.prg"
                 ]
@@ -18,6 +17,7 @@
             "linux": {
                 "command": "./bin/Linux/xcbasic3",
                 "args": [
+                    "-p=False",
                     "${file}",
                     "${fileDirname}/${fileBasenameNoExtension}.prg"
                 ]
