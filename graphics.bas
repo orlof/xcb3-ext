@@ -95,6 +95,7 @@ DECLARE SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED
 
 DECLARE SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
 DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
+DECLARE SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
 
 DECLARE FUNCTION Check AS BYTE(X AS WORD, Y AS BYTE) SHARED STATIC
 DECLARE FUNCTION CheckMC AS BYTE(X AS BYTE, Y AS BYTE) SHARED STATIC
@@ -110,7 +111,7 @@ DECLARE SUB _calc_screen_table() STATIC
 REM **********************
 REM *        MAIN        *
 REM **********************
-SUB TestSuite() SHARED STATIC
+SUB TestSuiteMC() SHARED STATIC
     CALL SetVideoBank(3)
     CALL SetBitmapMemory(1)
     CALL SetScreenMemory(0)
@@ -160,10 +161,12 @@ SUB TestSuite() SHARED STATIC
     NEXT
     CALL TextMC(0,0,1,$ff,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",CWORD(1))
     CALL TextMC(0,1,1,$ff,0,"abcdefghijklmnopqrstuvwxyz",CWORD(1))
+END SUB
 
-    DO
-    LOOP
-
+SUB TestSuite() SHARED STATIC
+    CALL SetVideoBank(3)
+    CALL SetBitmapMemory(1)
+    CALL SetScreenMemory(0)
     CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
     CALL FillBitmap(0)
     CALL FillScreen(SHL(1, 4) OR 2)
@@ -174,7 +177,7 @@ SUB TestSuite() SHARED STATIC
     '    NEXT
     'NEXT
 
-    FOR R = 5 TO 95 STEP 5
+    FOR R AS BYTE = 5 TO 95 STEP 5
         CALL Circle(160, 100, R, 1)
     NEXT
 
@@ -200,9 +203,19 @@ SUB TestSuite() SHARED STATIC
     CALL Draw(319,199,319,149,1)
     CALL Draw(0,0,319,199,1)
     CALL Draw(319,0,0,199,1)
+
+    CALL CopyCharROM(1, $d000)
+    FOR Face AS BYTE = 0 TO 2
+        FOR Bg AS BYTE = 0 TO 2
+            CALL Text(2+12*Bg, Face+10, Face-1, Bg-1, 1, "aAbBcC", CWORD(1))
+        NEXT
+    NEXT
+
 END SUB
 
 CALL TestSuite()
+DO
+LOOP
 
 END
 
@@ -487,6 +500,301 @@ mc_text_end
     END ASM
 END SUB
 
+SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
+    DIM ProcessorFlag AS BYTE
+    ' BITMAP_BASE:  ZP_W0
+    ' FONT_BASE:    ZP_W1
+    ' TEXT_POS:     ZP_B0
+    ' FONT_POS:     ZP_B1
+    ' FONT_BYTE:    ZP_B2
+    ' SCREEN_BYTE:  ZP_B3
+    ' BG_BYTE:      ZP_B4
+    ' FG_BYTE:      ZP_B5
+    ASM
+        lda {CharMemAddr}+1
+        bne _text_ram
+        lda {CharMemAddr}
+        cmp #2
+        bcs _text_ram
+
+_text_rom
+        sei
+        lda 1
+        sta {ProcessorFlag}
+        lda #%00110001
+        sta 1
+
+        ldx #$d8
+        lda {CharMemAddr}
+        bne _text_rom1
+        ldx #$d0
+_text_rom1
+        stx {CharMemAddr}+1
+
+        lda #0
+        sta {CharMemAddr}
+
+        jmp _text_init
+
+_text_ram
+        sei
+        lda 1
+        sta {ProcessorFlag}
+        and #%11111000
+        sta 1
+
+_text_init
+        ;init bitmap pointer
+        lda {Row}
+        asl
+        tay
+        lda {_bitmap_y_tbl},y
+        sta {ZP_W0}
+        lda {_bitmap_y_tbl}+1,y
+        sta {ZP_W0}+1
+
+        lda {Col}
+        asl
+        asl
+        asl
+        bcc text_add_col_to_base
+        inc {ZP_W0}+1
+        clc
+text_add_col_to_base
+        adc {ZP_W0}
+        sta {ZP_W0}
+        bcc _text_init_text_pointer
+        inc {ZP_W0}+1
+
+_text_init_text_pointer
+        ;init text pointer
+        lda #0
+        sta {ZP_B0}
+
+text_loop_text
+        ldy {ZP_B0}
+        cpy {Text}
+        bne text_loop_read_char
+        jmp text_end
+text_loop_read_char
+        iny
+        sty {ZP_B0}
+
+        ;petscii to screen code
+        lda {Text},y
+        ldx #$5e
+        cmp #255
+        beq _text_init_font_base
+        lsr
+        lsr
+        lsr
+        lsr
+        lsr
+        tax
+        clc
+        lda {_petscii_to_screencode},x
+        adc {Text},y
+        tax
+
+_text_init_font_base
+        lda #0
+        sta {ZP_W1}+1
+
+        txa
+        asl
+        rol {ZP_W1}+1
+        asl
+        rol {ZP_W1}+1
+        asl
+        rol {ZP_W1}+1
+
+        adc {CharMemAddr}
+        sta {ZP_W1}
+
+        lda {ZP_W1}+1
+        adc {CharMemAddr}+1
+        sta {ZP_W1}+1
+
+        ;init font loop
+        ldy #7
+text_font_loop
+        lda {Double}
+        bne _text_char_loop_double
+
+_text_char_single
+        lda {Mode}
+        beq _text_char_single_clr
+        bpl _text_char_single_set
+
+_text_char_single_transparent
+        lda ({ZP_W1}),y
+        and ({ZP_W0}),y
+        .byte $2c
+_text_char_single_clr
+        lda #0
+        .byte $2c
+_text_char_single_set
+        lda ({ZP_W1}),y
+        sta {ZP_B5}
+
+        lda {BgMode}
+        beq _text_char_single_bg_clr
+        bpl _text_char_single_bg_set
+
+_text_char_single_bg_transparent
+        lda ({ZP_W1}),y
+        eor #$ff
+        and ({ZP_W0}),y
+        jmp _text_char_single_combine
+_text_char_single_bg_clr
+        lda #0
+        jmp _text_char_single_combine
+_text_char_single_bg_set
+        lda ({ZP_W1}),y
+        eor #$ff
+
+_text_char_single_combine
+        ora {ZP_B5}
+        sta ({ZP_W0}),y
+
+        dey
+        bpl text_font_loop
+
+        ;next char
+        clc
+        lda {ZP_W0}
+        adc #8
+        sta {ZP_W0}
+        bcc text_char_next
+        inc {ZP_W0}+1
+text_char_next
+        jmp text_loop_text
+
+_text_char_loop_double
+        ;lda ({ZP_W0}),y
+        ;process left nible
+        lda ({ZP_W1}),y
+        lsr
+        lsr
+        lsr
+        lsr
+        tax
+        lda {_nible_to_byte},x
+        sta {ZP_B2}
+
+
+_text_char_left_fg
+        lda {Mode}
+        beq _text_char_left_clr
+        bpl _text_char_left_set
+
+_text_char_left_transparent
+        lda {ZP_B2}
+        and ({ZP_W0}),y
+        .byte $2c
+_text_char_left_clr
+        lda #0
+        .byte $2c
+_text_char_left_set
+        lda {ZP_B2}
+
+        sta {ZP_B5}
+
+_text_char_left_bg
+        lda {BgMode}
+        beq _text_char_left_bg_clr
+        bpl _text_char_left_bg_set
+
+_text_char_left_bg_flip
+        lda {ZP_B2}
+        eor #$ff
+        and ({ZP_W0}),y
+        jmp _text_char_left_combine
+_text_char_left_bg_clr
+        lda #0
+        jmp _text_char_left_combine
+_text_char_left_bg_set
+        lda {ZP_B2}
+        eor #$ff
+
+_text_char_left_combine
+        ora {ZP_B5}
+        sta ({ZP_W0}),y
+
+
+_text_char_right
+        lda ({ZP_W1}),y
+        and #%00001111
+        tax
+        lda {_nible_to_byte},x
+        sta {ZP_B2}
+
+        tya
+        eor #%00001000
+        tay
+
+_text_char_right_fg
+        lda {Mode}
+        beq _text_char_right_clr
+        bpl _text_char_right_set
+
+_text_char_right_transparent
+        lda {ZP_B2}
+        and ({ZP_W0}),y
+        .byte $2c
+_text_char_right_clr
+        lda #0
+        .byte $2c
+_text_char_right_set
+        lda {ZP_B2}
+
+        sta {ZP_B5}
+
+_text_char_right_bg
+        lda {BgMode}
+        beq _text_char_right_bg_clr
+        bpl _text_char_right_bg_set
+
+_text_char_right_bg_transparent
+        lda {ZP_B2}
+        eor #$ff
+        and ({ZP_W0}),y
+        jmp _text_char_right_combine
+_text_char_right_bg_clr
+        lda #0
+        jmp _text_char_right_combine
+_text_char_right_bg_set
+        lda {ZP_B2}
+        eor #$ff
+
+_text_char_right_combine
+        ora {ZP_B5}
+        sta ({ZP_W0}),y
+
+
+        tya
+        eor #%00001000
+        tay
+        dey
+        bmi text_char_double_next
+        jmp text_font_loop
+
+text_char_double_next
+        ;next char
+        clc
+        lda {ZP_W0}
+        adc #16
+        sta {ZP_W0}
+        bcc text_next_char
+        inc {ZP_W0}+1
+text_next_char
+        jmp text_loop_text
+text_end
+        lda {ProcessorFlag}
+        sta 1
+        cli
+    END ASM
+END SUB
 
 SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
     ' TEMP = ZP_B0
