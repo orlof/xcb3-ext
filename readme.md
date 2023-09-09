@@ -81,8 +81,6 @@ CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CWORD(1))
 
 Below is the detailed documentation for each subroutine provided by the XCB3-GFX library.
 
-Creating a table of contents (TOC) for the API calls you have documented will help users quickly navigate to the functions they need. Here's how you can create one:
-
 ### Table of Contents:
 
 #### Memory
