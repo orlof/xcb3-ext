@@ -1024,7 +1024,7 @@ SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
 END SUB
 
 SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
-    'ABOUT 235 pixels per jiffy (average 142 pixels per line)
+    'ABOUT 235 pixels per 1/50 s (average 142 pixels per line)
     ASM
 _plot_ram_in
         sei

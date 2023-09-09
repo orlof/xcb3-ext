@@ -1,0 +1,463 @@
+# XCB3-GFX: Low Level Graphic Primitives Library
+
+**XCB3-GFX Library Summary**:
+
+- **Purpose**: The XCB3-GFX library is tailored for drawing on C64 bitmaps, offering developers an array of low-level graphic primitives.
+
+- **Compatibility**: The library supports both hires and multicolor bitmap modes, ensuring a diverse graphical range.
+
+- **Flexibility**: XCB3-GFX can operate with any of the VIC banks (0-3). Unlike some other libraries, there's no "hard-coded" memory location for the bitmap, screen, or font, which provides developers with a high degree of flexibility. XCB3-GFX drawing primitives work even if target memory is located in bank 3 "behind" io and kernel.
+
+- **Performance**: It boasts considerable speed - for instance, it can plot random hires lines at a rate of approximately 235 pixels within 1/50s, with an average line length of 142 pixels.
+
+- **Usage Note**: For the sake of maintaining this performance, there's no built-in sanity check for the input arguments. As a result, if users input values that instruct drawings outside of the screen boundaries, the library's behavior becomes undefined, and it won't provide warnings or errors.
+
+- **API Design**: The library's API is designed for focused operations. Each command specifically targets either bitmap or screen memory. For example, if a developer wishes to draw text on the bitmap memory and simultaneously modify the color in screen memory, they would need separate calls - namely, `Text(...)` for the text and `ColorArea(...)` for the color.
+
+## API Documentation
+
+Below is the detailed documentation for each subroutine provided by the XCB3-GFX library.
+
+### SetVideoBank(BankNumber AS BYTE)
+
+This subroutine sets the VIC bank for graphic operations. The Commodore 64 has four possible video banks, and you can choose between them by passing the appropriate bank number.
+
+**Parameters:**
+- **BankNumber**: A byte representing the desired video bank. It can take values between 0 and 3, inclusive.
+
+  - **Bank #0**:
+    - Memory Range: `$0000-$3FFF`
+    - Decimal Range: `0-16383`
+
+  - **Bank #1**:
+    - Memory Range: `$4000-$7FFF`
+    - Decimal Range: `16384-32767`
+
+  - **Bank #2**:
+    - Memory Range: `$8000-$BFFF`
+    - Decimal Range: `32768-49151`
+
+  - **Bank #3**:
+    - Memory Range: `$C000-$FFFF`
+    - Decimal Range: `49152-65535`
+
+**Usage:**
+```c
+SetVideoBank(2);  // This will set the video bank to Bank #2
+```
+
+### SetGraphicsMode(Mode AS BYTE)
+
+This subroutine sets the desired graphics mode for display operations on the Commodore 64. Different modes enable different visual capabilities and styles.
+
+**Parameters:**
+- **Mode**: A byte representing the graphics mode. It must be one of the following constants:
+
+  - **STANDARD_CHARACTER_MODE**:
+    - **Description**: A mode primarily used for 40x25 text display. It allows for a single foreground color for each character against a common background.
+
+  - **MULTICOLOR_CHARACTER_MODE**:
+    - **Description**: Variation of the standard character mode. It allows three unique colors per character plus a common background but halves the horizontal resolution.
+
+  - **STANDARD_BITMAP_MODE**:
+    - **Description**: A high-resolution mode that enables 320x200 pixel-by-pixel graphics. In this mode, each 8x8 pixel cell can have a unique foreground and background color.
+
+  - **MULTICOLOR_BITMAP_MODE**:
+    - **Description**: A 160x200 multicolor version of the bitmap mode. It reduces the resolution but allows for up to three colors per 8x8 pixel cell plus a common background, giving more color-rich graphics.
+
+  - **EXTENDED_BACKGROUND_COLOR_MODE**:
+    - **Description**: This mode extends the standard character mode by offering additional background colors. While the foreground remains singular per character, there are now four possible background colors to choose from.
+
+**Usage:**
+```c
+SetGraphicsMode(STANDARD_BITMAP_MODE);  // This will set the graphics mode to STANDARD_BITMAP_MODE
+```
+
+**Note**: Switching between modes will drastically alter the appearance of any existing screen content. Ensure that the desired mode is set before performing any drawing or display operations to achieve consistent visual results.
+
+### SetScreenMemory(Ptr AS BYTE)
+
+This subroutine sets the starting location for screen memory. The location depends on the selected graphics mode:
+
+- **In Text Modes**: Screen memory holds the character codes for each of the characters displayed in the 40x25 screen grid, which utilizes 1KB of memory.
+
+- **In Bitmap Modes**: Screen memory holds the color data for each 8x8 pixel cell (or 4x8 pixel cell when in multicolor mode).
+
+**Parameters:**
+- **Ptr**: A byte indicating the relative position within the selected VIC bank. Here are the possible values:
+
+| Ptr Value | Memory Range  | Decimal Range  |
+|-----------|---------------|----------------|
+| 0         | `$0000-$03FF` | `0-1023`       |
+| 1         | `$0400-$07FF` | `1024-2047`    |
+| 2         | `$0800-$0BFF` | `2048-3071`    |
+| 3         | `$0C00-$0FFF` | `3072-4095`    |
+| 4         | `$1000-$13FF` | `4096-5119`    |
+| 5         | `$1400-$17FF` | `5120-6143`    |
+| 6         | `$1800-$1BFF` | `6144-7167`    |
+| 7         | `$1C00-$1FFF` | `7168-8191`    |
+| 8         | `$2000-$23FF` | `8192-9215`    |
+| 9         | `$2400-$27FF` | `9216-10239`   |
+| 10        | `$2800-$2BFF` | `10240-11263`  |
+| 11        | `$2C00-$2FFF` | `11264-12287`  |
+| 12        | `$3000-$33FF` | `12288-13311`  |
+| 13        | `$3400-$37FF` | `13312-14335`  |
+| 14        | `$3800-$3BFF` | `14336-15359`  |
+| 15        | `$3C00-$3FFF` | `15360-16383`  |
+
+**Usage:**
+```c
+SetScreenMemory(5);  // This will set the screen memory starting location to `$1400-$17FF`
+```
+
+**Note**: Changing the screen memory location during active display operations might produce unexpected visual results. It's advisable to set the screen memory location during initialization or when the screen is not actively being updated.
+
+### SetCharacterMemory(Ptr AS BYTE)
+
+This subroutine specifies the memory location for the 2k character set. The character set determines the design of the characters used on the screen in text modes, including custom fonts if you've created or loaded any.
+
+Note that this character memory pointer is not anyway related to the CharSet address that you can give for
+Text(...) subroutine.
+
+**Parameters:**
+- **Ptr**: A byte indicating the relative position within the selected VIC bank for the character memory. Here are the possible values:
+
+| Ptr Value | Memory Range  | Decimal Range  |
+|-----------|---------------|----------------|
+| 0         | `$0000-$07FF` | `0-2047`       |
+| 1         | `$0800-$0FFF` | `2048-4095`    |
+| 2         | `$1000-$17FF` | `4096-6143`    |
+| 3         | `$1800-$1FFF` | `6144-8191`    |
+| 4         | `$2000-$27FF` | `8192-10239`   |
+| 5         | `$2800-$2FFF` | `10240-12287`  |
+| 6         | `$3000-$37FF` | `12288-14335`  |
+| 7         | `$3800-$3FFF` | `14336-16383`  |
+
+**Usage:**
+```c
+SetCharacterMemory(4);  // This will set the character memory location to `$2000-$27FF`
+```
+
+**Note**: Modifying the character memory location while displaying text can yield unpredictable visual outputs. For optimal results, set the character memory location during system initialization or during periods when text display is not being actively modified.
+
+### SetBitmapMemory(Ptr AS BYTE)
+
+This subroutine specifies the memory location for the bitmap graphics. The bitmap memory holds the pixel data used for detailed graphics in bitmap modes, allowing for intricate designs, images, and more.
+
+**Parameters:**
+- **Ptr**: A byte indicating the relative position within the selected VIC bank for the bitmap memory. Here are the possible values:
+
+| Ptr Value | Memory Range  | Decimal Range   |
+|-----------|---------------|-----------------|
+| 0         | `$0000-$1FFF` | `0-8191`        |
+| 1         | `$2000-$3FFF` | `8192-16383`    |
+
+**Usage:**
+```c
+SetBitmapMemory(1);  // This will set the bitmap memory location to `$2000-$3FFF`
+```
+
+**Note**: Modifying the bitmap memory location while displaying graphics can yield unpredictable visual outputs. For the best results, it's recommended to set the bitmap memory location during system initialization or during periods when the graphical display is not being actively updated.
+
+### ResetScreen()
+
+This subroutine returns the VIC's configuration to a default state for basic text display, providing a convenient way to ensure a known state for the screen display system.
+
+**Actions Performed:**
+1. Sets the VIC bank to `Bank 0` (`$0000-$3FFF`, `0-16383`).
+2. Sets the screen memory location to `$0400-$07FF` (`1024-2047`).
+3. Sets the character memory location to `$1000-$17FF` (`4096-6143`).
+4. Enables `Standard Character Mode` for basic text display without any graphics modes or custom character sets.
+
+**Usage:**
+```c
+ResetScreen();  // This will restore the default VIC configurations as outlined above.
+```
+
+**Note**: Using `ResetScreen()` is helpful when transitioning from graphics or custom modes back to a standard text environment. It ensures predictable behavior by reverting to the familiar settings of the C64's default text mode. Always ensure any ongoing screen updates or animations are halted before resetting to avoid visual glitches or undesirable behaviors.
+
+### FillBitmap(Value AS BYTE)
+
+This subroutine provides an efficient way to fill the entire bitmap memory with a specified byte value. This is useful for quickly setting up a blank canvas or a consistent patterned background in both hires and multicolor bitmap modes.
+
+**Parameters:**
+- **Value**: The byte value to be filled into the entire bitmap memory. Depending on the bitmap mode (hires or multicolor), the interpretation of this byte will change. In hires mode, each bit of the byte corresponds to a pixel, while in multicolor mode, two bits together will define the color of a pixel.
+
+**Usage:**
+```c
+FillBitmap(0x00);  // This will clear the entire bitmap to black (or the respective background color).
+```
+
+**Note**: This subroutine only writes to the bitmap memory. If you wish to modify the screen memory or color RAM, you will need to utilize separate subroutines: `FillScreen(..)` for screen memory and `FillColorRam(...)` for color RAM. Ensure the respective areas are updated correctly to achieve the desired visual outcome.
+
+### FillScreen(Value AS BYTE)
+
+This subroutine offers a straightforward way to populate the entire screen memory with a specified byte value. Screen memory holds character codes or color data depending on the mode, which directly influences how the screen appears.
+
+**Parameters:**
+- **Value**: The byte value to be filled into the entire screen memory. The interpretation of this byte will depend on the current mode set for the system. For instance, in text modes, it denotes a character code, whereas in bitmapped modes, it defines the color data for each 8x8 pixel cell (or 4x8 cell in multicolor mode).
+
+**Usage:**
+```c
+FillScreen(0x20);  // This will fill the screen memory with spaces (assuming standard character mode).
+```
+
+**Note**: This subroutine solely modifies the screen memory. If you intend to adjust the bitmap graphics or color RAM, you must employ other relevant subroutines like `FillBitmap(..)` for bitmap memory and `FillColorRam(...)` for color RAM. It's essential to coordinate updates across these memories to attain the desired visual representation.
+
+### FillColorRam(Value AS BYTE)
+
+This subroutine provides a method to uniformly set all the values in the color RAM with a specified byte value. The color RAM is crucial in determining the colors of characters or bitmap graphics displayed on the screen, depending on the active mode.
+
+**Parameters:**
+- **Value**: The byte value to be filled into the entire color RAM. This value corresponds to a specific color in the C64 color palette. Since color RAM values are only 4 bits, valid values range from 0 to 15.
+
+**Usage:**
+```c
+FillColorRam(0x0F);  // This will set all color RAM entries to light gray (assuming standard C64 color codes).
+```
+
+**Note**: This subroutine only modifies the color RAM. If you need to change the bitmap graphics or screen memory, you should use the respective subroutines: `FillBitmap(..)` for bitmap memory and `FillScreen(..)` for screen memory. To achieve the intended visual display, ensure consistent and coordinated updates across these memories. Additionally, always ensure that the provided value is within the valid range of 0 to 15 to prevent unintended behaviors.
+
+### Plot(x AS WORD, y AS BYTE, Mode AS BYTE)
+
+The `Plot` subroutine provides a method to draw individual pixels on the screen when operating in `STANDARD_BITMAP_MODE`.
+
+**Parameters:**
+- **x**: The horizontal position of the pixel on the screen. Acceptable values range from 0 to 319. For literal values less than 256, you may need to use the `CWORD(255)` type conversion. For instance: `CALL Plot(CWORD(255), 100, MODE_SET)`.
+- **y**: The vertical position of the pixel on the screen. Valid values are between 0 and 199.
+- **Mode**: The operation mode for the pixel plotting. It can be one of the following constants:
+  - `MODE_SET`: Sets the pixel to the foreground color.
+  - `MODE_CLEAR`: Sets the pixel to the background color.
+  - `MODE_FLIP`: Inverts the current pixel color, switching between background and foreground.
+
+**Usage:**
+```c
+CALL Plot(150, 50, MODE_SET);  // This will set the pixel at position (150, 50) to the foreground color.
+```
+
+**Note**: This subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. Ensure that this mode is active before calling `Plot`. If you attempt to use this subroutine in any other mode, results might not be as expected. Always ensure that provided `x` and `y` values are within the valid ranges to prevent unintended behaviors.
+
+### PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE)
+
+The `PlotMC` subroutine offers a way to draw individual pixels on the screen in multicolor mode.
+
+**Parameters:**
+- **x**: The horizontal position of the pixel on the screen in multicolor mode. Valid values range from 0 to 159.
+- **y**: The vertical position of the pixel on the screen. Valid values are between 0 and 199.
+- **Ink**: Defines the color with which the pixel will be drawn. It can have one of the following values:
+  - `0`: Background color (addressed by `$D021`).
+  - `1`: Color1, determined by bits #4-7 of the corresponding byte in screen RAM.
+  - `2`: Color2, determined by bits #0-3 of the corresponding byte in screen RAM.
+  - `3`: Color3, determined by bits #0-3 in the corresponding byte in color RAM range `$D800-$DBFF`.
+
+**Usage:**
+```c
+CALL PlotMC(80, 50, 2);  // This will set the multicolor pixel at position (80, 50) to Color2 as defined in screen RAM.
+```
+
+**Note**: Ensure that your system is set to multicolor mode before using this subroutine. Always ensure that the provided `x`, `y`, and `Ink` values are within the valid ranges to prevent unintended behaviors. It's crucial to set up the screen and color RAM appropriately to achieve the desired color results with this subroutine.
+
+### Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE)
+
+The `Draw` subroutine provides a method to draw a straight line between two points on the screen when operating in `STANDARD_BITMAP_MODE`.
+
+**Parameters:**
+- **x1, x2**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if
+you are using a variable of type Word instead of literal value).
+- **y1, y2**: The vertical starting and ending positions of the line on the screen. Valid values for each range from 0 to 199.
+- **Mode**: The operation mode for drawing the line. It can be one of the following constants:
+  - `MODE_SET`: Draws the line using the foreground color.
+  - `MODE_CLEAR`: Draws the line using the background color.
+  - `MODE_FLIP`: Inverts the color of the pixels on the line's path, toggling between background and foreground.
+
+**Usage:**
+```c
+CALL Draw(CWORD(10), 10, CWORD(150), 190, MODE_SET);  // This will draw a line from point (10, 10) to point (150, 190) using the foreground color.
+```
+
+**Note**: This subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. It's essential to ensure that this mode is active before invoking `Draw`. Using this subroutine in other modes might produce unexpected results. Always ensure that the provided `x1`, `y1`, `x2`, `y2`, and `Mode` values are within the valid ranges to avoid unintended behaviors.
+
+### DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE)
+
+The `DrawMC` subroutine facilitates drawing straight lines on the screen in multicolor mode.
+
+**Parameters:**
+- **x1, x2**: The horizontal starting and ending positions of the line on the screen in multicolor mode. Valid values for each range from 0 to 159.
+- **y1, y2**: The vertical starting and ending positions of the line on the screen. Acceptable values for each are between 0 and 199.
+- **Ink**: Specifies the color to be used to draw the line. It can have one of the following values:
+  - `0`: Background color (addressed by `$D021`).
+  - `1`: Color1, determined by bits #4-7 of the corresponding byte in screen RAM.
+  - `2`: Color2, determined by bits #0-3 of the corresponding byte in screen RAM.
+  - `3`: Color3, determined by bits #0-3 in the corresponding byte in color RAM range `$D800-$DBFF`.
+
+**Usage:**
+```c
+CALL DrawMC(20, 30, 140, 170, 2);  // This will draw a line in multicolor mode from point (20, 30) to point (140, 170) using Color2 as defined in screen RAM.
+```
+
+**Note**: Before employing the `DrawMC` subroutine, ensure that your system is configured in multicolor mode. Set up the screen and color RAM appropriately to get the desired color results. Always verify that the provided `x1`, `y1`, `x2`, `y2`, and `Ink` values fall within the legitimate ranges to prevent unexpected outcomes. Using this subroutine in non-multicolor modes might yield unpredictable results.
+
+### Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE)
+
+The `Circle` subroutine enables drawing circles in the `STANDARD_BITMAP_MODE` on the screen.
+
+**Parameters:**
+- **X0**: The horizontal position of the circle's center. Valid values range from 0 to 319. For literal values less than 256, you might need to use the `CWORD(255)` type conversion. For instance: `CALL Circle(CWORD(255), 100, 50, MODE_SET)`.
+- **Y0**: The vertical position of the circle's center. Acceptable values range from 0 to 199.
+- **Radius**: Defines the radius of the circle in pixels.
+- **Mode**: The operation mode for drawing the circle. It can be one of the following constants:
+  - `MODE_SET`: Draws the circle using the foreground color.
+  - `MODE_CLEAR`: Draws the circle using the background color.
+  - `MODE_FLIP`: Inverts the color of the pixels on the circle's circumference, toggling between background and foreground.
+
+**Usage:**
+```c
+CALL Circle(150, 100, 40, MODE_SET);  // This draws a circle centered at point (150, 100) with a radius of 40 pixels using the foreground color.
+```
+
+**Note**: The `Circle` subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. Before calling this subroutine, ensure that the correct mode is active. Pixels drawn must be within the screen boundaries; always ensure that the combination of the center (`X0`, `Y0`) and `Radius` will result in a circle completely inside the screen dimensions to avoid unexpected behaviors. Using this subroutine outside the `STANDARD_BITMAP_MODE` might produce unpredictable results.
+
+### CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE)
+
+The `CircleMC` subroutine is tailored for drawing circles in multicolor mode on the screen.
+
+**Parameters:**
+- **X0**: The horizontal position of the circle's center in multicolor mode. Acceptable values range from 0 to 159.
+- **Y0**: The vertical position of the circle's center. Valid values range from 0 to 199.
+- **Radius**: Defines the radius of the circle in pixels.
+- **Ink**: Specifies the color to be used to draw the circle. It can have one of the following values:
+  - `0`: Background color (addressed by `$D021`).
+  - `1`: Color1, determined by bits #4-7 of the corresponding byte in screen RAM.
+  - `2`: Color2, determined by bits #0-3 of the corresponding byte in screen RAM.
+  - `3`: Color3, determined by bits #0-3 in the corresponding byte in color RAM range `$D800-$DBFF`.
+
+**Usage:**
+```c
+CALL CircleMC(80, 100, 40, 2);  // This will draw a circle centered at point (80, 100) with a radius of 40 pixels using Color2 as defined in screen RAM.
+```
+
+**Note**: The `CircleMC` subroutine is specifically devised for use in multicolor mode. Before using this subroutine, ensure that your system is configured to this mode. Pixels drawn must be within the screen boundaries; make sure that the combination of center (`X0`, `Y0`) and `Radius` keeps the circle entirely inside the screen dimensions to prevent unexpected behaviors. Using this subroutine outside of multicolor mode can yield unpredictable outcomes.
+
+### CopyCharROM(CharSet AS BYTE, DestAddr AS WORD)
+
+The `CopyCharROM` subroutine facilitates the copying of character sets from ROM to a designated RAM location. This is particularly useful when you wish to modify the character set or to ensure that the character set resides in a specific memory location for display purposes.
+
+**Parameters:**
+- **CharSet**: Determines which character set to copy from the ROM.
+  - `0`: Uppercase/Graphics character set.
+  - `1`: Lowercase/Uppercase character set.
+
+- **DestAddr**: This is the absolute memory location in RAM, spanning the entire 64k memory, where the character set will be copied to. Ensure that the address provided has space for 2048 bytes of character data. If you plan to use the copied characters in text-based modes, the `DestAddr` should align to a 2048-byte boundary within your selected 16k VIC bank.
+
+**Usage:**
+```c
+CALL CopyCharROM(0, $b000);  // This will copy the Uppercase/Graphics character set to the memory location starting at 45056.
+```
+
+**Note**: Before invoking this subroutine, it's crucial to verify that the `DestAddr` is correctly set to ensure that no unexpected memory overlap occurs. It's imperative to remember that the `DestAddr` is an absolute address, not relative to the current VIC bank. If used in text modes, ensuring alignment to the 2048-byte boundary is essential for the correct display of characters.
+
+### TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD)
+
+The `TextMC` subroutine offers the ability to draw text on the screen in the multicolor bitmap mode. Unlike pixel-based drawing, with this subroutine, you define the 4x8 cell on the screen where the text begins. The design of the displayed text depends on the character memory address provided.
+
+**Parameters:**
+- **Col**: Column index (4x8 cell) where the text starts. Valid range: `0-39`.
+
+- **Row**: Row index (4x8 cell) where the text starts. Valid range: `0-24`.
+
+- **Ink**: Defines the color used for the text's shapes. Possible values include `TRANSPARENT` (to leave the bitmap untouched for the letter shape) or a value from `0-3` representing the desired color.
+
+- **Bg**: Defines the background color for the text. It can be set to `TRANSPARENT` (to leave the bitmap as is for the letter's background) or a color value from `0-3`.
+
+- **Double**: Option to enlarge each letter to span across 2 cells horizontally.
+  - `0`: FALSE - Regular width.
+  - `$FF`: TRUE - Double width.
+
+- **Text**: A string of up to 40 characters. This subroutine does not recognize special codes. The actual shape drawn to the screen corresponds to the `CharMemAddr`. Each character in the string is converted from PETSCII to the C64 screen code, and the resulting pattern from the Character memory is rendered on screen.
+
+- **CharMemAddr**: Specifies the address within the 64k address space pointing to the character memory. This address can be outside the current VIC bank. Additionally, special constant values can be used:
+  - **CHARSET_UPPERCASE**: Uses the uppercase/graphics character set directly from the C64's ROM.
+  - **CHARSET_LOWERCASE**: Uses the lowercase/uppercase character set directly from the C64's ROM.
+
+**Usage:**
+```c
+CALL TextMC(10, 5, 1, 2, 0, "HELLO WORLD", 8192);
+```
+
+**Note**: With `TextMC`, the displayed characters derive their design from the provided character memory address (`CharMemAddr`). If you've customized or modified the character set in memory, the displayed text will reflect these changes. Always ensure that the `CharMemAddr` points to valid character data to avoid unexpected display results.
+
+### 18. Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD)
+Draws text on the screen.
+- **Col**, **Row**: Text position.
+- **Mode**: Text mode.
+- **BgMode**: Background mode.
+- **Double**: Double size flag (0 or 1).
+- **Text**: String of text (max 40 characters).
+- **CharMemAddr**: Character memory address.
+
+### Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD)
+
+The `Text` subroutine offers a flexible way to display text on the screen. This method provides options to control the display mode of the text, its background, and the potential to double its width. You'll specify the starting position in terms of the 8x8 cells rather than pixel coordinates.
+
+**Parameters:**
+- **Col**: Column index (8x8 cell) where the text will begin. Valid range: `0-39`.
+
+- **Row**: Row index (8x8 cell) where the text will begin. Valid range: `0-24`.
+
+- **Mode**: Determines the display mode for the text.
+  - **MODE_SET**: Sets text to the foreground color.
+  - **MODE_CLEAR**: Sets text to the background color.
+  - **MODE_FLIP**: Flips the current pixel from foreground to background or vice-versa.
+
+- **BgMode**: Determines the mode for the text's background.
+  - **MODE_SET**: Sets the background to the foreground color.
+  - **MODE_CLEAR**: Sets the background to the background color.
+  - **MODE_FLIP**: Flips the current pixel from foreground to background or vice-versa.
+
+- **Double**: Option to enlarge each letter's width to span 2 cells.
+  - `0`: FALSE - Regular width.
+  - `$FF`: TRUE - Double width.
+
+- **Text**: A string of up to 40 characters. The subroutine does not process special codes. Each character gets converted from PETSCII to C64 screen code, and the corresponding pattern from the Character memory is then displayed.
+
+- **CharMemAddr**: Specifies the address within the 64k address space pointing to the character memory. This address can be outside the current VIC bank. Additionally, special constant values can be used:
+  - **CHARSET_UPPERCASE**: Uses the uppercase/graphics character set directly from the C64's ROM.
+  - **CHARSET_LOWERCASE**: Uses the lowercase/uppercase character set directly from the C64's ROM.
+
+**Usage:**
+```c
+CALL Text(15, 10, MODE_SET, MODE_CLEAR, 0, "HELLO C64", CHARSET_UPPERCASE);
+```
+
+**Note**: The `Text` subroutine displays characters based on the provided character memory address (`CharMemAddr`). Customizations or changes made to the character set in RAM will be reflected in the displayed text. When using the ROM-based constants (CHARSET_UPPERCASE or CHARSET_LOWERCASE), it will directly utilize the respective character sets from the C64's internal ROM. Ensure that the `CharMemAddr` always points to valid character data to prevent unpredictable results.
+
+### PetsciiToScreenCode(Petscii AS BYTE) -> BYTE
+
+The `PetsciiToScreenCode` function is designed to convert a given PETSCII value into its corresponding C64 screen code value. This conversion is necessary when working directly with the C64's video hardware, as the native character encoding used in the C64's ROM and by many software applications is PETSCII, whereas the C64 video memory utilizes a different set of codes, known as screen codes, to represent characters.
+
+**Parameters:**
+- **Petscii**: The PETSCII value you wish to convert. It's an 8-bit byte representing a character in the PETSCII encoding.
+
+**Returns:**
+- An 8-bit byte representing the corresponding screen code for the provided PETSCII character.
+
+**Usage:**
+```c
+SCREEN_CODE = PetsciiToScreenCode(PETSCII_CHAR);
+```
+
+**Note**: Not all PETSCII characters have direct representations in the C64's screen code set. When converting, it's a good idea to verify that the resulting screen code corresponds to the desired character visually, especially if you're working with special or non-printable PETSCII characters.
+
+**Additional Note**: Most developers will not need to call this function directly. The `Text(...)` and `TextMC(...)` subroutines internally call this function to handle the conversion of characters. It's provided as part of the API for those who might have specialized use cases or for deeper insights into the library's internal operations.
+
+## Contribution
+
+We welcome contributions to the XCB3-GFX library. Please read the contribution guidelines before submitting a pull request.
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE` for details.
+
+---
+
+Created by [Your Name]. For further details or queries, feel free to reach out.
