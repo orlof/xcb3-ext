@@ -4,13 +4,11 @@
 
 - **Purpose**: The XCB3-GFX library is tailored for drawing on C64 bitmaps, offering developers an array of low-level graphic primitives.
 
-- **Compatibility**: The library supports both hires and multicolor bitmap modes, ensuring a diverse graphical range.
+- **Compatibility**: The library supports both hires and multicolor bitmap modes, ensuring a diverse graphical range. Some of the subroutines have two variants - one for Hires and another for Multicolor. Those subroutines are easy to recognize as their multicolor variant ends with MC e.g. Text() for hires and TextMC() for multicolor.
 
 - **Flexibility**: XCB3-GFX can operate with any of the VIC banks (0-3). Unlike some other libraries, there's no "hard-coded" memory location for the bitmap, screen, or font, which provides developers with a high degree of flexibility. XCB3-GFX drawing primitives work even if target memory is located in bank 3 "behind" io and kernel.
 
-- **Performance**: It boasts considerable speed - for instance, it can plot random hires lines at a rate of approximately 235 pixels within 1/50s, with an average line length of 142 pixels. However, this is not optimised
-solely for performance, but is balancing between memory consumption and speed. For example, bitmap's y-tables
-are only 25x2 bytes while 200x2 bytes would provide better performance.
+- **Performance**: XCB3-GFX is not the fastest library, but it ain't slow either. It can plot random hires lines at a rate of approximately 235 pixels within 1/50s, with an average line length of 142 pixels. Philosophy of this library is to try balancing performance, memory consumption and usability. For example, XCB3-GFX uses only 25*2 bytes for bitmap y-tables while 200*2 bytes would improve the performance.
 
 - **Usage Note**: For the sake of maintaining a decent performance, there's no built-in sanity check for the input arguments. As a result, if users input values that instruct drawings outside of the screen boundaries, the library's behavior becomes undefined, and it won't provide warnings or errors.
 
@@ -87,26 +85,33 @@ Creating a table of contents (TOC) for the API calls you have documented will he
 
 ### Table of Contents:
 
-1. [SetVideoBank](#setvideobank)
-2. [SetGraphicsMode](#setgraphicsmode)
-3. [SetScreenMemory](#setscreenmemory)
-4. [SetCharacterMemory](#setcharactermemory)
-5. [SetBitmapMemory](#setbitmapmemory)
-6. [ResetScreen](#resetscreen)
-7. [FillBitmap](#fillbitmap)
-8. [FillScreen](#fillscreen)
-9. [FillColorRam](#fillcolorram)
-10. [Plot](#plot)
-11. [PlotMC](#plotmc)
-12. [Draw](#draw)
-13. [DrawMC](#drawmc)
-14. [Circle](#circle)
-15. [CircleMC](#circlemc)
-16. [CopyCharROM](#copycharrom)
-17. [TextMC](#textmc)
-18. [Text](#text)
-19. [PetsciiToScreenCode](#petsciitoscreencode)
-20. [SetColor](#setcolor)
+#### Memory
+- [SetVideoBank](#setvideobank)
+- [SetGraphicsMode](#setgraphicsmode)
+- [SetScreenMemory](#setscreenmemory)
+- [SetCharacterMemory](#setcharactermemory)
+- [SetBitmapMemory](#setbitmapmemory)
+- [ResetScreen](#resetscreen)
+
+#### Color
+- [FillBitmap](#fillbitmap)
+- [FillScreen](#fillscreen)
+- [FillColorRam](#fillcolorram)
+- [SetColor](#setcolor)
+
+#### Drawing
+- [Plot](#plot)
+- [PlotMC](#plotmc)
+- [Draw](#draw)
+- [DrawMC](#drawmc)
+- [Circle](#circle)
+- [CircleMC](#circlemc)
+
+#### Text
+- [CopyCharROM](#copycharrom)
+- [TextMC](#textmc)
+- [Text](#text)
+- [PetsciiToScreenCode](#petsciitoscreencode)
 
 ---
 
@@ -350,6 +355,43 @@ FillColorRam(0x0F);  // This will set all color RAM entries to light gray (assum
 
 ---
 
+### SetColor
+#### `SetColor(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE)`
+
+This subroutine allows users to change the color of specific regions in the C64 graphics screen.
+
+**Parameters:**
+- **X0, Y0**: Defines the top-left cell of the rectangle that will be recolored.
+- **X1, Y1**: Defines the bottom-right cell of the rectangle that will be recolored. The provided rectangle is inclusive of these coordinates.
+  - **Valid values**:
+    - X0, X1: 0-39 (Representing the horizontal cell index on the screen)
+    - Y0, Y1: 0-24 (Representing the vertical cell index on the screen)
+
+- **Ink**: This specifies the index of the color that you wish to set.
+  - For graphics in `HIRES` mode, valid values are `0-1`.
+  - For `MULTICOLOR` mode graphics, valid values are `1-3`.
+
+- **ColorId**: This is the actual color code that will be assigned to the specified `Ink` within the rectangle defined by the coordinates.
+  - **Valid values**: 0-15 (Representing standard C64 color codes).
+
+**Description**:
+
+Using this subroutine, you can redefine the color of specific regions of the C64's screen. For instance, if you wish to change the background color (Ink 0 in HIRES mode) of a specific screen region to blue, you'd use the appropriate `ColorId` for blue and set `Ink` to 0.
+
+**Example Usage**:
+
+Let's say you want to change the background color of a rectangle that starts from the cell (5,5) and ends at (10,10) to blue in HIRES mode:
+
+```basic
+CALL SetColor(5, 5, 10, 10, 0, COLOR_BLUE)
+```
+
+Note: Remember to ensure that the specified region (from X0, Y0 to X1, Y1) lies within the valid screen dimensions and that you choose appropriate values for `Ink` and `ColorId` based on the graphics mode you're operating in.
+
+[Back to TOC](#table-of-contents)
+
+---
+
 ### Plot
 #### Plot(x AS WORD, y AS BYTE, Mode AS BYTE)
 
@@ -495,43 +537,6 @@ CALL CircleMC(80, 100, 40, 2);  // This will draw a circle centered at point (80
 ```
 
 **Note**: The `CircleMC` subroutine is specifically devised for use in multicolor mode. Before using this subroutine, ensure that your system is configured to this mode. Pixels drawn must be within the screen boundaries; make sure that the combination of center (`X0`, `Y0`) and `Radius` keeps the circle entirely inside the screen dimensions to prevent unexpected behaviors. Using this subroutine outside of multicolor mode can yield unpredictable outcomes.
-
-[Back to TOC](#table-of-contents)
-
----
-
-### SetColor
-#### `SetColor(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE)`
-
-This subroutine allows users to change the color of specific regions in the C64 graphics screen.
-
-**Parameters:**
-- **X0, Y0**: Defines the top-left cell of the rectangle that will be recolored.
-- **X1, Y1**: Defines the bottom-right cell of the rectangle that will be recolored. The provided rectangle is inclusive of these coordinates.
-  - **Valid values**:
-    - X0, X1: 0-39 (Representing the horizontal cell index on the screen)
-    - Y0, Y1: 0-24 (Representing the vertical cell index on the screen)
-
-- **Ink**: This specifies the index of the color that you wish to set.
-  - For graphics in `HIRES` mode, valid values are `0-1`.
-  - For `MULTICOLOR` mode graphics, valid values are `1-3`.
-
-- **ColorId**: This is the actual color code that will be assigned to the specified `Ink` within the rectangle defined by the coordinates.
-  - **Valid values**: 0-15 (Representing standard C64 color codes).
-
-**Description**:
-
-Using this subroutine, you can redefine the color of specific regions of the C64's screen. For instance, if you wish to change the background color (Ink 0 in HIRES mode) of a specific screen region to blue, you'd use the appropriate `ColorId` for blue and set `Ink` to 0.
-
-**Example Usage**:
-
-Let's say you want to change the background color of a rectangle that starts from the cell (5,5) and ends at (10,10) to blue in HIRES mode:
-
-```basic
-CALL SetColor(5, 5, 10, 10, 0, COLOR_BLUE)
-```
-
-Note: Remember to ensure that the specified region (from X0, Y0 to X1, Y1) lies within the valid screen dimensions and that you choose appropriate values for `Ink` and `ColorId` based on the graphics mode you're operating in.
 
 [Back to TOC](#table-of-contents)
 
