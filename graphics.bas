@@ -1,16 +1,20 @@
 REM **********************
 REM *     CONSTANTS      *
 REM **********************
-
 SHARED CONST STANDARD_CHARACTER_MODE        = %00000000
 SHARED CONST MULTICOLOR_CHARACTER_MODE      = %00010000
 SHARED CONST STANDARD_BITMAP_MODE           = %00100000
 SHARED CONST MULTICOLOR_BITMAP_MODE         = %00110000
 SHARED CONST EXTENDED_BACKGROUND_COLOR_MODE = %01000000
 
-SHARED CONST PLOT_SET   = 1
-SHARED CONST PLOT_CLEAR = 0
-SHARED CONST PLOT_FLIP  = -1
+SHARED CONST CHARSET_UPPERCASE = 0
+SHARED CONST CHARSET_LOWERCASE = 1
+
+SHARED CONST MODE_SET   = 1
+SHARED CONST MODE_CLEAR = 0
+SHARED CONST MODE_FLIP  = $ff
+
+SHARED CONST TRANSPARENT = $ff
 
 SHARED CONST COLOR_BLACK       = $0
 SHARED CONST COLOR_WHITE       = $1
@@ -50,7 +54,9 @@ DIM _color_y_tbl_lo(25) AS BYTE @ __color_y_tbl_lo
 DIM _petscii_to_screencode(8) AS BYTE @ __petscii_to_screencode
 DIM _nible_to_byte(16) AS BYTE @ __nible_to_byte
 
-' REUSABLE ZERO-PAGE PSEUDO-REGISTERS
+REM **********************
+REM *  PSEUDO REGISTERS  *
+REM **********************
 DIM ZP_W0 AS WORD FAST  ' BASE
 DIM ZP_W1 AS WORD FAST  ' DX
 DIM ZP_W2 AS WORD FAST  ' COUNT
@@ -64,17 +70,9 @@ DIM ZP_B4 AS BYTE FAST  ' MASK
 DIM ZP_B5 AS BYTE FAST  ' TEMP TEMP0
 DIM ZP_B6 AS BYTE FAST  ' MASK TEMP1
 
-'DIM DY AS BYTE FAST
-'DIM X_INC AS BYTE FAST
-'DIM Y_INC AS BYTE FAST
-'DIM PATTERN AS BYTE FAST
-'DIM MASK AS BYTE FAST
-'DIM TEMP AS BYTE FAST
-
 REM **********************
 REM *    DECLARATIONS    *
 REM **********************
-
 DECLARE SUB SetVideoBank(BankNumber AS BYTE) SHARED STATIC
 DECLARE SUB SetGraphicsMode(Mode AS BYTE) SHARED STATIC
 DECLARE SUB SetScreenMemory(Ptr AS BYTE) SHARED STATIC
@@ -96,14 +94,9 @@ DECLARE SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED
 DECLARE SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
 DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
 DECLARE SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
+DECLARE SUB SetColor(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE) SHARED STATIC
 
-DECLARE FUNCTION Check AS BYTE(X AS WORD, Y AS BYTE) SHARED STATIC
-DECLARE FUNCTION CheckMC AS BYTE(X AS BYTE, Y AS BYTE) SHARED STATIC
 DECLARE FUNCTION PetsciiToScreenCode AS BYTE(Petscii AS BYTE) SHARED STATIC
-
-'DECLARE SUB SetBackgroundColor1(ColorCode AS BYTE) SHARED STATIC
-'DECLARE SUB SetBackgroundColor2(ColorCode AS BYTE) SHARED STATIC
-'DECLARE SUB CopyCharacterSet(Set AS BYTE, Address AS BYTE) SHARED STATIC
 
 DECLARE SUB _calc_bitmap_table() STATIC
 DECLARE SUB _calc_screen_table() STATIC
@@ -153,14 +146,16 @@ SUB TestSuiteMC() SHARED STATIC
     CALL DrawMC(0, 0, 159, 199, 1)
     CALL DrawMC(159, 0, 0, 199, 1)
 
-    CALL CopyCharROM(1, $d000)
+    'CALL CopyCharROM(1, $d000)
     FOR Face AS BYTE = 0 TO 4
         FOR Bg AS BYTE = 0 TO 4
             CALL TextMC(8*Bg, Face+10, Face-1, Bg-1, 1, "aAbB", CWORD(1))
         NEXT
     NEXT
-    CALL TextMC(0,0,1,$ff,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",CWORD(1))
-    CALL TextMC(0,1,1,$ff,0,"abcdefghijklmnopqrstuvwxyz",CWORD(1))
+    CALL TextMC(0,0,3,$ff,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",CWORD(1))
+    CALL TextMC(0,1,3,$ff,0,"abcdefghijklmnopqrstuvwxyz",CWORD(1))
+    CALL SetColor(0,0,39,24,1,12)
+
 END SUB
 
 SUB TestSuite() SHARED STATIC
@@ -210,10 +205,12 @@ SUB TestSuite() SHARED STATIC
             CALL Text(2+12*Bg, Face+10, Face-1, Bg-1, 1, "aAbBcC", CWORD(1))
         NEXT
     NEXT
+    CALL Text(0,0,1,0,0,"aAbBcC", CWORD(1))
+    CALL SetColor(0,0,3,0,1,14)
 
 END SUB
 
-CALL TestSuite()
+CALL TestSuiteMC()
 DO
 LOOP
 
@@ -306,7 +303,7 @@ mc_text_loop_text
         ldy {ZP_B0}
         cpy {Text}
         bne mc_text_loop_read_char
-        jmp mc_text_end
+        jmp _mc_text_end
 mc_text_loop_read_char
         iny
         sty {ZP_B0}
@@ -373,24 +370,24 @@ _mc_text_char_single
         tax
 
         and #%01100000
-        beq f1
+        beq _mc_text_char_shrink0
         lda #%00110000
-f1
+_mc_text_char_shrink0
         sta {ZP_B2}
 
         txa
         and #%00011000
-        beq f2
+        beq _mc_text_char_shrink1
         lda #%00001100
-f2
+_mc_text_char_shrink1
         ora {ZP_B2}
         sta {ZP_B2}
 
         txa
         and #%00000110
-        beq f3
+        beq _mc_text_char_shrink2
         lda #%00000011
-f3
+_mc_text_char_shrink2
         ora {ZP_B2}
         sta {ZP_B2}
 
@@ -480,20 +477,20 @@ _mc_text_font_loop_store_right_nible
         eor #%00001000
         tay
         dey
-        bmi mc_text_char_double_next
+        bmi _mc_text_char_double_next
         jmp mc_text_font_loop
 
-mc_text_char_double_next
+_mc_text_char_double_next
         ;next char
         clc
         lda {ZP_W0}
         adc #16
         sta {ZP_W0}
-        bcc mc_text_next_char
+        bcc _mc_text_next_char
         inc {ZP_W0}+1
-mc_text_next_char
+_mc_text_next_char
         jmp mc_text_loop_text
-mc_text_end
+_mc_text_end
         lda {ProcessorFlag}
         sta 1
         cli
@@ -622,36 +619,17 @@ text_font_loop
         bne _text_char_loop_double
 
 _text_char_single
+        lda ({ZP_W1}),y
+        sta {ZP_B2}
         lda {Mode}
-        beq _text_char_single_clr
-        bpl _text_char_single_set
-
-_text_char_single_transparent
-        lda ({ZP_W1}),y
-        and ({ZP_W0}),y
-        .byte $2c
-_text_char_single_clr
-        lda #0
-        .byte $2c
-_text_char_single_set
-        lda ({ZP_W1}),y
+        jsr _text_pen_and_paper
         sta {ZP_B5}
 
+        lda {ZP_B2}
+        eor #$ff
+        sta {ZP_B2}
         lda {BgMode}
-        beq _text_char_single_bg_clr
-        bpl _text_char_single_bg_set
-
-_text_char_single_bg_transparent
-        lda ({ZP_W1}),y
-        eor #$ff
-        and ({ZP_W0}),y
-        jmp _text_char_single_combine
-_text_char_single_bg_clr
-        lda #0
-        jmp _text_char_single_combine
-_text_char_single_bg_set
-        lda ({ZP_W1}),y
-        eor #$ff
+        jsr _text_pen_and_paper
 
 _text_char_single_combine
         ora {ZP_B5}
@@ -682,45 +660,12 @@ _text_char_loop_double
         lda {_nible_to_byte},x
         sta {ZP_B2}
 
-
-_text_char_left_fg
-        lda {Mode}
-        beq _text_char_left_clr
-        bpl _text_char_left_set
-
-_text_char_left_transparent
-        lda {ZP_B2}
-        and ({ZP_W0}),y
-        .byte $2c
-_text_char_left_clr
-        lda #0
-        .byte $2c
-_text_char_left_set
-        lda {ZP_B2}
-
-        sta {ZP_B5}
-
-_text_char_left_bg
-        lda {BgMode}
-        beq _text_char_left_bg_clr
-        bpl _text_char_left_bg_set
-
-_text_char_left_bg_flip
-        lda {ZP_B2}
-        eor #$ff
-        and ({ZP_W0}),y
-        jmp _text_char_left_combine
-_text_char_left_bg_clr
-        lda #0
-        jmp _text_char_left_combine
-_text_char_left_bg_set
-        lda {ZP_B2}
-        eor #$ff
+_text_char_left
+        jsr _text_double_pen_and_paper
 
 _text_char_left_combine
         ora {ZP_B5}
         sta ({ZP_W0}),y
-
 
 _text_char_right
         lda ({ZP_W1}),y
@@ -733,39 +678,7 @@ _text_char_right
         eor #%00001000
         tay
 
-_text_char_right_fg
-        lda {Mode}
-        beq _text_char_right_clr
-        bpl _text_char_right_set
-
-_text_char_right_transparent
-        lda {ZP_B2}
-        and ({ZP_W0}),y
-        .byte $2c
-_text_char_right_clr
-        lda #0
-        .byte $2c
-_text_char_right_set
-        lda {ZP_B2}
-
-        sta {ZP_B5}
-
-_text_char_right_bg
-        lda {BgMode}
-        beq _text_char_right_bg_clr
-        bpl _text_char_right_bg_set
-
-_text_char_right_bg_transparent
-        lda {ZP_B2}
-        eor #$ff
-        and ({ZP_W0}),y
-        jmp _text_char_right_combine
-_text_char_right_bg_clr
-        lda #0
-        jmp _text_char_right_combine
-_text_char_right_bg_set
-        lda {ZP_B2}
-        eor #$ff
+        jsr _text_double_pen_and_paper
 
 _text_char_right_combine
         ora {ZP_B5}
@@ -789,6 +702,32 @@ text_char_double_next
         inc {ZP_W0}+1
 text_next_char
         jmp text_loop_text
+
+_text_double_pen_and_paper
+        lda {Mode}
+        jsr _text_pen_and_paper
+        sta {ZP_B5}
+
+        lda {ZP_B2}
+        eor #$ff
+        sta {ZP_B2}
+        lda {BgMode}
+
+_text_pen_and_paper
+        beq _text_pen_and_paper_clr
+        bpl _text_pen_and_paper_set
+
+_text_char_single_transparent
+        lda {ZP_B2}
+        and ({ZP_W0}),y
+        .byte $2c
+_text_pen_and_paper_clr
+        lda #0
+        .byte $2c
+_text_pen_and_paper_set
+        lda {ZP_B2}
+        rts
+
 text_end
         lda {ProcessorFlag}
         sta 1
@@ -818,6 +757,83 @@ SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
     END ASM
 END SUB
 
+SUB SetColor(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE) SHARED STATIC
+    ASM
+        lda {ColorId}
+        sta {ZP_B2}
+
+        lda {Ink}
+        cmp #3
+        beq _set_color_mc_3
+
+        ldx {Y0}
+        lda {_screen_y_tbl_lo},x
+        sta {ZP_W0}
+        lda {_screen_y_tbl_hi},x
+        sta {ZP_W0}+1
+
+        lda {Ink}
+        cmp #2
+        beq _set_color_mc_2
+
+_set_color_mc_1
+        lda #%00001111
+        sta {ZP_B3}
+        lda {ZP_B2}
+        asl
+        asl
+        asl
+        asl
+        sta {ZP_B2}
+        jmp _set_color_init_loops
+
+_set_color_mc_2
+        lda #%11110000
+        sta {ZP_B3}
+        jmp _set_color_init_loops
+
+_set_color_mc_3
+        lda #0
+        sta {ZP_B3}
+
+        ldx {Y0}
+        lda {_color_y_tbl_lo},x
+        sta {ZP_W0}
+        lda {_color_y_tbl_hi},x
+        sta {ZP_W0}+1
+
+_set_color_init_loops
+        sec
+        lda {Y1}
+        sbc {Y0}
+        tax
+
+_set_color_y_loop
+        ldy {X0}
+
+_set_color_x_loop
+        lda ({ZP_W0}),y
+        and {ZP_B3}
+        ora {ZP_B2}
+        sta ({ZP_W0}),y
+
+        iny
+        cpy {X1}
+        bcc _set_color_x_loop
+        beq _set_color_x_loop
+
+        clc
+        lda #40
+        adc {ZP_W0}
+        sta {ZP_W0}
+        lda {ZP_W0}+1
+        adc #0
+        sta {ZP_W0}+1
+
+        dex
+        bpl _set_color_y_loop
+    END ASM
+END SUB
 
 SUB FillColorRam(Value AS BYTE) SHARED STATIC
     MEMSET $d800, 1000, Value
@@ -948,48 +964,6 @@ SUB SetBitmapMemory(Ptr AS BYTE) SHARED STATIC
     END ASM
     CALL _calc_bitmap_table()
 END SUB
-
-FUNCTION Check AS BYTE(X AS WORD, Y AS BYTE) SHARED STATIC
-    ASM
-check
-        lda #$ff
-        sta {Check}
-
-        lda {Y}
-        cmp #200
-        bcs _check_end
-
-        lda {X}+1
-        cmp #$1
-        bcc _check_ok
-        bne _check_end
-        lda {X}
-        cmp #$40
-        bcs _check_end
-_check_ok
-        inc {Check}
-_check_end
-    END ASM
-END FUNCTION
-
-FUNCTION CheckMC AS BYTE(X AS BYTE, Y AS BYTE) SHARED STATIC
-    ASM
-checkmc
-        lda #$ff
-        sta {CheckMC}
-
-        lda {Y}
-        cmp #200
-        bcs _check_end
-
-        lda {X}
-        cmp #160
-        bcs _check_end
-_checkmc_ok
-        inc {CheckMC}
-_checkmc_end
-    END ASM
-END FUNCTION
 
 SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
     ' DISTANCE = ZP_I0
