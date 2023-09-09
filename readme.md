@@ -14,7 +14,7 @@ are only 25x2 bytes while 200x2 bytes would provide better performance.
 
 - **Usage Note**: For the sake of maintaining a decent performance, there's no built-in sanity check for the input arguments. As a result, if users input values that instruct drawings outside of the screen boundaries, the library's behavior becomes undefined, and it won't provide warnings or errors.
 
-- **API Design**: The library's API is designed for focused operations. Each command specifically targets either bitmap or screen memory. For example, if a developer wishes to draw text on the bitmap memory and simultaneously modify the color in screen memory, they would need separate calls - namely, `Text(...)` for the text and `ColorArea(...)` for the color.
+- **API Design**: The library's API is designed for focused operations. Each command specifically targets either bitmap or screen memory. For example, if a developer wishes to draw text on the bitmap memory and simultaneously modify the color in screen memory, they would need separate calls - namely, `Text(...)` for the text and `SetColor(...)` for the color.
 
 ### Example
 
@@ -403,6 +403,42 @@ CALL CircleMC(80, 100, 40, 2);  // This will draw a circle centered at point (80
 
 **Note**: The `CircleMC` subroutine is specifically devised for use in multicolor mode. Before using this subroutine, ensure that your system is configured to this mode. Pixels drawn must be within the screen boundaries; make sure that the combination of center (`X0`, `Y0`) and `Radius` keeps the circle entirely inside the screen dimensions to prevent unexpected behaviors. Using this subroutine outside of multicolor mode can yield unpredictable outcomes.
 
+### Documentation for `SetColor` subroutine
+
+---
+
+#### `SetColor(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE)`
+
+This subroutine allows users to change the color of specific regions in the C64 graphics screen.
+
+**Parameters:**
+- **X0, Y0**: Defines the top-left cell of the rectangle that will be recolored.
+- **X1, Y1**: Defines the bottom-right cell of the rectangle that will be recolored. The provided rectangle is inclusive of these coordinates.
+  - **Valid values**:
+    - X0, X1: 0-39 (Representing the horizontal cell index on the screen)
+    - Y0, Y1: 0-24 (Representing the vertical cell index on the screen)
+
+- **Ink**: This specifies the index of the color that you wish to set.
+  - For graphics in `HIRES` mode, valid values are `0-1`.
+  - For `MULTICOLOR` mode graphics, valid values are `1-3`.
+
+- **ColorId**: This is the actual color code that will be assigned to the specified `Ink` within the rectangle defined by the coordinates.
+  - **Valid values**: 0-15 (Representing standard C64 color codes).
+
+**Description**:
+
+Using this subroutine, you can redefine the color of specific regions of the C64's screen. For instance, if you wish to change the background color (Ink 0 in HIRES mode) of a specific screen region to blue, you'd use the appropriate `ColorId` for blue and set `Ink` to 0.
+
+**Example Usage**:
+
+Let's say you want to change the background color of a rectangle that starts from the cell (5,5) and ends at (10,10) to blue in HIRES mode:
+
+```basic
+CALL SetColor(5, 5, 10, 10, 0, COLOR_BLUE)
+```
+
+Note: Remember to ensure that the specified region (from X0, Y0 to X1, Y1) lies within the valid screen dimensions and that you choose appropriate values for `Ink` and `ColorId` based on the graphics mode you're operating in.
+
 ### CopyCharROM(CharSet AS BYTE, DestAddr AS WORD)
 
 The `CopyCharROM` subroutine facilitates the copying of character sets from ROM to a designated RAM location. This is particularly useful when you wish to modify the character set or to ensure that the character set resides in a specific memory location for display purposes.
@@ -525,4 +561,4 @@ This project is licensed under the MIT License. See `LICENSE` for details.
 
 ---
 
-Created by [Your Name]. For further details or queries, feel free to reach out.
+Created by Orlof. For further details or queries, feel free to reach out.
