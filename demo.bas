@@ -53,7 +53,6 @@ SUB TestSuiteMC() SHARED STATIC
     NEXT
     CALL TextMC(0,0,3,$ff,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",CWORD(1))
     CALL TextMC(0,1,3,$ff,0,"abcdefghijklmnopqrstuvwxyz",CWORD(1))
-    CALL SetColor(0,0,39,24,1,12)
 
 END SUB
 
@@ -104,8 +103,6 @@ SUB TestSuite() SHARED STATIC
             CALL Text(2+12*Bg, Face+10, Face-1, Bg-1, 1, "aAbBcC", CWORD(1))
         NEXT
     NEXT
-    CALL Text(0,0,1,0,0,"aAbBcC", CWORD(1))
-    CALL SetColor(0,0,3,0,1,14)
 
 END SUB
 

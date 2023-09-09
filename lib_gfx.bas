@@ -765,6 +765,8 @@ SUB ResetScreen() SHARED STATIC
     CALL SetScreenMemory(1)
     CALL SetCharacterMemory(2)
     CALL SetGraphicsMode(STANDARD_CHARACTER_MODE)
+    CALL FillScreen(32)
+    CALL FillColorRam(COLOR_LIGHTBLUE)
 END SUB
 
 SUB SetGraphicsMode(Mode AS BYTE) SHARED STATIC
