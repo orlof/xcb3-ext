@@ -94,7 +94,7 @@ DECLARE SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED 
 DECLARE SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
 
 DECLARE SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
-DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
+DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
 
 DECLARE FUNCTION Check AS BYTE(X AS WORD, Y AS BYTE) SHARED STATIC
 DECLARE FUNCTION CheckMC AS BYTE(X AS BYTE, Y AS BYTE) SHARED STATIC
@@ -152,13 +152,14 @@ SUB TestSuite() SHARED STATIC
     CALL DrawMC(0, 0, 159, 199, 1)
     CALL DrawMC(159, 0, 0, 199, 1)
 
-'    CALL CopyCharROM(1, $d000)
+    CALL CopyCharROM(1, $d000)
     FOR Face AS BYTE = 0 TO 4
-    FOR Bg AS BYTE = 0 TO 4
-    CALL TextMC(8*Bg, Face+10, Face-1, Bg-1, "aAbB", CWORD(1))
+        FOR Bg AS BYTE = 0 TO 4
+            CALL TextMC(8*Bg, Face+10, Face-1, Bg-1, 1, "aAbB", CWORD(1))
+        NEXT
     NEXT
-    NEXT
-
+    CALL TextMC(0,0,1,$ff,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",CWORD(1))
+    CALL TextMC(0,1,1,$ff,0,"abcdefghijklmnopqrstuvwxyz",CWORD(1))
 
     DO
     LOOP
@@ -208,7 +209,7 @@ END
 REM **********************
 REM *     FUNCTIONS      *
 REM **********************
-SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
+SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
     DIM ProcessorFlag AS BYTE
     ' BITMAP_BASE:  ZP_W0
     ' FONT_BASE:    ZP_W1
@@ -229,8 +230,7 @@ _mc_text_rom
         sei
         lda 1
         sta {ProcessorFlag}
-        and #%11111000
-        ora #%00000001
+        lda #%00110001
         sta 1
 
         ldx #$d8
@@ -347,12 +347,66 @@ _mc_text_font_loop_left_bg
         ;choose background
         ldx {Bg}
         cpx #$ff
-        bne _mc_text_font_loop_left_nible
+        bne _mc_text_char_sx_or_dx
         lda ({ZP_W0}),y
         sta {ZP_B4}
 
+_mc_text_char_sx_or_dx
+        lda {Double}
+        bne _mc_text_font_loop_left_nible
+
+_mc_text_char_single
+        lda ({ZP_W1}),y
+        tax
+
+        and #%01100000
+        beq f1
+        lda #%00110000
+f1
+        sta {ZP_B2}
+
+        txa
+        and #%00011000
+        beq f2
+        lda #%00001100
+f2
+        ora {ZP_B2}
+        sta {ZP_B2}
+
+        txa
+        and #%00000110
+        beq f3
+        lda #%00000011
+f3
+        ora {ZP_B2}
+        sta {ZP_B2}
+
+        eor #$ff
+        and {ZP_B4}
+        sta {ZP_B3}
+
+        lda {ZP_B5}
+        and {ZP_B2}
+        ora {ZP_B3}
+        sta ({ZP_W0}),y
+
+        dey
+        bpl mc_text_font_loop
+
+        ;next char
+        clc
+        lda {ZP_W0}
+        adc #8
+        sta {ZP_W0}
+        bcc mc_text_char_next
+        inc {ZP_W0}+1
+mc_text_char_next
+        jmp mc_text_loop_text
+
+
+
 _mc_text_font_loop_left_nible
-        lda ({ZP_W0}),y
+        ;lda ({ZP_W0}),y
         ;process left nible
         lda ({ZP_W1}),y
         lsr
@@ -413,8 +467,10 @@ _mc_text_font_loop_store_right_nible
         eor #%00001000
         tay
         dey
-        bpl mc_text_font_loop
+        bmi mc_text_char_double_next
+        jmp mc_text_font_loop
 
+mc_text_char_double_next
         ;next char
         clc
         lda {ZP_W0}
