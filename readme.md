@@ -16,6 +16,69 @@ are only 25x2 bytes while 200x2 bytes would provide better performance.
 
 - **API Design**: The library's API is designed for focused operations. Each command specifically targets either bitmap or screen memory. For example, if a developer wishes to draw text on the bitmap memory and simultaneously modify the color in screen memory, they would need separate calls - namely, `Text(...)` for the text and `ColorArea(...)` for the color.
 
+### Example
+
+```basic
+INCLUDE "lib_gfx.bas"
+
+CONST TRUE = $ff
+CONST FALSE = 0
+
+CALL SetVideoBank(3)
+CALL SetBitmapMemory(1)
+CALL SetScreenMemory(0)
+CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
+CALL FillBitmap(0)
+CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)
+
+CALL Plot(160, 50, MODE_SET)
+
+CALL Circle(160, 100, 90, MODE_SET)
+
+CALL Draw(0, 0, 319, 199, MODE_SET)
+CALL Draw(0, 199, 319, 0, MODE_SET)
+
+CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CWORD(1))
+```
+
+#### Line-by-Line Explanation:
+
+- `INCLUDE "lib_gfx.bas"`:
+  This line imports the graphics library named "lib_gfx.bas". This library contains all the subroutines and functions required for graphical operations.
+
+- `CONST TRUE = $ff` and `CONST FALSE = 0`:
+  These lines define cosmetic constants `TRUE` and `FALSE` which represent binary true and false values, respectively.
+
+- `CALL SetVideoBank(3)`:
+  This sets the VIC bank to Bank #3 (address range: $C000-$FFFF, 49152-65535).
+
+- `CALL SetBitmapMemory(1)`:
+  This sets the bitmap memory to the location $2000-$3F3F in current bank (absolute address range: $E000-$FF3F).
+
+- `CALL SetScreenMemory(0)`:
+  This sets the screen memory to the location $0000-$03FF in the current VIC bank (address range: $C000-$C3ff).
+
+- `CALL SetGraphicsMode(STANDARD_BITMAP_MODE)`:
+  Activates the standard bitmap mode. In this mode, the screen displays a high-resolution 320x200 pixels bitmap.
+
+- `CALL FillBitmap(0)`:
+  This fills the entire bitmap with the value 0 (clearing all pixels).
+
+- `CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)`:
+  This sets the screen memory with a value derived from a combination of the white and red colors. Here, `SHL(COLOR_WHITE, 4)` shifts the white color value 4 bits to the left, and `OR COLOR_RED` combines it with the red color value. This combination sets the background color to red and the foreground color to white.
+
+- `CALL Plot(160, 50, MODE_SET)`:
+  This plots (or draws) a pixel at coordinates (160, 50) in the foreground color.
+
+- `CALL Circle(160, 100, 90, MODE_SET)`:
+  Draws a circle with its center at (160, 100) and a radius of 90 pixels in the foreground color.
+
+- `CALL Draw(0, 0, 319, 199, MODE_SET)` and `CALL Draw(0, 199, 319, 0, MODE_SET)`:
+  These lines draw two diagonal lines on the screen. The first line is drawn from the top-left to the bottom-right, and the second line is drawn from the bottom-left to the top-right, both in the foreground color.
+
+- `CALL Text(9, 2, 1, TRANSPARENT, TRUE, "Hello World", CWORD(CHARSET_LOWERCASE))`:
+  This writes the text "Hello World" to the screen starting at cell (9, 2). The text is in the foreground color, the background is set to transparent, the text is doubled in size in the x-direction, and it uses the uppercase/lowercase character set from ROM memory defined by `CWORD(CHARSET_LOWERCASE)`.
+
 ## API Documentation
 
 Below is the detailed documentation for each subroutine provided by the XCB3-GFX library.
@@ -409,12 +472,12 @@ The `Text` subroutine offers a flexible way to display text on the screen. This 
 - **Mode**: Determines the display mode for the text.
   - **MODE_SET**: Sets text to the foreground color.
   - **MODE_CLEAR**: Sets text to the background color.
-  - **MODE_FLIP**: Flips the current pixel from foreground to background or vice-versa.
+  - **TRANSPARENT**: Leaves the pixels unchanged.
 
 - **BgMode**: Determines the mode for the text's background.
   - **MODE_SET**: Sets the background to the foreground color.
   - **MODE_CLEAR**: Sets the background to the background color.
-  - **MODE_FLIP**: Flips the current pixel from foreground to background or vice-versa.
+  - **TRANSPARENT**: Leaves the pixels unchanged.
 
 - **Double**: Option to enlarge each letter's width to span 2 cells.
   - `0`: FALSE - Regular width.

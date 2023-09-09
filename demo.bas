@@ -62,13 +62,13 @@ SUB TestSuite() SHARED STATIC
     CALL SetScreenMemory(0)
     CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
     CALL FillBitmap(0)
-    CALL FillScreen(SHL(1, 4) OR 2)
+    CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)
 
-    'FOR XW AS WORD = 0 TO 319
-    '    FOR Y = 80 TO 120
-    '        CALL Plot(XW, Y, (XW XOR Y) AND 1)
-    '    NEXT
-    'NEXT
+    FOR XW AS WORD = 0 TO 319
+        FOR Y AS BYTE = 80 TO 120
+            CALL Plot(XW, Y, (XW XOR Y) AND 1)
+        NEXT
+    NEXT
 
     FOR R AS BYTE = 5 TO 95 STEP 5
         CALL Circle(160, 100, R, 1)
@@ -97,7 +97,6 @@ SUB TestSuite() SHARED STATIC
     CALL Draw(0,0,319,199,1)
     CALL Draw(319,0,0,199,1)
 
-    CALL CopyCharROM(1, $d000)
     FOR Face AS BYTE = 0 TO 2
         FOR Bg AS BYTE = 0 TO 2
             CALL Text(2+12*Bg, Face+10, Face-1, Bg-1, 1, "aAbBcC", CWORD(1))
