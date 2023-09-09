@@ -36,7 +36,7 @@ CALL Circle(160, 100, 90, MODE_SET)
 CALL Draw(0, 0, 319, 199, MODE_SET)
 CALL Draw(0, 199, 319, 0, MODE_SET)
 
-CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CWORD(1))
+CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CWORD(CHARSET_LOWERCASE))
 ```
 
 #### Line-by-Line Explanation:
