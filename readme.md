@@ -83,8 +83,35 @@ CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CWORD(1))
 
 Below is the detailed documentation for each subroutine provided by the XCB3-GFX library.
 
-### SetVideoBank(BankNumber AS BYTE)
+Creating a table of contents (TOC) for the API calls you have documented will help users quickly navigate to the functions they need. Here's how you can create one:
 
+### Table of Contents:
+
+1. [SetVideoBank](#setvideobank)
+2. [SetGraphicsMode](#setgraphicsmode)
+3. [SetScreenMemory](#setscreenmemory)
+4. [SetCharacterMemory](#setcharactermemory)
+5. [SetBitmapMemory](#setbitmapmemory)
+6. [ResetScreen](#resetscreen)
+7. [FillBitmap](#fillbitmap)
+8. [FillScreen](#fillscreen)
+9. [FillColorRam](#fillcolorram)
+10. [Plot](#plot)
+11. [PlotMC](#plotmc)
+12. [Draw](#draw)
+13. [DrawMC](#drawmc)
+14. [Circle](#circle)
+15. [CircleMC](#circlemc)
+16. [CopyCharROM](#copycharrom)
+17. [TextMC](#textmc)
+18. [Text](#text)
+19. [PetsciiToScreenCode](#petsciitoscreencode)
+20. [SetColor](#setcolor)
+
+---
+
+### SetVideoBank
+#### SetVideoBank(BankNumber AS BYTE)
 This subroutine sets the VIC bank for graphic operations. The Commodore 64 has four possible video banks, and you can choose between them by passing the appropriate bank number.
 
 **Parameters:**
@@ -111,7 +138,13 @@ This subroutine sets the VIC bank for graphic operations. The Commodore 64 has f
 SetVideoBank(2);  // This will set the video bank to Bank #2
 ```
 
-### SetGraphicsMode(Mode AS BYTE)
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### SetGraphicsMode
+#### SetGraphicsMode(Mode AS BYTE)
 
 This subroutine sets the desired graphics mode for display operations on the Commodore 64. Different modes enable different visual capabilities and styles.
 
@@ -140,7 +173,12 @@ SetGraphicsMode(STANDARD_BITMAP_MODE);  // This will set the graphics mode to ST
 
 **Note**: Switching between modes will drastically alter the appearance of any existing screen content. Ensure that the desired mode is set before performing any drawing or display operations to achieve consistent visual results.
 
-### SetScreenMemory(Ptr AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### SetScreenMemory
+#### SetScreenMemory(Ptr AS BYTE)
 
 This subroutine sets the starting location for screen memory. The location depends on the selected graphics mode:
 
@@ -177,7 +215,12 @@ SetScreenMemory(5);  // This will set the screen memory starting location to `$1
 
 **Note**: Changing the screen memory location during active display operations might produce unexpected visual results. It's advisable to set the screen memory location during initialization or when the screen is not actively being updated.
 
-### SetCharacterMemory(Ptr AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### SetCharacterMemory
+#### SetCharacterMemory(Ptr AS BYTE)
 
 This subroutine specifies the memory location for the 2k character set. The character set determines the design of the characters used on the screen in text modes, including custom fonts if you've created or loaded any.
 
@@ -205,7 +248,12 @@ SetCharacterMemory(4);  // This will set the character memory location to `$2000
 
 **Note**: Modifying the character memory location while displaying text can yield unpredictable visual outputs. For optimal results, set the character memory location during system initialization or during periods when text display is not being actively modified.
 
-### SetBitmapMemory(Ptr AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### SetBitmapMemory
+#### SetBitmapMemory(Ptr AS BYTE)
 
 This subroutine specifies the memory location for the bitmap graphics. The bitmap memory holds the pixel data used for detailed graphics in bitmap modes, allowing for intricate designs, images, and more.
 
@@ -241,7 +289,12 @@ ResetScreen();  // This will restore the default VIC configurations as outlined 
 
 **Note**: Using `ResetScreen()` is helpful when transitioning from graphics or custom modes back to a standard text environment. It ensures predictable behavior by reverting to the familiar settings of the C64's default text mode. Always ensure any ongoing screen updates or animations are halted before resetting to avoid visual glitches or undesirable behaviors.
 
-### FillBitmap(Value AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### FillBitmap
+#### FillBitmap(Value AS BYTE)
 
 This subroutine provides an efficient way to fill the entire bitmap memory with a specified byte value. This is useful for quickly setting up a blank canvas or a consistent patterned background in both hires and multicolor bitmap modes.
 
@@ -255,7 +308,12 @@ FillBitmap(0x00);  // This will clear the entire bitmap to black (or the respect
 
 **Note**: This subroutine only writes to the bitmap memory. If you wish to modify the screen memory or color RAM, you will need to utilize separate subroutines: `FillScreen(..)` for screen memory and `FillColorRam(...)` for color RAM. Ensure the respective areas are updated correctly to achieve the desired visual outcome.
 
-### FillScreen(Value AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### FillScreen
+#### FillScreen(Value AS BYTE)
 
 This subroutine offers a straightforward way to populate the entire screen memory with a specified byte value. Screen memory holds character codes or color data depending on the mode, which directly influences how the screen appears.
 
@@ -269,7 +327,12 @@ FillScreen(0x20);  // This will fill the screen memory with spaces (assuming sta
 
 **Note**: This subroutine solely modifies the screen memory. If you intend to adjust the bitmap graphics or color RAM, you must employ other relevant subroutines like `FillBitmap(..)` for bitmap memory and `FillColorRam(...)` for color RAM. It's essential to coordinate updates across these memories to attain the desired visual representation.
 
-### FillColorRam(Value AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### FillColorRam
+#### FillColorRam(Value AS BYTE)
 
 This subroutine provides a method to uniformly set all the values in the color RAM with a specified byte value. The color RAM is crucial in determining the colors of characters or bitmap graphics displayed on the screen, depending on the active mode.
 
@@ -283,7 +346,12 @@ FillColorRam(0x0F);  // This will set all color RAM entries to light gray (assum
 
 **Note**: This subroutine only modifies the color RAM. If you need to change the bitmap graphics or screen memory, you should use the respective subroutines: `FillBitmap(..)` for bitmap memory and `FillScreen(..)` for screen memory. To achieve the intended visual display, ensure consistent and coordinated updates across these memories. Additionally, always ensure that the provided value is within the valid range of 0 to 15 to prevent unintended behaviors.
 
-### Plot(x AS WORD, y AS BYTE, Mode AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### Plot
+#### Plot(x AS WORD, y AS BYTE, Mode AS BYTE)
 
 The `Plot` subroutine provides a method to draw individual pixels on the screen when operating in `STANDARD_BITMAP_MODE`.
 
@@ -302,7 +370,12 @@ CALL Plot(150, 50, MODE_SET);  // This will set the pixel at position (150, 50) 
 
 **Note**: This subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. Ensure that this mode is active before calling `Plot`. If you attempt to use this subroutine in any other mode, results might not be as expected. Always ensure that provided `x` and `y` values are within the valid ranges to prevent unintended behaviors.
 
-### PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### PlotMC
+#### PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE)
 
 The `PlotMC` subroutine offers a way to draw individual pixels on the screen in multicolor mode.
 
@@ -322,7 +395,12 @@ CALL PlotMC(80, 50, 2);  // This will set the multicolor pixel at position (80, 
 
 **Note**: Ensure that your system is set to multicolor mode before using this subroutine. Always ensure that the provided `x`, `y`, and `Ink` values are within the valid ranges to prevent unintended behaviors. It's crucial to set up the screen and color RAM appropriately to achieve the desired color results with this subroutine.
 
-### Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### Draw
+#### Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE)
 
 The `Draw` subroutine provides a method to draw a straight line between two points on the screen when operating in `STANDARD_BITMAP_MODE`.
 
@@ -342,7 +420,12 @@ CALL Draw(CWORD(10), 10, CWORD(150), 190, MODE_SET);  // This will draw a line f
 
 **Note**: This subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. It's essential to ensure that this mode is active before invoking `Draw`. Using this subroutine in other modes might produce unexpected results. Always ensure that the provided `x1`, `y1`, `x2`, `y2`, and `Mode` values are within the valid ranges to avoid unintended behaviors.
 
-### DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### DrawMC
+#### DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE)
 
 The `DrawMC` subroutine facilitates drawing straight lines on the screen in multicolor mode.
 
@@ -362,7 +445,12 @@ CALL DrawMC(20, 30, 140, 170, 2);  // This will draw a line in multicolor mode f
 
 **Note**: Before employing the `DrawMC` subroutine, ensure that your system is configured in multicolor mode. Set up the screen and color RAM appropriately to get the desired color results. Always verify that the provided `x1`, `y1`, `x2`, `y2`, and `Ink` values fall within the legitimate ranges to prevent unexpected outcomes. Using this subroutine in non-multicolor modes might yield unpredictable results.
 
-### Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### Circle
+#### Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE)
 
 The `Circle` subroutine enables drawing circles in the `STANDARD_BITMAP_MODE` on the screen.
 
@@ -382,7 +470,12 @@ CALL Circle(150, 100, 40, MODE_SET);  // This draws a circle centered at point (
 
 **Note**: The `Circle` subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. Before calling this subroutine, ensure that the correct mode is active. Pixels drawn must be within the screen boundaries; always ensure that the combination of the center (`X0`, `Y0`) and `Radius` will result in a circle completely inside the screen dimensions to avoid unexpected behaviors. Using this subroutine outside the `STANDARD_BITMAP_MODE` might produce unpredictable results.
 
-### CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE)
+[Back to TOC](#table-of-contents)
+
+---
+
+### CircleMC
+#### CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE)
 
 The `CircleMC` subroutine is tailored for drawing circles in multicolor mode on the screen.
 
@@ -403,10 +496,11 @@ CALL CircleMC(80, 100, 40, 2);  // This will draw a circle centered at point (80
 
 **Note**: The `CircleMC` subroutine is specifically devised for use in multicolor mode. Before using this subroutine, ensure that your system is configured to this mode. Pixels drawn must be within the screen boundaries; make sure that the combination of center (`X0`, `Y0`) and `Radius` keeps the circle entirely inside the screen dimensions to prevent unexpected behaviors. Using this subroutine outside of multicolor mode can yield unpredictable outcomes.
 
-### Documentation for `SetColor` subroutine
+[Back to TOC](#table-of-contents)
 
 ---
 
+### SetColor
 #### `SetColor(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE)`
 
 This subroutine allows users to change the color of specific regions in the C64 graphics screen.
@@ -439,7 +533,12 @@ CALL SetColor(5, 5, 10, 10, 0, COLOR_BLUE)
 
 Note: Remember to ensure that the specified region (from X0, Y0 to X1, Y1) lies within the valid screen dimensions and that you choose appropriate values for `Ink` and `ColorId` based on the graphics mode you're operating in.
 
-### CopyCharROM(CharSet AS BYTE, DestAddr AS WORD)
+[Back to TOC](#table-of-contents)
+
+---
+
+### CopyCharROM
+#### CopyCharROM(CharSet AS BYTE, DestAddr AS WORD)
 
 The `CopyCharROM` subroutine facilitates the copying of character sets from ROM to a designated RAM location. This is particularly useful when you wish to modify the character set or to ensure that the character set resides in a specific memory location for display purposes.
 
@@ -457,7 +556,12 @@ CALL CopyCharROM(0, $b000);  // This will copy the Uppercase/Graphics character 
 
 **Note**: Before invoking this subroutine, it's crucial to verify that the `DestAddr` is correctly set to ensure that no unexpected memory overlap occurs. It's imperative to remember that the `DestAddr` is an absolute address, not relative to the current VIC bank. If used in text modes, ensuring alignment to the 2048-byte boundary is essential for the correct display of characters.
 
-### TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD)
+[Back to TOC](#table-of-contents)
+
+---
+
+### TextMC
+#### TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD)
 
 The `TextMC` subroutine offers the ability to draw text on the screen in the multicolor bitmap mode. Unlike pixel-based drawing, with this subroutine, you define the 4x8 cell on the screen where the text begins. The design of the displayed text depends on the character memory address provided.
 
@@ -487,16 +591,12 @@ CALL TextMC(10, 5, 1, 2, 0, "HELLO WORLD", 8192);
 
 **Note**: With `TextMC`, the displayed characters derive their design from the provided character memory address (`CharMemAddr`). If you've customized or modified the character set in memory, the displayed text will reflect these changes. Always ensure that the `CharMemAddr` points to valid character data to avoid unexpected display results.
 
-### 18. Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD)
-Draws text on the screen.
-- **Col**, **Row**: Text position.
-- **Mode**: Text mode.
-- **BgMode**: Background mode.
-- **Double**: Double size flag (0 or 1).
-- **Text**: String of text (max 40 characters).
-- **CharMemAddr**: Character memory address.
+[Back to TOC](#table-of-contents)
 
-### Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD)
+---
+
+### Text
+#### Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD)
 
 The `Text` subroutine offers a flexible way to display text on the screen. This method provides options to control the display mode of the text, its background, and the potential to double its width. You'll specify the starting position in terms of the 8x8 cells rather than pixel coordinates.
 
@@ -532,7 +632,12 @@ CALL Text(15, 10, MODE_SET, MODE_CLEAR, 0, "HELLO C64", CHARSET_UPPERCASE);
 
 **Note**: The `Text` subroutine displays characters based on the provided character memory address (`CharMemAddr`). Customizations or changes made to the character set in RAM will be reflected in the displayed text. When using the ROM-based constants (CHARSET_UPPERCASE or CHARSET_LOWERCASE), it will directly utilize the respective character sets from the C64's internal ROM. Ensure that the `CharMemAddr` always points to valid character data to prevent unpredictable results.
 
-### PetsciiToScreenCode(Petscii AS BYTE) -> BYTE
+[Back to TOC](#table-of-contents)
+
+---
+
+### PetsciiToScreenCode
+#### PetsciiToScreenCode(Petscii AS BYTE) -> BYTE
 
 The `PetsciiToScreenCode` function is designed to convert a given PETSCII value into its corresponding C64 screen code value. This conversion is necessary when working directly with the C64's video hardware, as the native character encoding used in the C64's ROM and by many software applications is PETSCII, whereas the C64 video memory utilizes a different set of codes, known as screen codes, to represent characters.
 
