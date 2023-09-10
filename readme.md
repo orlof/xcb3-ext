@@ -297,6 +297,55 @@ ResetScreen();  // This will restore the default VIC configurations as outlined 
 
 ---
 
+### ScreenOn()
+#### ScreenOn()
+
+The `ScreenOn()` subroutine reactivates the screen display after it has been turned off, restoring the visibility of the content on the screen. While the screen provides a visual interface, it also utilizes a substantial number of CPU cycles for refreshing and maintenance. Reactivating the screen with `ScreenOn()` will mean that these cycles are once again dedicated to screen updates.
+
+### **Details:**
+
+- **Effect on Screen:** The previously obscured screen content becomes visible again, with the display resuming its normal state.
+
+- **CPU Cycle Impact:** In total, 19,656 CPU cycles are available per frame. With the screen on, the VIC (Video Interface Chip) will "steal" between 960 to 1,550 cycles per frame for screen updates, reducing the cycles available to the CPU for other operations.
+
+### **Usage**
+
+```basic
+ScreenOn();  // This restore the normal screen contents visible
+```
+
+- Use this subroutine to restore the display after performing computations with the screen off using the `ScreenOff()` subroutine.
+- Always ensure that the screen is turned back on after turning it off, especially before expecting any visual feedback or results on the screen.
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### ScreenOff()
+#### ScreenOff()
+
+The `ScreenOff()` subroutine turns off the screen display, resulting in the complete screen being covered by the border. When the screen is active, the VIC (Video Interface Chip) utilizes a significant number of CPU cycles to refresh and maintain the display. Turning the screen off with `ScreenOff()` ensures that these cycles are reclaimed, providing the CPU with more processing time per frame.
+
+### **Details:**
+
+- **Effect on Screen:** The entire visible screen area is obscured, and only the border remains visible.
+
+- **CPU Cycle Impact:** Under normal conditions, there are 19,656 CPU cycles available per frame. However, when the screen is on, the VIC "steals" between 960 to 1,550 cycles per frame for screen updating. This reduces the available CPU cycles. Using `ScreenOff()` ensures that these cycles are not lost to screen updates.
+
+### **Usage**
+
+**Usage:**
+```c
+ScreenOff();  // This will cover the whole screen with border
+```
+
+- It might be beneficial to use this subroutine during intense computational operations where every CPU cycle counts.
+- Remember to turn the screen back on, using a counterpart subroutine (if available), to display graphics or text after processing.
+
+[Back to TOC](#table-of-contents)
+
+---
+
 ### FillBitmap
 #### FillBitmap(Value AS BYTE)
 

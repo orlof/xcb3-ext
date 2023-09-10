@@ -114,6 +114,22 @@ wait2:  bit $d011
     END ASM
 END SUB
 
+SUB ScreenOff() SHARED STATIC
+    ASM
+        lda $d011
+        and #%11101111
+        sta $d011
+    END ASM
+END SUB
+
+SUB ScreenOn() SHARED STATIC
+    ASM
+        lda $d011
+        ora #%00010000
+        sta $d011
+    END ASM
+END SUB
+
 SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
     DIM ProcessorFlag AS BYTE
     ' BITMAP_BASE:  ZP_W0
