@@ -91,6 +91,8 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 - [SetCharacterMemory](#setcharactermemory)
 - [SetBitmapMemory](#setbitmapmemory)
 - [ResetScreen](#resetscreen)
+- [ScreenOn](#screenon)
+- [ScreenOff](#screenoff)
 
 #### Color
 - [FillBitmap](#fillbitmap)
