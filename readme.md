@@ -12,7 +12,7 @@
 
 - **Usage Note**: For the sake of maintaining a decent performance, there's no built-in sanity check for the input arguments. As a result, if users input values that instruct drawings outside of the screen boundaries, the library's behavior becomes undefined, and it won't provide warnings or errors.
 
-- **API Design**: The library's API is designed for focused operations. Each command specifically targets either bitmap or screen memory. For example, if a developer wishes to draw text on the bitmap memory and simultaneously modify the color in screen memory, they would need separate calls - namely, `Text(...)` for the text and `SetColor(...)` for the color.
+- **API Design**: The library's API is designed for focused operations. Each command specifically targets either bitmap or screen memory. For example, if a developer wishes to draw text on the bitmap memory and simultaneously modify the color in screen memory, they would need separate calls - namely, `Text(...)` for the text and `SetColorInRect(...)` for the color.
 
 ### Example
 
@@ -95,7 +95,7 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 - [FillBitmap](#fillbitmap)
 - [FillScreen](#fillscreen)
 - [FillColorRam](#fillcolorram)
-- [SetColor](#setcolor)
+- [SetColorInRect](#setcolor)
 
 #### Drawing
 - [Plot](#plot)
@@ -353,8 +353,8 @@ FillColorRam(0x0F);  // This will set all color RAM entries to light gray (assum
 
 ---
 
-### SetColor
-#### `SetColor(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE)`
+### SetColorInRect
+#### `SetColorInRect(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE)`
 
 This subroutine allows users to change the color of specific regions in the C64 graphics screen.
 
@@ -381,7 +381,7 @@ Using this subroutine, you can redefine the color of specific regions of the C64
 Let's say you want to change the background color of a rectangle that starts from the cell (5,5) and ends at (10,10) to blue in HIRES mode:
 
 ```basic
-CALL SetColor(5, 5, 10, 10, 0, COLOR_BLUE)
+CALL SetColorInRect(5, 5, 10, 10, 0, COLOR_BLUE)
 ```
 
 Note: Remember to ensure that the specified region (from X0, Y0 to X1, Y1) lies within the valid screen dimensions and that you choose appropriate values for `Ink` and `ColorId` based on the graphics mode you're operating in.
