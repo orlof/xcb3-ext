@@ -308,7 +308,7 @@ The `ScreenOn()` subroutine reactivates the screen display after it has been tur
 
 - **Effect on Screen:** The previously obscured screen content becomes visible again, with the display resuming its normal state.
 
-- **CPU Cycle Impact:** In total, 19,656 CPU cycles are available per frame. With the screen on, the VIC (Video Interface Chip) will "steal" between 960 to 1,550 cycles per frame for screen updates, reducing the cycles available to the CPU for other operations.
+- **CPU Cycle Impact:** In total, 19,705 CPU cycles are available per frame. With the screen on, the VIC (Video Interface Chip) will "steal" between 960 to 1,550 cycles per frame for screen updates, reducing the cycles available to the CPU for other operations.
 
 ### **Usage**
 
@@ -318,6 +318,7 @@ ScreenOn();  // This restore the normal screen contents visible
 
 - Use this subroutine to restore the display after performing computations with the screen off using the `ScreenOff()` subroutine.
 - Always ensure that the screen is turned back on after turning it off, especially before expecting any visual feedback or results on the screen.
+- There is no need to sync this operation to vertical blank as screen on/off is refreshed only between frames
 
 [Back to TOC](#table-of-contents)
 
@@ -332,7 +333,7 @@ The `ScreenOff()` subroutine turns off the screen display, resulting in the comp
 
 - **Effect on Screen:** The entire visible screen area is obscured, and only the border remains visible.
 
-- **CPU Cycle Impact:** Under normal conditions, there are 19,656 CPU cycles available per frame. However, when the screen is on, the VIC "steals" between 960 to 1,550 cycles per frame for screen updating. This reduces the available CPU cycles. Using `ScreenOff()` ensures that these cycles are not lost to screen updates.
+- **CPU Cycle Impact:** Under normal conditions, there are 19,705 CPU cycles available per frame. However, when the screen is on, the VIC "steals" between 960 to 1,550 cycles per frame for screen updating. This reduces the available CPU cycles. Using `ScreenOff()` ensures that these cycles are not lost to screen updates.
 
 ### **Usage**
 
@@ -343,6 +344,7 @@ ScreenOff();  // This will cover the whole screen with border
 
 - It might be beneficial to use this subroutine during intense computational operations where every CPU cycle counts.
 - Remember to turn the screen back on, using a counterpart subroutine (if available), to display graphics or text after processing.
+- There is no need to sync this operation to vertical blank as screen on/off is refreshed only between frames
 
 [Back to TOC](#table-of-contents)
 
