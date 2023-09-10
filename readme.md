@@ -8,7 +8,8 @@
 
 - **Flexibility**: XCB3-GFX can operate with any of the VIC banks (0-3). Unlike some other libraries, there's no "hard-coded" memory location for the bitmap, screen, or font, which provides developers with a high degree of flexibility. XCB3-GFX drawing primitives work even if target memory is located in bank 3 "behind" io and kernel.
 
-- **Performance**: XCB3-GFX is not the fastest library, but it ain't slow either. It can plot random hires lines at a rate of approximately 235 pixels within 1/50s, with an average line length of 142 pixels. Philosophy of this library is to try balancing performance, memory consumption and usability. For example, XCB3-GFX uses only 25x2 bytes for bitmap y-tables while 200x2 bytes would improve the performance.
+- **Performance**: XCB3-GFX is not the fastest library, but it ain't slow either. It can plot random hires lines at a rate of approximately 235 pixels within 1/50s, with an average line length of 142 pixels. Philosophy of this library is to try balancing performance, memory consumption and usability. For example, XCB3-GFX uses only 25x2 bytes for bitmap y-tables while 200x2 bytes would improve the performance. Current release contains self
+modifying code (in Text routine) that makes it unsuitable for ROM. There is also a separate branch feature/no_smc where self modifying code is replaced with a branching structure that is 8-10 cycles/pixel slower.
 
 - **Usage Note**: For the sake of maintaining a decent performance, there's no built-in sanity check for the input arguments. As a result, if users input values that instruct drawings outside of the screen boundaries, the library's behavior becomes undefined, and it won't provide warnings or errors.
 
