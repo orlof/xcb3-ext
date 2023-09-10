@@ -999,15 +999,12 @@ _draw_init
         ;xi   = ZP_B1   1/r flag 8
         ;yi   = ZP_B2   u/d flag 8
         ;base = ZP_W0   base of pixel addr 16
-        ;m    = MASK   pixel mask 8
-        ;c    = COUNT   ZP_W2 count 16
+        ;mask = ZP_B4   pixel mask 8
+        ;count= ZP_W2 count 16
         ;r    = DISTANCE   16 ZP_I0
-        ldx {Mode}
-        inx
-        lda {_opcodes},x
-        sta _draw_smc0
-        sta _draw_smc1
-        sta _draw_smc2
+        ;Mode = ZP_B3   8
+        lda {Mode}
+        sta {ZP_B3}
 
         ldx #0              ;xinc=right
         ldy #0              ;yinc=down
@@ -1072,8 +1069,21 @@ _draw_store_mask
         sta {ZP_B4}         ;save mask
         lda ({ZP_W0}),y
 
-_draw_smc0
-        ora {ZP_B4}
+
+        ldx {ZP_B3}                     ;3
+        bmi _draw_first_plot_flip       ;2/3
+        bne _draw_first_plot_set        ;2/3
+_draw_first_plot_clear
+        and {ZP_B4}
+        jmp _draw_first_plot_done       ;+10
+_draw_first_plot_flip
+        eor {ZP_B4}
+        jmp _draw_first_plot_done       ;+10
+_draw_first_plot_set
+        ora {ZP_B4}                     ;+8
+_draw_first_plot_done
+
+
         sta ({ZP_W0}),y
 
         lda {ZP_W1}+1
@@ -1169,21 +1179,40 @@ _draw_x_store_base_hi
 
 _draw_x_plot
         lda ({ZP_W0}),y
-_draw_smc1
-        ora {ZP_B4}
+
+
+        ldx {ZP_B3}                 ;3
+        bmi _draw_x_plot_flip       ;2/3
+        bne _draw_x_plot_set        ;2/3
+_draw_x_plot_clear
+        and {ZP_B4}
+        jmp _draw_x_plot_done       ;+10
+_draw_x_plot_flip
+        eor {ZP_B4}
+        jmp _draw_x_plot_done       ;+10
+_draw_x_plot_set
+        ora {ZP_B4}                 ;+8
+_draw_x_plot_done
+
+
         sta ({ZP_W0}),y     ;plot (x,y) mc
 
         dec {ZP_W2}
-        bne _draw_x_loop             ;next
+        bne _draw_x_next             ;next
         dec {ZP_W2}+1
-        beq _draw_x_loop             ;next
+        beq _draw_x_next             ;next
         jmp _draw_ram_out
+
+_draw_x_next
+        jmp _draw_x_loop
 
 _draw_y
         ; dy>dx
         lda {ZP_B0}
-        beq _draw_ram_out            ;single point
+        bne _draw_y_init
+        jmp _draw_ram_out            ;single point
 
+_draw_y_init
         sta {ZP_W2}         ;c=dy
         lsr
         sta {ZP_I0}         ;r=dy/2
@@ -1260,8 +1289,22 @@ _draw_y_left
 
 _draw_y_plot
         lda ({ZP_W0}),y
-_draw_smc2
-        ora {ZP_B4}
+
+
+        ldx {ZP_B3}                     ;3
+        bmi _draw_y_plot_flip       ;2/3
+        bne _draw_y_plot_set        ;2/3
+_draw_y_plot_clear
+        and {ZP_B4}
+        jmp _draw_y_plot_done       ;+10
+_draw_y_plot_flip
+        eor {ZP_B4}
+        jmp _draw_y_plot_done       ;+10
+_draw_y_plot_set
+        ora {ZP_B4}                     ;+8
+_draw_y_plot_done
+
+
         sta ({ZP_W0}),y     ;plot (x, y)
 
         dec {ZP_W2}
