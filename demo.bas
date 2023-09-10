@@ -105,7 +105,33 @@ SUB TestSuite() SHARED STATIC
 
 END SUB
 
-CALL TestSuiteMC()
+SUB TestSuiteLines() STATIC
+    CALL SetVideoBank(3)
+    CALL SetBitmapMemory(1)
+    CALL SetScreenMemory(0)
+    CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
+    CALL FillBitmap(0)
+    CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)
+
+    DIM Y AS BYTE
+    DIM X AS WORD
+
+    DO
+        Y = 0
+        DO
+            CALL Draw(0, Y, 319, Y, MODE_FLIP)
+            Y=Y+1
+        LOOP UNTIL Y = 200
+
+        X = 0
+        DO
+            CALL Draw(X, 0, X, 199, MODE_FLIP)
+            X=X+1
+        LOOP UNTIL X = 320
+    LOOP
+END SUB
+
+'CALL TestSuiteMC()
 
 DIM a AS BYTE
 DO
@@ -113,6 +139,12 @@ DO
 LOOP UNTIL a > 0
 
 CALL TestSuite()
+
+DO
+  GET a
+LOOP UNTIL a > 0
+
+CALL TestSuiteLines()
 
 DO
   GET a

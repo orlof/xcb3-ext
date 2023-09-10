@@ -53,6 +53,7 @@ DIM _color_y_tbl_lo(25) AS BYTE @ __color_y_tbl_lo
 
 DIM _petscii_to_screencode(8) AS BYTE @ __petscii_to_screencode
 DIM _nible_to_byte(16) AS BYTE @ __nible_to_byte
+DIM _opcodes(3) AS BYTE @ __opcodes
 
 REM **********************
 REM *  PSEUDO REGISTERS  *
@@ -95,7 +96,7 @@ DECLARE SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
 DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
 DECLARE SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
 DECLARE SUB SetColorInRect(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE) SHARED STATIC
-
+DECLARE SUB WaitRasterLine256() SHARED STATIC
 DECLARE FUNCTION PetsciiToScreenCode AS BYTE(Petscii AS BYTE) SHARED STATIC
 
 DECLARE SUB _calc_bitmap_table() STATIC
@@ -104,6 +105,15 @@ DECLARE SUB _calc_screen_table() STATIC
 REM **********************
 REM *     FUNCTIONS      *
 REM **********************
+SUB WaitRasterLine256() SHARED STATIC
+    ASM
+wait1:  bit $d011
+        bmi wait1
+wait2:  bit $d011
+        bpl wait2
+    END ASM
+END SUB
+
 SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC
     DIM ProcessorFlag AS BYTE
     ' BITMAP_BASE:  ZP_W0
@@ -992,6 +1002,12 @@ _draw_init
         ;m    = MASK   pixel mask 8
         ;c    = COUNT   ZP_W2 count 16
         ;r    = DISTANCE   16 ZP_I0
+        ldx {Mode}
+        inx
+        lda {_opcodes},x
+        sta _draw_smc0
+        sta _draw_smc1
+        sta _draw_smc2
 
         ldx #0              ;xinc=right
         ldy #0              ;yinc=down
@@ -1050,9 +1066,14 @@ _draw_store_dy
         and #7
         tax
         lda {_hires_mask1},x    ; mc
+        bne _draw_store_mask
+        eor #$ff
+_draw_store_mask
         sta {ZP_B4}         ;save mask
+        lda ({ZP_W0}),y
 
-        ora ({ZP_W0}),y
+_draw_smc0
+        ora {ZP_B4}
         sta ({ZP_W0}),y
 
         lda {ZP_W1}+1
@@ -1148,6 +1169,7 @@ _draw_x_store_base_hi
 
 _draw_x_plot
         lda ({ZP_W0}),y
+_draw_smc1
         ora {ZP_B4}
         sta ({ZP_W0}),y     ;plot (x,y) mc
 
@@ -1238,6 +1260,7 @@ _draw_y_left
 
 _draw_y_plot
         lda ({ZP_W0}),y
+_draw_smc2
         ora {ZP_B4}
         sta ({ZP_W0}),y     ;plot (x, y)
 
@@ -1735,3 +1758,6 @@ DATA AS BYTE %00000000, %00000011, %00001100, %00001111
 DATA AS BYTE %00110000, %00110011, %00111100, %00111111
 DATA AS BYTE %11000000, %11000011, %11001100, %11001111
 DATA AS BYTE %11110000, %11110011, %11111100, %11111111
+
+__opcodes:
+DATA AS BYTE $45, $25, $05
