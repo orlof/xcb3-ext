@@ -324,8 +324,6 @@ _mc_text_char_shrink2
 mc_text_char_next
         jmp mc_text_loop_text
 
-
-
 _mc_text_font_loop_left_nible
         ;lda ({ZP_W0}),y
         ;process left nible
@@ -448,7 +446,7 @@ _text_ram
         sei
         lda 1
         sta {ProcessorFlag}
-        and #%11111000
+        lda #%00110000
         sta 1
 
 _text_init
@@ -908,9 +906,11 @@ SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
 END SUB
 
 SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
-    ' WE USE DX AND DY BECAUSE THOSE ARE CONVENIENTLY FREE WORD AND BYTE VARIABLES
     ' DISTANCE = ZP_I0
-    ' DY = ZP_B0
+    ' ZP_W1 = x
+    ' ZP_B0 = y
+    ' ZP_I0 = error distance
+    '
     ZP_W1 = Radius
     ZP_B0 = 0
     ZP_I0 = ZP_W1 / 2
