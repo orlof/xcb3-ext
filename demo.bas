@@ -103,6 +103,8 @@ SUB TestSuite() SHARED STATIC
         NEXT
     NEXT
 
+    CALL Text(0,0,1,TRANSPARENT,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",CWORD(1))
+    CALL Text(0,1,TRANSPARENT,1,0,"abcdefghijklmnopqrstuvwxyz",CWORD(1))
 END SUB
 
 SUB TestSuiteLines() STATIC
@@ -119,19 +121,19 @@ SUB TestSuiteLines() STATIC
     DO
         Y = 0
         DO
-            CALL Draw(0, Y, 319, Y, MODE_FLIP)
+            CALL Draw(0, Y, 319, Y, MODE_SET)
             Y=Y+1
         LOOP UNTIL Y = 200
 
         X = 0
         DO
-            CALL Draw(X, 0, X, 199, MODE_FLIP)
+            CALL Draw(X, 0, X, 199, MODE_CLEAR)
             X=X+1
         LOOP UNTIL X = 320
     LOOP
 END SUB
 
-'CALL TestSuiteMC()
+CALL TestSuiteMC()
 
 DIM a AS BYTE
 DO

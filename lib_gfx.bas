@@ -1006,24 +1006,47 @@ _draw_ram_in
         dec 1
 
 _draw_init
-        ;fast line draw
-        ;passed: x1, y1, x2, y2
-
-        ;altered:
-        ;dx   = _x      delta x 16
-        ;dy   = ZP_B0      delta y 8
+        ;dx   = ZP_W1
+        ;dy   = ZP_B0
         ;xi   = ZP_B1   1/r flag 8
         ;yi   = ZP_B2   u/d flag 8
         ;base = ZP_W0   base of pixel addr 16
-        ;m    = MASK   pixel mask 8
-        ;c    = COUNT   ZP_W2 count 16
-        ;r    = DISTANCE   16 ZP_I0
-        ldx {Mode}
-        inx
-        lda {_opcodes},x
+        ;m    = ZP_B4   pixel mask 8
+        ;c    = ZP_W2   ZP_W2 count 16
+        ;r    = ZP_I0   16 ZP_I0
+        lda {Mode}
+        beq _draw_smc_init_clr
+        bpl _draw_smc_init_set
+_draw_smc_init_flip
+        lda #$24        ;-> bit <- $ad
         sta _draw_smc0
         sta _draw_smc1
         sta _draw_smc2
+        lda #$51        ;-> eor <- ($af),y
+        sta _draw_smc0+2
+        sta _draw_smc1+2
+        sta _draw_smc2+2
+        jmp _draw_smc_init_end
+_draw_smc_init_clr
+        lda #$49        ; -> eor <- #$ff
+        sta _draw_smc0
+        sta _draw_smc1
+        sta _draw_smc2
+        lda #$31        ; -> and <- ($af),y
+        sta _draw_smc0+2
+        sta _draw_smc1+2
+        sta _draw_smc2+2
+        jmp _draw_smc_init_end
+_draw_smc_init_set
+        lda #$24        ;-> bit <- $ad
+        sta _draw_smc0
+        sta _draw_smc1
+        sta _draw_smc2
+        lda #$11        ; -> ora <- ($af),y
+        sta _draw_smc0+2
+        sta _draw_smc1+2
+        sta _draw_smc2+2     ; 29 cycles / 4 cycles
+_draw_smc_init_end
 
         ldx #0              ;xinc=right
         ldy #0              ;yinc=down
@@ -1062,7 +1085,7 @@ _draw_store_dy
         sty {ZP_B2}         ;y1: $00 or $ff
 
         lda {y1}            ;plot (x1, y1)
-        and #7
+        and #%00000111
         tay
 
         eor {y1}
@@ -1071,7 +1094,7 @@ _draw_store_dy
         tax
 
         lda {x1}
-        and #$f8
+        and #%11111000
         adc {_bitmap_y_tbl},x
         sta {ZP_W0}         ;save base
         lda {_bitmap_y_tbl}+1,x
@@ -1079,17 +1102,15 @@ _draw_store_dy
         sta {ZP_W0}+1
 
         lda {x1}
-        and #7
+        and #%00000111
         tax
         lda {_hires_mask1},x    ; mc
-        bne _draw_store_mask
-        eor #$ff
-_draw_store_mask
         sta {ZP_B4}         ;save mask
-        lda ({ZP_W0}),y
 
+        lda {ZP_B4}
 _draw_smc0
-        ora {ZP_B4}
+        bit $ff
+        ora ({ZP_W0}),y
         sta ({ZP_W0}),y
 
         lda {ZP_W1}+1
@@ -1184,9 +1205,10 @@ _draw_x_store_base_hi
         sta {ZP_W0}+1
 
 _draw_x_plot
-        lda ({ZP_W0}),y
+        lda {ZP_B4}
 _draw_smc1
-        ora {ZP_B4}
+        bit $ff
+        ora ({ZP_W0}),y
         sta ({ZP_W0}),y     ;plot (x,y) mc
 
         dec {ZP_W2}
@@ -1275,9 +1297,10 @@ _draw_y_left
         dec {ZP_W0}+1
 
 _draw_y_plot
-        lda ({ZP_W0}),y
+        lda {ZP_B4}
 _draw_smc2
-        ora {ZP_B4}
+        bit $ff
+        ora ({ZP_W0}),y
         sta ({ZP_W0}),y     ;plot (x, y)
 
         dec {ZP_W2}
@@ -1748,6 +1771,7 @@ _petscii_to_screencode_end
         stx {PetsciiToScreenCode}
     END ASM
 END FUNCTION
+
 
 __color_y_tbl_hi:
 DATA AS BYTE $d8, $d8, $d8, $d8, $d8, $d8, $d8, $d9, $d9, $d9, $d9, $d9, $d9, $da, $da, $da
