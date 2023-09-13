@@ -94,6 +94,11 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 - [ScreenOn](#screenon)
 - [ScreenOff](#screenoff)
 
+#### Double Buffering
+- [DoubleBufferOn](#doublebufferon)
+- [DoubleBufferOff](#doublebufferon)
+- [BufferSwap](#bufferswap)
+
 #### Color
 - [FillBitmap](#fillbitmap)
 - [FillScreen](#fillscreen)
@@ -346,6 +351,89 @@ ScreenOff();  // This will cover the whole screen with border
 - Remember to turn the screen back on, using a counterpart subroutine (if available), to display graphics or text after processing.
 - There is no need to sync this operation to vertical blank as screen on/off is refreshed only between frames
 
+[Back to TOC](#table-of-contents)
+
+---
+
+### DoubleBufferOn
+#### DoubleBufferOn()
+
+The `DoubleBufferOn()` subroutine activates double buffering, a technique used to eliminate flickering in screen displays. Flickering often occurs when rapidly changing or updating graphics on the screen, resulting in an undesirable visual effect. Double buffering solves this problem by maintaining two screen buffers: one visible to the user and one hidden for drawing operations. This approach enhances the visual experience in applications like games and multimedia by displaying one frame while buffering drawing operations to the other.
+
+### **Details:**
+
+- **Flicker Elimination:** The primary purpose of enabling double buffering is to eliminate flickering on the screen during rapid updates or animations. It achieves this by displaying one complete frame while preparing the next one in the hidden buffer.
+
+- **Buffer Assignment:** When double buffering is active, all future calls to change memory configurations (such as setting screen, character, or bitmap memory) will affect the hidden buffer. Similarly, all drawing operations will be routed to the hidden buffer.
+
+- **Buffer Swap:** To update the screen, users can call the `BufferSwap()` subroutine, which swaps the visible and hidden buffers. This operation ensures that the new frame is displayed to the user while the next frame is being prepared in the previously visible buffer.
+
+- **Sync Responsibility:** It's essential to note that the library does not automatically perform any screen copying or clearing between the buffers. Users are responsible for managing and synchronizing the content between the visible and hidden buffers to maintain a seamless display.
+
+- **Memory Consumption:** Utilizing double buffering effectively doubles the memory consumption, as both a visible and a hidden buffer must be maintained. For example, if your application originally used 9k of memory, enabling double buffering will increase it to 18k.
+
+### **Usage Notes:**
+
+- Use `DoubleBufferOn()` when working with applications that involve rapid screen updates or animations to achieve smoother, flicker-free visuals.
+- Refer to the provided example `demo3.bas` in the repository to see the practical implementation and benefits of double buffering.
+
+---
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### DoubleBufferOff
+#### DoubleBufferOff()
+
+The `DoubleBufferOff()` subroutine deactivates double buffering, which is a technique used to eliminate screen flickering during rapid screen updates. Double buffering involves maintaining two screen buffers: one visible to the user and one hidden for drawing operations. Disabling double buffering with `DoubleBufferOff()` will revert to the standard screen display mode without the benefits of flicker elimination.
+
+### **Details:**
+
+- **Flicker Reintroduction:** When double buffering is turned off, screen updates may lead to flickering, particularly during rapid or dynamic changes to the screen content.
+
+- **Buffer Assignment:** Without double buffering, all memory configuration changes (e.g., setting screen, character, or bitmap memory) and drawing operations directly affect the visible screen buffer.
+
+- **Memory Consumption:** Disabling double buffering reduces memory consumption to its standard level. While enabled, double buffering effectively doubles memory usage due to the need to maintain both a visible and a hidden buffer.
+
+### **Usage Notes:**
+
+- Use `DoubleBufferOff()` when you no longer require flicker-free screen updates or when memory constraints are a concern.
+
+- Be aware that disabling double buffering may reintroduce screen flickering, particularly when performing rapid screen updates or animations.
+
+---
+
+The `DoubleBufferOff()` subroutine serves as the counterpart to `DoubleBufferOn()`, allowing users to revert to the standard screen display mode when flicker elimination or memory conservation is not required.
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### BufferSwap
+#### BufferSwap()
+
+The `BufferSwap()` subroutine is used in conjunction with double buffering to exchange the visible and hidden screen buffers. Double buffering is a technique employed to eliminate screen flickering during rapid screen updates. It maintains two screen buffers: one visible to the user and one hidden for drawing operations. `BufferSwap()` facilitates switching between these buffers, allowing the hidden buffer to become the visible buffer, and vice versa.
+
+### **Details:**
+
+- **Buffer Exchange:** When `BufferSwap()` is called, the contents of the hidden buffer become visible to the user, and the previous visible buffer becomes the new hidden buffer.
+
+- **Flicker Elimination:** This swapping process ensures that screen updates occur smoothly and without flickering, as the new frame is displayed only once it's fully prepared in the hidden buffer.
+
+- **Usage with Double Buffering:** `BufferSwap()` is typically used in conjunction with double buffering, where one buffer is being drawn to while the other is being displayed. The routine is called after drawing operations are completed in the hidden buffer.
+
+- **Synchronization Responsibility:** It's important to note that `BufferSwap()` does not automatically synchronize or clear the content between the visible and hidden buffers. Users are responsible for managing and ensuring that the content in both buffers is consistent.
+
+### **Usage Notes:**
+
+- Use `BufferSwap()` when working with double buffering to switch between the visible and hidden screen buffers.
+
+- Always call `BufferSwap()` after completing drawing operations in the hidden buffer to display the updated frame without flickering.
+
+---
+
+The `BufferSwap()` subroutine is an essential component of double buffering and ensures that the transition between the visible and hidden buffers is smooth and flicker-free during screen updates.
 [Back to TOC](#table-of-contents)
 
 ---

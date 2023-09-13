@@ -43,10 +43,9 @@ DIM _hires_mask1(8) AS BYTE @__hires_mask1
 DIM _mc_mask(4) AS BYTE @__mc_mask
 DIM _mc_pattern(4) AS BYTE @__mc_pattern
 
-DIM _bitmap_y_tbl(25) AS WORD
+DIM _bitmap_y_tbl(50) AS WORD
 
-DIM _screen_y_tbl_hi(25) AS BYTE
-DIM _screen_y_tbl_lo(25) AS BYTE
+DIM _screen_y_tbl(50) AS WORD
 
 DIM _color_y_tbl_hi(25) AS BYTE @ __color_y_tbl_hi
 DIM _color_y_tbl_lo(25) AS BYTE @ __color_y_tbl_lo
@@ -54,6 +53,15 @@ DIM _color_y_tbl_lo(25) AS BYTE @ __color_y_tbl_lo
 DIM _petscii_to_screencode(8) AS BYTE @ __petscii_to_screencode
 DIM _nible_to_byte(16) AS BYTE @ __nible_to_byte
 DIM _opcodes(3) AS BYTE @ __opcodes
+
+DIM _dbuf_nr AS BYTE
+_dbuf_nr = %00000000
+
+DIM _dbuf_on AS BYTE
+_dbuf_on = %00000000
+
+DIM _hbuf_d018 AS BYTE
+DIM _hbuf_dd00 AS BYTE
 
 REM **********************
 REM *  PSEUDO REGISTERS  *
@@ -80,6 +88,11 @@ DECLARE SUB SetScreenMemory(Ptr AS BYTE) SHARED STATIC
 DECLARE SUB SetCharacterMemory(Ptr AS BYTE) SHARED STATIC
 DECLARE SUB SetBitmapMemory(Ptr AS BYTE) SHARED STATIC
 DECLARE SUB ResetScreen() SHARED STATIC
+DECLARE SUB DoubleBufferOn() SHARED STATIC
+DECLARE SUB DoubleBufferOff() SHARED STATIC
+DECLARE SUB BufferSwap() SHARED STATIC
+DECLARE SUB ScreenOff() SHARED STATIC
+DECLARE SUB ScreenOn() SHARED STATIC
 
 DECLARE SUB FillBitmap(Value AS BYTE) SHARED STATIC
 DECLARE SUB FillScreen(Value AS BYTE) SHARED STATIC
@@ -105,6 +118,51 @@ DECLARE SUB _calc_screen_table() STATIC
 REM **********************
 REM *     FUNCTIONS      *
 REM **********************
+SUB DoubleBufferOn() SHARED STATIC
+    ASM
+        ;lda $d018
+        ;sta {_hbuf_d018}
+
+        ;lda $dd00
+        ;sta {_hbuf_dd00}
+
+        lda #%00000010
+        sta {_dbuf_on}
+    END ASM
+END SUB
+
+SUB DoubleBufferOff() SHARED STATIC
+    _dbuf_on = %00000000
+    IF _dbuf_nr = %00000010 THEN
+        CALL BufferSwap()
+    END IF
+END SUB
+
+SUB BufferSwap() SHARED STATIC
+    ASM
+swap_wait1
+        bit $d011
+        bmi swap_wait1
+swap_wait2
+        bit $d011
+        bpl swap_wait2
+
+        ldx $d018
+        lda {_hbuf_d018}
+        stx {_hbuf_d018}
+        sta $d018
+
+        ldx $dd00
+        lda {_hbuf_dd00}
+        stx {_hbuf_dd00}
+        sta $dd00
+
+        lda {_dbuf_nr}
+        eor #%00000010
+        sta {_dbuf_nr}
+    END ASM
+END SUB
+
 SUB WaitRasterLine256() SHARED STATIC
     ASM
 wait1:  bit $d011
@@ -186,6 +244,9 @@ _mc_text_init
         ;init bitmap pointer
         lda {Row}
         asl
+        asl
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
         tay
         lda {_bitmap_y_tbl},y
         sta {ZP_W0}
@@ -453,6 +514,9 @@ _text_init
         ;init bitmap pointer
         lda {Row}
         asl
+        asl
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
         tay
         lda {_bitmap_y_tbl},y
         sta {ZP_W0}
@@ -666,7 +730,7 @@ SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
     END ASM
 END SUB
 
-SUB SetColorInRect(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE) SHARED STATIC
+SUB SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE) SHARED STATIC
     ASM
         lda {ColorId}
         sta {ZP_B2}
@@ -675,11 +739,16 @@ SUB SetColorInRect(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, 
         cmp #3
         beq _set_color_mc_3
 
-        ldx {Y0}
-        lda {_screen_y_tbl_lo},x
-        sta {ZP_W0}
-        lda {_screen_y_tbl_hi},x
+        lda {y0}
+        asl
+        asl
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
+        tax
+        lda {_screen_y_tbl}+1,x
         sta {ZP_W0}+1
+        lda {_screen_y_tbl},x
+        sta {ZP_W0}
 
         lda {Ink}
         cmp #2
@@ -705,7 +774,7 @@ _set_color_mc_3
         lda #0
         sta {ZP_B3}
 
-        ldx {Y0}
+        ldx {y0}
         lda {_color_y_tbl_lo},x
         sta {ZP_W0}
         lda {_color_y_tbl_hi},x
@@ -713,12 +782,12 @@ _set_color_mc_3
 
 _set_color_init_loops
         sec
-        lda {Y1}
-        sbc {Y0}
+        lda {y1}
+        sbc {y0}
         tax
 
 _set_color_y_loop
-        ldy {X0}
+        ldy {x0}
 
 _set_color_x_loop
         lda ({ZP_W0}),y
@@ -727,7 +796,7 @@ _set_color_x_loop
         sta ({ZP_W0}),y
 
         iny
-        cpy {X1}
+        cpy {x1}
         bcc _set_color_x_loop
         beq _set_color_x_loop
 
@@ -749,42 +818,51 @@ SUB FillColorRam(Value AS BYTE) SHARED STATIC
 END SUB
 
 SUB FillScreen(Value AS BYTE) SHARED STATIC
-    IF _screen_y_tbl_hi(0) >= $d0 THEN
-        ASM
-            sei
-            dec 1
-            dec 1
-        END ASM
-    END IF
-    MEMSET SHL(CWORD(_screen_y_tbl_hi(0)), 8) OR _screen_y_tbl_lo(0), 1000, Value
-    IF _screen_y_tbl_hi(0) >= $d0 THEN
-        ASM
-            inc 1
-            inc 1
-            cli
-        END ASM
-    END IF
+    ASM
+        sei
+        dec 1
+        dec 1
+
+        lda {_dbuf_nr}
+        eor {_dbuf_on}
+        tax
+        lda {_screen_y_tbl}+1,x
+        sta {ZP_W0}+1
+        lda {_screen_y_tbl},x
+        sta {ZP_W0}
+    END ASM
+    MEMSET ZP_W0, 1000, Value
+    ASM
+        inc 1
+        inc 1
+        cli
+    END ASM
 END SUB
 
 SUB FillBitmap(Value AS BYTE) SHARED STATIC
-    IF _bitmap_y_tbl(0) >= $c000 THEN
-        ASM
-            sei
-            dec 1
-            dec 1
-        END ASM
-    END IF
-    MEMSET _bitmap_y_tbl(0), 8000, Value
-    IF _bitmap_y_tbl(0) >= $c000 THEN
-        ASM
-            inc 1
-            inc 1
-            cli
-        END ASM
-    END IF
+    ASM
+        sei
+        lda #%00110100
+        sta 1
+
+        lda {_dbuf_nr}
+        eor {_dbuf_on}
+        tax
+        lda {_bitmap_y_tbl},x
+        sta {ZP_W0}
+        lda {_bitmap_y_tbl}+1,x
+        sta {ZP_W0}+1
+    END ASM
+    MEMSET ZP_W0, 8000, Value
+    ASM
+        lda #%00110110
+        sta 1
+        cli
+    END ASM
 END SUB
 
 SUB ResetScreen() SHARED STATIC
+    CALL DoubleBufferOff()
     CALL SetVideoBank(0)
     CALL SetScreenMemory(1)
     CALL SetCharacterMemory(2)
@@ -818,11 +896,25 @@ END SUB
 
 SUB SetVideoBank(BankNumber AS BYTE) SHARED STATIC
     ASM
+        lda {_dbuf_on}
+        beq _set_video_bank_single
+
+_set_video_bank_double
+        lda {_hbuf_dd00}
+        and #%11111100
+        ora {BankNumber}
+        eor #%00000011
+        sta {_hbuf_dd00}
+        jmp _set_video_bank_end
+
+_set_video_bank_single
         lda $dd00
         and #%11111100
         ora {BankNumber}
         eor #%00000011
         sta $dd00
+
+_set_video_bank_end
     END ASM
     CALL _calc_bitmap_table()
     CALL _calc_screen_table()
@@ -835,10 +927,23 @@ SUB SetCharacterMemory(Ptr AS BYTE) SHARED STATIC
         asl
         sta {ZP_B0}
 
+        lda {_dbuf_on}
+        beq _set_character_memory_single
+
+_set_character_memory_double
+        lda {_hbuf_d018}
+        and #%11110001
+        ora {ZP_B0}
+        sta {_hbuf_d018}
+        jmp _set_character_memory_end
+
+_set_character_memory_single
         lda $d018
         and #%11110001
         ora {ZP_B0}
         sta $d018
+
+_set_character_memory_end
     END ASM
 END SUB
 
@@ -851,10 +956,24 @@ SUB SetScreenMemory(Ptr AS BYTE) SHARED STATIC
         asl
         asl
         sta {ZP_B0}
+
+        lda {_dbuf_on}
+        beq _set_screen_memory_single
+
+_set_screen_memory_double
+        lda {_hbuf_d018}
+        and #%00001111
+        ora {ZP_B0}
+        sta {_hbuf_d018}
+        jmp _set_screen_memory_end
+
+_set_screen_memory_single
         lda $d018
         and #%00001111
         ora {ZP_B0}
         sta $d018
+
+_set_screen_memory_end
     END ASM
     CALL _calc_screen_table()
 END SUB
@@ -868,10 +987,23 @@ SUB SetBitmapMemory(Ptr AS BYTE) SHARED STATIC
         asl
         sta {ZP_B0}
 
+        lda {_dbuf_on}
+        beq _set_bitmap_memory_single
+
+_set_bitmap_memory_double
+        lda {_hbuf_d018}
+        and #%11110111
+        ora {ZP_B0}
+        sta {_hbuf_d018}
+        jmp _set_bitmap_memory_end
+
+_set_bitmap_memory_single
         lda $d018
         and #%11110111
         ora {ZP_B0}
         sta $d018
+
+_set_bitmap_memory_end
     END ASM
     CALL _calc_bitmap_table()
 END SUB
@@ -951,7 +1083,8 @@ _plot_init
 
         eor {y}             ; 3
         lsr                 ; 2
-        lsr                 ; 2
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
         tax                 ; 2
 
         lda  {_bitmap_y_tbl}+1,x
@@ -998,6 +1131,14 @@ _plot_end
 END SUB
 
 SUB Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE) SHARED STATIC
+    ' ZP_W0: Base
+    ' ZP_W1: Dx
+    ' ZP_W2: Count
+    ' ZP_I0: Error
+    ' ZP_B0: Dy
+    ' ZP_B1: Xi
+    ' ZP_B2: Yi
+    ' ZP_B4: Mask
     ' DX ZP_W1
     ASM
 _draw_ram_in
@@ -1006,46 +1147,38 @@ _draw_ram_in
         dec 1
 
 _draw_init
-        ;dx   = ZP_W1
-        ;dy   = ZP_B0
-        ;xi   = ZP_B1   1/r flag 8
-        ;yi   = ZP_B2   u/d flag 8
-        ;base = ZP_W0   base of pixel addr 16
-        ;m    = ZP_B4   pixel mask 8
-        ;c    = ZP_W2   ZP_W2 count 16
-        ;r    = ZP_I0   16 ZP_I0
         lda {Mode}
         beq _draw_smc_init_clr
         bpl _draw_smc_init_set
 _draw_smc_init_flip
-        lda #$24        ;-> bit <- $ad
+        lda #$24            ; -> bit <- $ad
         sta _draw_smc0
         sta _draw_smc1
         sta _draw_smc2
-        lda #$51        ;-> eor <- ($af),y
+        lda #$51            ; -> eor <- ($af),y
         sta _draw_smc0+2
         sta _draw_smc1+2
         sta _draw_smc2+2
         jmp _draw_smc_init_end
 _draw_smc_init_clr
-        lda #$49        ; -> eor <- #$ff
+        lda #$49            ; -> eor <- #$ff
         sta _draw_smc0
         sta _draw_smc1
         sta _draw_smc2
-        lda #$31        ; -> and <- ($af),y
+        lda #$31            ; -> and <- ($af),y
         sta _draw_smc0+2
         sta _draw_smc1+2
         sta _draw_smc2+2
         jmp _draw_smc_init_end
 _draw_smc_init_set
-        lda #$24        ;-> bit <- $ad
+        lda #$24            ; -> bit <- $ad
         sta _draw_smc0
         sta _draw_smc1
         sta _draw_smc2
-        lda #$11        ; -> ora <- ($af),y
+        lda #$11            ; -> ora <- ($af),y
         sta _draw_smc0+2
         sta _draw_smc1+2
-        sta _draw_smc2+2     ; 29 cycles / 4 cycles
+        sta _draw_smc2+2    ; 29 cycles / 4 cycles
 _draw_smc_init_end
 
         ldx #0              ;xinc=right
@@ -1090,7 +1223,8 @@ _draw_store_dy
 
         eor {y1}
         lsr
-        lsr
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
         tax
 
         lda {x1}
@@ -1106,16 +1240,14 @@ _draw_store_dy
         tax
         lda {_hires_mask1},x    ; mc
         sta {ZP_B4}         ;save mask
-
-        lda {ZP_B4}
 _draw_smc0
         bit $ff
         ora ({ZP_W0}),y
         sta ({ZP_W0}),y
 
-        lda {ZP_W1}+1
+        lda {ZP_W1}+1           ; if dx>=dy: _draw_x else: _draw_y
         bne _draw_x
-        lda {ZP_W1}            ;(dx>=dy)
+        lda {ZP_W1}
         cmp {ZP_B0}
         bcs _draw_x
         jmp _draw_y
@@ -1124,46 +1256,52 @@ _draw_x
         lda {ZP_W1}+1
         sta {ZP_W2}+1       ;c=dx
         lsr
-        sta {ZP_I0}+1       ;r=dx/2
+        sta {ZP_I0}+1       ;r=dx/2 always 0, but must be stored anyway
         lda {ZP_W1}
         sta {ZP_W2}
         ror
         sta {ZP_I0}
+
         lda {ZP_W2}
         ora {ZP_W2}+1
         bne _draw_x_loop
         jmp _draw_ram_out             ;if single point
 
 _draw_x_loop
-        lda {ZP_B1}
+        lda {ZP_B1}                     ;Xi
         bmi _draw_x_left
 
 _draw_x_right
-        lsr {ZP_B4}         ;right mc
+        lsr {ZP_B4}                     ; mask >>= 1
         bcc _draw_x_add_dy
-        ror {ZP_B4}
+
+        ror {ZP_B4}                     ; mask = %10000000
         lda {ZP_W0}
         adc #8
         sta {ZP_W0}
         bcc _draw_x_add_dy
         inc {ZP_W0}+1
         bne _draw_x_add_dy
+
 _draw_x_left
-        asl {ZP_B4}         ;left mc
+        asl {ZP_B4}                     ; mask <<= 1
         bcc _draw_x_add_dy
+
         rol {ZP_B4}
         lda {ZP_W0}
         sbc #7
         sta {ZP_W0}
         bcs _draw_x_add_dy
         dec {ZP_W0}+1
+
 _draw_x_add_dy
-        lda {ZP_I0}         ;r=r+dy
+        lda {ZP_I0}                     ; Error += Dy
         clc
         adc {ZP_B0}
         sta {ZP_I0}
         bcc _draw_x_sub_dx
         inc {ZP_I0}+1
+
 _draw_x_sub_dx
         sec
         sbc {ZP_W1}
@@ -1171,10 +1309,10 @@ _draw_x_sub_dx
 
         lda {ZP_I0}+1
         sbc {ZP_W1}+1
-        bcc _draw_x_plot
+        bcc _draw_x_plot                ; if Error < Dx
 
-        stx {ZP_I0}         ;r>=dx
-        sta {ZP_I0}+1       ;r=r-dx
+        stx {ZP_I0}                     ; Error -= Dx
+        sta {ZP_I0}+1
 
         lda {ZP_B2}
         bmi _draw_x_up
@@ -1211,10 +1349,17 @@ _draw_smc1
         ora ({ZP_W0}),y
         sta ({ZP_W0}),y     ;plot (x,y) mc
 
-        dec {ZP_W2}
-        bne _draw_x_loop             ;next
+        ldx {ZP_W2}
+        bne _draw_dec_count_lo
         dec {ZP_W2}+1
-        beq _draw_x_loop             ;next
+        bne _draw_x_end
+_draw_dec_count_lo
+        dex
+        stx {ZP_W2}
+        bne _draw_x_loop
+        ldx {ZP_W2}+1
+        bne _draw_x_loop
+_draw_x_end
         jmp _draw_ram_out
 
 _draw_y
@@ -1331,7 +1476,8 @@ _plotmc_init
 
         eor {y}             ; 3
         lsr                 ; 2
-        lsr                 ; 2
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
         tax                 ; 2
 
 _plotmc_base
@@ -1430,7 +1576,8 @@ _drawmc_store_dy:
 
         eor  {y1}     ; (y1 & %11111000) << 2
         lsr
-        lsr
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
         tax
 
         lda  {x1}
@@ -1672,13 +1819,30 @@ END SUB
 
 SUB _calc_bitmap_table() STATIC
     ASM
-        lda $d018           ; bitmap memory
+        lda #0
+        sta {ZP_W0}
+
+        lda {_dbuf_on}
+        beq _calc_bitmap_table_single
+
+_calc_bitmap_table_double
+        lda {_hbuf_dd00}
+        sta {ZP_B0}
+        lda {_hbuf_d018}
+        jmp _calc_bitmap_table_address
+
+_calc_bitmap_table_single
+        lda $dd00
+        sta {ZP_B0}
+        lda $d018
+
+_calc_bitmap_table_address
         and #%00001000
         asl
         asl
         sta {ZP_W0}+1
 
-        lda $dd00           ; vic bank
+        lda {ZP_B0}           ; vic bank
         and #%00000011
         eor #%00000011
         lsr
@@ -1687,19 +1851,20 @@ SUB _calc_bitmap_table() STATIC
         ora {ZP_W0}+1
         sta {ZP_W0}+1       ; bank + bitmap memory
 
-        ldy #0
-        sty {ZP_W0}
+        lda {_dbuf_nr}
+        ;eor #%00000010
+        eor {_dbuf_on}
+        tay
 _calc_table_bitmap_loop
+        lda {ZP_W0}+1
+        sta {_bitmap_y_tbl}+1,y
         lda {ZP_W0}
         sta {_bitmap_y_tbl},y
         iny
-        lda {ZP_W0}+1
-        sta {_bitmap_y_tbl},y
         iny
 
 _calc_table_bitmap_add_320
         clc
-        lda {ZP_W0}
         adc #$40
         sta {ZP_W0}
 
@@ -1707,20 +1872,40 @@ _calc_table_bitmap_add_320
         adc #$1
         sta {ZP_W0}+1
 
-        cpy #50
-        bne _calc_table_bitmap_loop
+        iny
+        iny
+
+        cpy #100
+        bcc _calc_table_bitmap_loop
     END ASM
 END SUB
 
 SUB _calc_screen_table() STATIC
     ASM
-        lda $d018           ; bitmap memory
+        lda #0
+        sta {ZP_W0}
+
+        lda {_dbuf_on}
+        beq _calc_screen_table_single
+
+_calc_screen_table_double
+        lda {_hbuf_dd00}
+        sta {ZP_B0}
+        lda {_hbuf_d018}
+        jmp _calc_screen_table_address
+
+_calc_screen_table_single
+        lda $dd00
+        sta {ZP_B0}
+        lda $d018
+
+_calc_screen_table_address
         and #%11110000
         lsr
         lsr
         sta {ZP_W0}+1
 
-        lda $dd00           ; vic bank
+        lda {ZP_B0}           ; vic bank
         and #%00000011
         eor #%00000011
         lsr
@@ -1729,13 +1914,17 @@ SUB _calc_screen_table() STATIC
         ora {ZP_W0}+1
         sta {ZP_W0}+1       ; bank + bitmap memory
 
-        ldy #0
-        sty {ZP_W0}
+        lda {_dbuf_nr}
+        ;eor #%00000010
+        eor {_dbuf_on}
+        tay
 _calc_table_screen_loop
         lda {ZP_W0}+1
-        sta {_screen_y_tbl_hi},y
+        sta {_screen_y_tbl}+1,y
         lda {ZP_W0}
-        sta {_screen_y_tbl_lo},y
+        sta {_screen_y_tbl},y
+        iny
+        iny
 
         clc
         adc #40
@@ -1746,8 +1935,9 @@ _calc_table_screen_loop
         sta {ZP_W0}+1
 
         iny
-        cpy #25
-        bne _calc_table_screen_loop
+        iny
+        cpy #50
+        bcc _calc_table_screen_loop
     END ASM
 END SUB
 
