@@ -18,7 +18,7 @@ CALL FillBitmap(0)
 CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
 CALL FillColorRam(COLOR_RED)
 
-CALL TextMC(7, 0, 3, 0, 1, "Single Buffer", CWORD(1))
+CALL TextMC(7, 0, 3, 0, 1, "Single Buffer", CHARSET_LOWERCASE)
 
 BORDER COLOR_BLUE
 BACKGROUND COLOR_BLACK
@@ -29,7 +29,7 @@ FOR Counter = 0 TO 96
     CALL WaitRasterLine256()
 NEXT Counter
 
-CALL TextMC(7, 0, 0, 0, 1, "Single Buffer", CWORD(1))
+CALL TextMC(7, 0, 0, 0, 1, "Single Buffer", CHARSET_LOWERCASE)
 
 DIM x0 AS WORD
 DIM y0 AS BYTE
