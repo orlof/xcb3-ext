@@ -4,6 +4,10 @@ INCLUDE "lib_random.bas"
 CONST MAX_X = 159
 CONST MAX_Y = 199
 
+DIM Counter AS BYTE
+
+CALL ScreenOff()
+
 CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
 
 CALL SetVideoBank(3)
@@ -14,8 +18,18 @@ CALL FillBitmap(0)
 CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
 CALL FillColorRam(COLOR_RED)
 
+CALL TextMC(7, 0, 3, 0, 1, "Single Buffer", CWORD(1))
+
 BORDER COLOR_BLUE
 BACKGROUND COLOR_BLACK
+
+CALL ScreenOn()
+
+FOR Counter = 0 TO 96
+    CALL WaitRasterLine256()
+NEXT Counter
+
+CALL TextMC(7, 0, 0, 0, 1, "Single Buffer", CWORD(1))
 
 DIM x0 AS WORD
 DIM y0 AS BYTE
@@ -79,8 +93,7 @@ CALL Points(1).Init()
 CALL Points(2).Init()
 CALL Points(3).Init()
 
-DO
-
+FOR Counter AS BYTE = 0 TO 255
     FOR T = 0 TO 3
         CALL Points(T).Move()
     NEXT T
@@ -105,8 +118,10 @@ DO
 
     DIM key AS BYTE
     GET key
-    IF key > 0 THEN EXIT DO
-LOOP
+    IF key > 0 THEN EXIT FOR
+NEXT Counter
+
+CALL ScreenOff()
 
 CALL DoubleBufferOn()
 
@@ -116,6 +131,18 @@ CALL SetScreenMemory(0)
 
 CALL FillBitmap(0)
 CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
+
+CALL TextMC(7, 0, 3, 0, 1, "Double Buffer", CWORD(1))
+CALL BufferSwap()
+
+CALL ScreenOn()
+
+FOR Counter = 0 TO 96
+    CALL WaitRasterLine256()
+NEXT Counter
+
+CALL BufferSwap()
+CALL TextMC(7, 0, 0, 0, 1, "Double Buffer", CWORD(1))
 
 DO
     FOR T = 0 TO 3
