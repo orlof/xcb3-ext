@@ -96,7 +96,7 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 
 #### Double Buffering
 - [DoubleBufferOn](#doublebufferon)
-- [DoubleBufferOff](#doublebufferon)
+- [DoubleBufferOff](#doublebufferoff)
 - [BufferSwap](#bufferswap)
 
 #### Color
