@@ -95,7 +95,7 @@ DECLARE SUB ScreenOff() SHARED STATIC
 DECLARE SUB ScreenOn() SHARED STATIC
 
 DECLARE SUB FillBuffer(Value AS BYTE) SHARED STATIC
-DECLARE SUB FillScreen(Value AS BYTE) SHARED STATIC
+DECLARE SUB FillScreen(ColorA AS BYTE, ColorB AS BYTE) SHARED STATIC
 DECLARE SUB FillColorRam(Value AS BYTE) SHARED STATIC
 
 DECLARE SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
@@ -853,7 +853,7 @@ SUB FillColorRam(Value AS BYTE) SHARED STATIC
     MEMSET $d800, 1000, Value
 END SUB
 
-SUB FillScreen(Value AS BYTE) SHARED STATIC
+SUB FillScreen(ColorA AS BYTE, ColorB AS BYTE) SHARED STATIC
     ASM
         sei
         dec 1
@@ -866,8 +866,16 @@ SUB FillScreen(Value AS BYTE) SHARED STATIC
         sta {ZP_W0}+1
         lda {_screen_y_tbl},x
         sta {ZP_W0}
+
+        lda {ColorA}
+        asl
+        asl
+        asl
+        asl
+        ora {ColorB}
+        sta {ZP_B1}
     END ASM
-    MEMSET ZP_W0, 1000, Value
+    MEMSET ZP_W0, 1000, ZP_B1
     ASM
         inc 1
         inc 1
@@ -881,7 +889,7 @@ SUB ResetScreen() SHARED STATIC
     CALL SetScreenMemory(1)
     CALL SetCharacterMemory(2)
     CALL SetGraphicsMode(STANDARD_CHARACTER_MODE)
-    CALL FillScreen(32)
+    MEMSET $0400, 1000, 32
     CALL FillColorRam(COLOR_LIGHTBLUE)
 END SUB
 

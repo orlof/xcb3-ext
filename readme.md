@@ -27,7 +27,7 @@ CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
-CALL FillBitmap(0)
+CALL FillBuffer(0)
 CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)
 
 CALL Plot(160, 50, MODE_SET)
@@ -37,7 +37,7 @@ CALL Circle(160, 100, 90, MODE_SET)
 CALL Draw(0, 0, 319, 199, MODE_SET)
 CALL Draw(0, 199, 319, 0, MODE_SET)
 
-CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CWORD(CHARSET_LOWERCASE))
+CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CHARSET_LOWERCASE)
 ```
 
 #### Line-by-Line Explanation:
@@ -63,8 +63,8 @@ CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CWORD(CHARSET_LOWERC
 - `CALL FillBitmap(0)`:
   This fills the entire bitmap with the value 0 (clearing all pixels).
 
-- `CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)`:
-  This sets the screen memory with a value derived from a combination of the white and red colors. Here, `SHL(COLOR_WHITE, 4)` shifts the white color value 4 bits to the left, and `OR COLOR_RED` combines it with the red color value. This combination sets the background color to red and the foreground color to white.
+- `CALL FillScreen(COLOR_WHITE, COLOR_RED)`:
+  This sets the screen memory with a value derived from a combination of the white and red colors. This combination sets the foreground color to white and the background color to red.
 
 - `CALL Plot(160, 50, MODE_SET)`:
   This plots (or draws) a pixel at coordinates (160, 50) in the foreground color.
@@ -75,8 +75,8 @@ CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CWORD(CHARSET_LOWERC
 - `CALL Draw(0, 0, 319, 199, MODE_SET)` and `CALL Draw(0, 199, 319, 0, MODE_SET)`:
   These lines draw two diagonal lines on the screen. The first line is drawn from the top-left to the bottom-right, and the second line is drawn from the bottom-left to the top-right, both in the foreground color.
 
-- `CALL Text(9, 2, 1, TRANSPARENT, TRUE, "Hello World", CWORD(CHARSET_LOWERCASE))`:
-  This writes the text "Hello World" to the screen starting at cell (9, 2). The text is in the foreground color, the background is set to transparent, the text is doubled in size in the x-direction, and it uses the uppercase/lowercase character set from ROM memory defined by `CWORD(CHARSET_LOWERCASE)`.
+- `CALL Text(9, 2, 1, TRANSPARENT, TRUE, "Hello World", CHARSET_LOWERCASE)`:
+  This writes the text "Hello World" to the screen starting at cell (9, 2). The text is in the foreground color, the background is set to transparent, the text is doubled in size in the x-direction, and it uses the uppercase/lowercase character set from ROM memory defined by `CHARSET_LOWERCASE`.
 
 ## API Documentation
 
@@ -465,12 +465,13 @@ FillBuffer(0x00);  // This will clear the entire bitmap to black (or the respect
 ---
 
 ### FillScreen
-#### FillScreen(Value AS BYTE)
+#### FillScreen(ColorA AS BYTE, ColorB AS BYTE)
 
 This subroutine offers a straightforward way to populate the entire screen memory with a specified byte value. Screen memory holds character codes or color data depending on the mode, which directly influences how the screen appears.
 
 **Parameters:**
-- **Value**: The byte value to be filled into the entire screen memory. The interpretation of this byte will depend on the current mode set for the system. For instance, in text modes, it denotes a character code, whereas in bitmapped modes, it defines the color data for each 8x8 pixel cell (or 4x8 cell in multicolor mode).
+- **ColorA**: The color value to be filled into the entire screen memory. The interpretation of this byte will depend on the current graphics mode. In STANDARD_BITMAP_MODE it denotes the Color 1 for each 8x8 pixel cell (ink color) and in MULTICOLOR_BITMAP_MODE it denotes Color 1 for each 4x8 cell.
+- **ColorB**: The color value to be filled into the entire screen memory. In STANDARD_BITMAP_MODE it denotes the Color 0 (paper color) for each 8x8 pixel cell and in MULTICOLOR_BITMAP_MODE it denotes Color 2 for each 4x8 cell.
 
 **Usage:**
 ```c

@@ -80,7 +80,7 @@ CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
-CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
+CALL FillScreen(COLOR_WHITE, COLOR_BLUE)
 CALL FillColorRam(COLOR_RED)
 CALL FillBuffer(0)
 
@@ -90,7 +90,7 @@ CALL SetVideoBank(2)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
-CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
+CALL FillScreen(COLOR_WHITE, COLOR_BLUE)
 CALL FillBuffer(0)
 
 CALL ScreenOn()

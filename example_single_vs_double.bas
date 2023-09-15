@@ -78,7 +78,7 @@ CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
 CALL FillBuffer(0)
-CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
+CALL FillScreen(COLOR_WHITE, COLOR_BLUE)
 CALL FillColorRam(COLOR_RED)
 
 BORDER COLOR_BLUE
@@ -88,10 +88,6 @@ REM *************************************
 REM * SHOW SINGLE BUFFER ANIMATION      *
 REM *************************************
 CALL TextMC(7, 10, 3, 0, 1, "Single Buffer", CHARSET_LOWERCASE)
-
-DO
-    GET Key
-LOOP UNTIL Key > 0
 
 CALL ScreenOn()
 
@@ -136,7 +132,7 @@ CALL SetVideoBank(2)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
-CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
+CALL FillScreen(COLOR_WHITE, COLOR_BLUE)
 
 FOR Counter = 0 TO 96
     CALL WaitRasterLine256()
