@@ -122,21 +122,22 @@ FOR Counter AS BYTE = 0 TO 255
 NEXT Counter
 
 REM *************************************
-REM * SHOW DOUBLE BUFFER                *
+REM * SHOW DOUBLE BUFFER ANIMATION      *
 REM *************************************
 CALL TextMC(7, 10, 3, TRANSPARENT, 1, "Double Buffer", CWORD(1))
 
+FOR Counter = 0 TO 96
+    CALL WaitRasterLine256()
+NEXT Counter
+
 CALL DoubleBufferOn()
+' From now on, all commands will target the back buffer
 
 CALL SetVideoBank(2)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
 CALL FillScreen(COLOR_WHITE, COLOR_BLUE)
-
-FOR Counter = 0 TO 96
-    CALL WaitRasterLine256()
-NEXT Counter
 
 DO
     CALL FillBuffer(0)
