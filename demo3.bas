@@ -85,9 +85,14 @@ BORDER COLOR_BLUE
 BACKGROUND COLOR_BLACK
 
 REM *************************************
-REM * SHOW SINGLE BUFFER                *
+REM * SHOW SINGLE BUFFER ANIMATION      *
 REM *************************************
 CALL TextMC(7, 10, 3, 0, 1, "Single Buffer", CHARSET_LOWERCASE)
+
+DO
+    GET Key
+LOOP UNTIL Key > 0
+
 CALL ScreenOn()
 
 FOR Counter = 0 TO 96
