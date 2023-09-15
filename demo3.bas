@@ -14,7 +14,7 @@ CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
-CALL FillBitmap(0)
+CALL FillBuffer(0)
 CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
 CALL FillColorRam(COLOR_RED)
 
@@ -108,13 +108,8 @@ FOR Counter AS BYTE = 0 TO 255
         CALL DrawMC(x0, y0, x1, y1, c)
     NEXT T
 
-    FOR T = 0 TO 3
-        x0 = Points(T).x3
-        y0 = Points(T).y3
-        x1 = Points((T+1) AND 3).x3
-        y1 = Points((T+1) AND 3).y3
-        CALL DrawMC(x0, y0, x1, y1, 0)
-    NEXT T
+    CALL WaitRasterLine256()
+    CALL FillBuffer(0)
 
     DIM key AS BYTE
     GET key
@@ -129,7 +124,7 @@ CALL SetVideoBank(2)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
-CALL FillBitmap(0)
+CALL FillBuffer(0)
 CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_BLUE)
 
 CALL TextMC(7, 0, 3, 0, 1, "Double Buffer", CWORD(1))
@@ -145,13 +140,7 @@ CALL BufferSwap()
 CALL TextMC(7, 0, 0, 0, 1, "Double Buffer", CWORD(1))
 
 DO
-    FOR T = 0 TO 3
-        x0 = Points(T).x2
-        y0 = Points(T).y2
-        x1 = Points((T+1) AND 3).x2
-        y1 = Points((T+1) AND 3).y2
-        CALL DrawMC(x0, y0, x1, y1, 0)
-    NEXT T
+    CALL FillBuffer(0)
 
     FOR T = 0 TO 3
         CALL Points(T).Move2()
@@ -169,13 +158,7 @@ DO
 
     CALL BufferSwap()
 
-    FOR T = 0 TO 3
-        x0 = Points(T).x3
-        y0 = Points(T).y3
-        x1 = Points((T+1) AND 3).x3
-        y1 = Points((T+1) AND 3).y3
-        CALL DrawMC(x0, y0, x1, y1, 0)
-    NEXT T
+    CALL FillBuffer(0)
 
     FOR T = 0 TO 3
         CALL Points(T).Move3()

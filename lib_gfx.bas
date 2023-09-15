@@ -94,7 +94,7 @@ DECLARE SUB BufferSwap() SHARED STATIC
 DECLARE SUB ScreenOff() SHARED STATIC
 DECLARE SUB ScreenOn() SHARED STATIC
 
-DECLARE SUB FillBitmap(Value AS BYTE) SHARED STATIC
+DECLARE SUB FillBuffer(Value AS BYTE) SHARED STATIC
 DECLARE SUB FillScreen(Value AS BYTE) SHARED STATIC
 DECLARE SUB FillColorRam(Value AS BYTE) SHARED STATIC
 
@@ -120,6 +120,32 @@ DECLARE SUB _calc_screen_table() STATIC
 REM **********************
 REM *     FUNCTIONS      *
 REM **********************
+SUB FillBuffer(Value AS BYTE) SHARED STATIC
+    ASM
+        sei
+        lda #%00110100
+        sta 1
+
+        lda {_dbuf_nr}
+        eor {_dbuf_on}
+        bne _clear_buffer_choose1
+
+_clear_buffer_choose0
+        lda {Value}
+        jsr _clear_buffer0
+        jmp _clear_buffer_end
+
+_clear_buffer_choose1
+        lda {Value}
+        jsr _clear_buffer1
+
+_clear_buffer_end
+        lda #%00110110
+        sta 1
+        cli
+    END ASM
+END SUB
+
 SUB DoubleBufferOn() SHARED STATIC
     ASM
         ;lda $d018
@@ -845,28 +871,6 @@ SUB FillScreen(Value AS BYTE) SHARED STATIC
     ASM
         inc 1
         inc 1
-        cli
-    END ASM
-END SUB
-
-SUB FillBitmap(Value AS BYTE) SHARED STATIC
-    ASM
-        sei
-        lda #%00110100
-        sta 1
-
-        lda {_dbuf_nr}
-        eor {_dbuf_on}
-        tax
-        lda {_bitmap_y_tbl},x
-        sta {ZP_W0}
-        lda {_bitmap_y_tbl}+1,x
-        sta {ZP_W0}+1
-    END ASM
-    MEMSET ZP_W0, 8000, Value
-    ASM
-        lda #%00110110
-        sta 1
         cli
     END ASM
 END SUB
@@ -1829,6 +1833,7 @@ END SUB
 
 SUB _calc_bitmap_table() STATIC
     ASM
+        sta $400
         lda #0
         sta {ZP_W0}
 
@@ -1862,9 +1867,17 @@ _calc_bitmap_table_address
         sta {ZP_W0}+1       ; bank + bitmap memory
 
         lda {_dbuf_nr}
-        ;eor #%00000010
         eor {_dbuf_on}
-        tay
+        bne _calc_bitmap_buffer1
+_calc_bitmap_buffer0
+        jsr _update_buffer0_clear
+        ldy #0
+        jmp _calc_table_bitmap_loop
+
+_calc_bitmap_buffer1
+        jsr _update_buffer1_clear
+        ldy #2
+
 _calc_table_bitmap_loop
         lda {ZP_W0}+1
         sta {_bitmap_y_tbl}+1,y
@@ -2001,3 +2014,163 @@ DATA AS BYTE %11110000, %11110011, %11111100, %11111111
 
 __opcodes:
 DATA AS BYTE $45, $25, $05
+
+REM **********************
+REM *     ASSEMBLER      *
+REM **********************
+GOTO THE_END
+ASM
+_update_buffer0_clear
+        lda {ZP_W0}+1
+        clc
+        adc #30
+        ldx #92
+        sec
+
+_update_buffer0_clear_loop
+        sta _clear_buffer0_loop,x
+        sbc #1
+        dex
+        dex
+        dex
+        bpl _update_buffer0_clear_loop
+
+        lda {ZP_W0}+1
+        clc
+        adc #31
+        ldx #11
+
+_update_buffer0_clear_loop2
+        sta _clear_buffer0_loop2,x
+        dex
+        dex
+        dex
+        bpl _update_buffer0_clear_loop2
+
+        rts
+
+_clear_buffer0
+        ;33364 cycles to clear the buffer
+        ldx #0
+_clear_buffer0_loop
+        sta $e000,x
+        sta $e100,x
+        sta $e200,x
+        sta $e300,x
+        sta $e400,x
+        sta $e500,x
+        sta $e600,x
+        sta $e700,x
+        sta $e800,x
+        sta $e900,x
+        sta $ea00,x
+        sta $eb00,x
+        sta $ec00,x
+        sta $ed00,x
+        sta $ee00,x
+        sta $ef00,x
+        sta $f000,x
+        sta $f100,x
+        sta $f200,x
+        sta $f300,x
+        sta $f400,x
+        sta $f500,x
+        sta $f600,x
+        sta $f700,x
+        sta $f800,x
+        sta $f900,x
+        sta $fa00,x
+        sta $fb00,x
+        sta $fc00,x
+        sta $fd00,x
+        sta $fe00,x
+        ;sta $ff00,x
+        dex
+        bne _clear_buffer0_loop
+        ldx #15
+_clear_buffer0_loop2
+        sta $ff00,x
+        sta $ff10,x
+        sta $ff20,x
+        sta $ff30,x
+        dex
+        bpl _clear_buffer0_loop2
+        rts
+
+_update_buffer1_clear
+        lda {ZP_W0}+1
+        clc
+        adc #30
+        ldx #92
+        sec
+
+_update_buffer1_clear_loop
+        sta _clear_buffer1_loop,x
+        sbc #1
+        dex
+        dex
+        dex
+        bpl _update_buffer1_clear_loop
+
+        lda {ZP_W0}+1
+        clc
+        adc #31
+        ldx #11
+
+_update_buffer1_clear_loop2
+        sta _clear_buffer1_loop2,x
+        dex
+        dex
+        dex
+        bpl _update_buffer1_clear_loop2
+
+        rts
+
+_clear_buffer1
+        ldx #0
+_clear_buffer1_loop
+        sta $a000,x
+        sta $a100,x
+        sta $a200,x
+        sta $a300,x
+        sta $a400,x
+        sta $a500,x
+        sta $a600,x
+        sta $a700,x
+        sta $a800,x
+        sta $a900,x
+        sta $aa00,x
+        sta $ab00,x
+        sta $ac00,x
+        sta $ad00,x
+        sta $ae00,x
+        sta $af00,x
+        sta $b000,x
+        sta $b100,x
+        sta $b200,x
+        sta $b300,x
+        sta $b400,x
+        sta $b500,x
+        sta $b600,x
+        sta $b700,x
+        sta $b800,x
+        sta $b900,x
+        sta $ba00,x
+        sta $bb00,x
+        sta $bc00,x
+        sta $bd00,x
+        sta $be00,x
+        ;sta $bf00,x
+        dex
+        bne _clear_buffer1_loop
+        ldx #15
+_clear_buffer1_loop2
+        sta $bf00,x
+        sta $bf10,x
+        sta $bf20,x
+        sta $bf30,x
+        dex
+        bpl _clear_buffer1_loop2
+        rts
+END ASM
+THE_END:

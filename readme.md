@@ -9,7 +9,7 @@
 - **Flexibility**: XCB3-GFX can operate with any of the VIC banks (0-3). Unlike some other libraries, there's no "hard-coded" memory location for the bitmap, screen, or font, which provides developers with a high degree of flexibility. XCB3-GFX drawing primitives work even if target memory is located in bank 3 "behind" io and kernel.
 
 - **Performance**: XCB3-GFX is not the fastest library, but it ain't slow either. It can plot random hires lines at a rate of approximately 235 pixels within 1/50s, with an average line length of 142 pixels. Philosophy of this library is to try balancing performance, memory consumption and usability. For example, XCB3-GFX uses only 25x2 bytes for bitmap y-tables while 200x2 bytes would improve the performance. Current release contains self
-modifying code (in Text routine) that makes it unsuitable for ROM. There is also a separate branch feature/no_smc where self modifying code is replaced with a branching structure that is 8-10 cycles/pixel slower.
+modifying code that makes it unsuitable for ROM. In VERY rough terms memory consumption is about 3k for hires routines and 3k for multicolor routines. If all features are in use then memory consumption is about 6k.
 
 - **Usage Note**: For the sake of maintaining a decent performance, there's no built-in sanity check for the input arguments. As a result, if users input values that instruct drawings outside of the screen boundaries, the library's behavior becomes undefined, and it won't provide warnings or errors.
 
@@ -149,6 +149,7 @@ This subroutine sets the VIC bank for graphic operations. The Commodore 64 has f
 SetVideoBank(2);  // This will set the video bank to Bank #2
 ```
 
+**Note**: This is a slow operation as it also updates y coordinate tables and fast clear routines.
 
 [Back to TOC](#table-of-contents)
 
@@ -224,6 +225,8 @@ This subroutine sets the starting location for screen memory. The location depen
 SetScreenMemory(5);  // This will set the screen memory starting location to `$1400-$17FF`
 ```
 
+**Note**: This is a slow operation as it also updates y coordinate tables.
+
 **Note**: Changing the screen memory location during active display operations might produce unexpected visual results. It's advisable to set the screen memory location during initialization or when the screen is not actively being updated.
 
 [Back to TOC](#table-of-contents)
@@ -280,6 +283,8 @@ This subroutine specifies the memory location for the bitmap graphics. The bitma
 ```c
 SetBitmapMemory(1);  // This will set the bitmap memory location to `$2000-$3FFF`
 ```
+
+**Note**: This is a slow operation as it also updates y coordinate tables and fast clear routines.
 
 **Note**: Modifying the bitmap memory location while displaying graphics can yield unpredictable visual outputs. For the best results, it's recommended to set the bitmap memory location during system initialization or during periods when the graphical display is not being actively updated.
 
@@ -404,7 +409,7 @@ The `DoubleBufferOff()` subroutine deactivates double buffering, which is a tech
 
 ---
 
-The `DoubleBufferOff()` subroutine serves as the counterpart to `DoubleBufferOn()`, allowing users to revert to the standard screen display mode when flicker elimination or memory conservation is not required.
+The `DoubleBufferOff()` subroutine serves as the counterpart to `DoubleBufferOn()`, allowing users to revert to the standard screen display mode when flicker elimination is not required.
 
 [Back to TOC](#table-of-contents)
 
@@ -423,7 +428,7 @@ The `BufferSwap()` subroutine is used in conjunction with double buffering to ex
 
 - **Usage with Double Buffering:** `BufferSwap()` is typically used in conjunction with double buffering, where one buffer is being drawn to while the other is being displayed. The routine is called after drawing operations are completed in the hidden buffer.
 
-- **Synchronization Responsibility:** It's important to note that `BufferSwap()` does not automatically synchronize or clear the content between the visible and hidden buffers. Users are responsible for managing and ensuring that the content in both buffers is consistent.
+- **Synchronization Responsibility:** It's important to note that `BufferSwap()` does not automatically synchronize or clear the content between the visible and hidden buffers. Users are responsible for managing and ensuring that the content in both buffers is consistent. Typically hidden buffer is cleared with `FillBuffer(0)` after swap.
 
 ### **Usage Notes:**
 
@@ -438,8 +443,8 @@ The `BufferSwap()` subroutine is an essential component of double buffering and 
 
 ---
 
-### FillBitmap
-#### FillBitmap(Value AS BYTE)
+### FillBuffer
+#### FillBuffer(Value AS BYTE)
 
 This subroutine provides an efficient way to fill the entire bitmap memory with a specified byte value. This is useful for quickly setting up a blank canvas or a consistent patterned background in both hires and multicolor bitmap modes.
 
@@ -448,8 +453,10 @@ This subroutine provides an efficient way to fill the entire bitmap memory with 
 
 **Usage:**
 ```c
-FillBitmap(0x00);  // This will clear the entire bitmap to black (or the respective background color).
+FillBuffer(0x00);  // This will clear the entire bitmap to black (or the respective background color).
 ```
+
+**Note**: Core loops of this subroutine completes in 33364 clock cycles. It takes about 2 frames to fill the 8k buffer.
 
 **Note**: This subroutine only writes to the bitmap memory. If you wish to modify the screen memory or color RAM, you will need to utilize separate subroutines: `FillScreen(..)` for screen memory and `FillColorRam(...)` for color RAM. Ensure the respective areas are updated correctly to achieve the desired visual outcome.
 
