@@ -4,7 +4,7 @@ CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
-CALL FillBitmap(0)
+CALL FillBuffer(0)
 CALL FillScreen(SHL(COLOR_LIGHTGRAY, 4) OR COLOR_MIDDLEGRAY)
 CALL FillColorRam(COLOR_DARKGRAY)
 

@@ -8,7 +8,7 @@ SUB TestSuiteMC() SHARED STATIC
     CALL SetBitmapMemory(1)
     CALL SetScreenMemory(0)
     CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
-    CALL FillBitmap(0)
+    CALL FillBuffer(0)
     CALL FillScreen(SHL(1, 4) OR 2)
     CALL FillColorRam(3)
 
@@ -61,7 +61,7 @@ SUB TestSuite() SHARED STATIC
     CALL SetBitmapMemory(1)
     CALL SetScreenMemory(0)
     CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
-    CALL FillBitmap(0)
+    CALL FillBuffer(0)
     CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)
 
     FOR XW AS WORD = 0 TO 319
@@ -112,7 +112,7 @@ SUB TestSuiteLines() STATIC
     CALL SetBitmapMemory(1)
     CALL SetScreenMemory(0)
     CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
-    CALL FillBitmap(0)
+    CALL FillBuffer(0)
     CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)
 
     DIM Y AS BYTE
