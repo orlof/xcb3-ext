@@ -7,8 +7,8 @@ SHARED CONST STANDARD_BITMAP_MODE           = %00100000
 SHARED CONST MULTICOLOR_BITMAP_MODE         = %00110000
 SHARED CONST EXTENDED_BACKGROUND_COLOR_MODE = %01000000
 
-SHARED CONST CHARSET_UPPERCASE = 0
-SHARED CONST CHARSET_LOWERCASE = 1
+SHARED CONST ROM_CHARSET_UPPERCASE = 0
+SHARED CONST ROM_CHARSET_LOWERCASE = 1
 
 SHARED CONST MODE_SET   = 1
 SHARED CONST MODE_CLEAR = 0
@@ -95,8 +95,10 @@ DECLARE SUB ScreenOff() SHARED STATIC
 DECLARE SUB ScreenOn() SHARED STATIC
 
 DECLARE SUB FillBuffer(Value AS BYTE) SHARED STATIC
-DECLARE SUB FillScreen(ColorA AS BYTE, ColorB AS BYTE) SHARED STATIC
-DECLARE SUB FillColorRam(Value AS BYTE) SHARED STATIC
+DECLARE SUB FillColors(Color0 AS BYTE, Color1 AS BYTE) SHARED STATIC
+DECLARE SUB FillColorsMC(Color0 AS BYTE, Color1 AS BYTE, Color2 AS BYTE, Color3 AS BYTE) SHARED STATIC
+DECLARE SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
+DECLARE SUB FillColorMemory(Value AS BYTE) SHARED STATIC
 
 DECLARE SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
@@ -849,11 +851,30 @@ _set_color_x_loop
     END ASM
 END SUB
 
-SUB FillColorRam(Value AS BYTE) SHARED STATIC
+SUB FillColors(Color0 AS BYTE, Color1 AS BYTE) SHARED STATIC
+    ASM
+        lda {Color1}
+        asl
+        asl
+        asl
+        asl
+        ora {Color0}
+        sta {ZP_B1}
+    END ASM
+    CALL FillScreenMemory(ZP_B1)
+END SUB
+
+SUB FillColorsMC(Color0 AS BYTE, Color1 AS BYTE, Color2 AS BYTE, Color3 AS BYTE) SHARED STATIC
+    BACKGROUND Color0
+    CALL FillColors(Color2, Color1)
+    CALL FillColorMemory(Color3)
+END SUB
+
+SUB FillColorMemory(Value AS BYTE) SHARED STATIC
     MEMSET $d800, 1000, Value
 END SUB
 
-SUB FillScreen(ColorA AS BYTE, ColorB AS BYTE) SHARED STATIC
+SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
     ASM
         sei
         dec 1
@@ -866,16 +887,8 @@ SUB FillScreen(ColorA AS BYTE, ColorB AS BYTE) SHARED STATIC
         sta {ZP_W0}+1
         lda {_screen_y_tbl},x
         sta {ZP_W0}
-
-        lda {ColorA}
-        asl
-        asl
-        asl
-        asl
-        ora {ColorB}
-        sta {ZP_B1}
     END ASM
-    MEMSET ZP_W0, 1000, ZP_B1
+    MEMSET ZP_W0, 1000, Value
     ASM
         inc 1
         inc 1
@@ -890,7 +903,7 @@ SUB ResetScreen() SHARED STATIC
     CALL SetCharacterMemory(2)
     CALL SetGraphicsMode(STANDARD_CHARACTER_MODE)
     MEMSET $0400, 1000, 32
-    CALL FillColorRam(COLOR_LIGHTBLUE)
+    CALL FillColorMemory(COLOR_LIGHTBLUE)
 END SUB
 
 SUB SetGraphicsMode(Mode AS BYTE) SHARED STATIC

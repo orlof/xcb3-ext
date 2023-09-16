@@ -9,8 +9,7 @@ SUB TestSuiteMC() SHARED STATIC
     CALL SetScreenMemory(0)
     CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
     CALL FillBuffer(0)
-    CALL FillScreen(COLOR_BLACK, COLOR_WHITE)
-    CALL FillColorRam(COLOR_RED)
+    CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 
     FOR X AS BYTE = 0 TO 159
         FOR Y AS BYTE = 80 TO 120
@@ -48,11 +47,11 @@ SUB TestSuiteMC() SHARED STATIC
     'CALL CopyCharROM(1, $d000)
     FOR Face AS BYTE = 0 TO 4
         FOR Bg AS BYTE = 0 TO 4
-            CALL TextMC(8*Bg, Face+10, Face-1, Bg-1, 1, "aAbB", CWORD(1))
+            CALL TextMC(8*Bg, Face+10, Face-1, Bg-1, 1, "aAbB", ROM_CHARSET_LOWERCASE)
         NEXT
     NEXT
-    CALL TextMC(0,0,3,$ff,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",CWORD(1))
-    CALL TextMC(0,1,3,$ff,0,"abcdefghijklmnopqrstuvwxyz",CWORD(1))
+    CALL TextMC(0,0,3,$ff,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",ROM_CHARSET_LOWERCASE)
+    CALL TextMC(0,1,3,$ff,0,"abcdefghijklmnopqrstuvwxyz",ROM_CHARSET_LOWERCASE)
 
 END SUB
 
@@ -62,7 +61,7 @@ SUB TestSuite() SHARED STATIC
     CALL SetScreenMemory(0)
     CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
     CALL FillBuffer(0)
-    CALL FillScreen(COLOR_BLACK, COLOR_WHITE)
+    CALL FillColors(COLOR_BLACK, COLOR_WHITE)
 
     FOR XW AS WORD = 0 TO 319
         FOR Y AS BYTE = 80 TO 120
@@ -99,12 +98,12 @@ SUB TestSuite() SHARED STATIC
 
     FOR Face AS BYTE = 0 TO 2
         FOR Bg AS BYTE = 0 TO 2
-            CALL Text(2+12*Bg, Face+10, Face-1, Bg-1, 1, "aAbBcC", CWORD(1))
+            CALL Text(2+12*Bg, Face+10, Face-1, Bg-1, 1, "aAbBcC", ROM_CHARSET_LOWERCASE)
         NEXT
     NEXT
 
-    CALL Text(0,0,1,TRANSPARENT,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",CWORD(1))
-    CALL Text(0,1,TRANSPARENT,1,0,"abcdefghijklmnopqrstuvwxyz",CWORD(1))
+    CALL Text(0,0,1,TRANSPARENT,0,"ABCDEFGHIJKLMNOPQRSTUVWXYZ",ROM_CHARSET_LOWERCASE)
+    CALL Text(0,1,TRANSPARENT,1,0,"abcdefghijklmnopqrstuvwxyz",ROM_CHARSET_LOWERCASE)
 END SUB
 
 SUB TestSuiteLines() STATIC
@@ -113,7 +112,7 @@ SUB TestSuiteLines() STATIC
     CALL SetScreenMemory(0)
     CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
     CALL FillBuffer(0)
-    CALL FillScreen(COLOR_WHITE, COLOR_RED)
+    CALL FillColors(COLOR_WHITE, COLOR_RED)
 
     DIM Y AS BYTE
     DIM X AS WORD

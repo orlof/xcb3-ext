@@ -72,7 +72,6 @@ REM *************************************
 CALL ScreenOff()
 
 BORDER COLOR_BLUE
-BACKGROUND COLOR_BLACK
 
 CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
 
@@ -80,8 +79,7 @@ CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
-CALL FillScreen(COLOR_WHITE, COLOR_BLUE)
-CALL FillColorRam(COLOR_RED)
+CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 CALL FillBuffer(0)
 
 CALL DoubleBufferOn()
@@ -90,7 +88,7 @@ CALL SetVideoBank(2)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
-CALL FillScreen(COLOR_WHITE, COLOR_BLUE)
+CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 CALL FillBuffer(0)
 
 CALL ScreenOn()

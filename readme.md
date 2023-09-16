@@ -2,14 +2,13 @@
 
 **XCB3-GFX Library Summary**:
 
-- **Purpose**: The XCB3-GFX library is tailored for drawing on C64 bitmaps, offering developers an array of low-level graphic primitives.
+- **Purpose**: The XCB3-GFX library is tailored for drawing on C64 bitmaps, offering developers an array of graphic primitives.
 
-- **Compatibility**: The library supports both hires and multicolor bitmap modes, ensuring a diverse graphical range. Some of the subroutines have two variants - one for Hires and another for Multicolor. Those subroutines are easy to recognize as their multicolor variant ends with MC e.g. Text() for hires and TextMC() for multicolor.
+- **Compatibility**: The library supports both hires and multicolor bitmap modes. Some of the subroutines have two variants - one for Hires and another for Multicolor. Those subroutines are easy to recognize as their multicolor variant ends with MC e.g. Text() for hires and TextMC() for multicolor.
 
 - **Flexibility**: XCB3-GFX can operate with any of the VIC banks (0-3). Unlike some other libraries, there's no "hard-coded" memory location for the bitmap, screen, or font, which provides developers with a high degree of flexibility. XCB3-GFX drawing primitives work even if target memory is located in bank 3 "behind" io and kernel.
 
-- **Performance**: XCB3-GFX is not the fastest library, but it ain't slow either. It can plot random hires lines at a rate of approximately 235 pixels within 1/50s, with an average line length of 142 pixels. Philosophy of this library is to try balancing performance, memory consumption and usability. For example, XCB3-GFX uses only 25x2 bytes for bitmap y-tables while 200x2 bytes would improve the performance. Current release contains self
-modifying code that makes it unsuitable for ROM. In VERY rough terms memory consumption is about 3k for hires routines and 3k for multicolor routines. If all features are in use then memory consumption is about 6k.
+- **Performance**: XCB3-GFX is not the fastest library, but it ain't slow either. It can plot random hires lines at a rate of approximately 235 pixels within 1/50s, with an average line length of 142 pixels. 8 linex "mystic lines" screen saver updates about 8 times per second in multicolor mode. Philosophy of this library is to try balancing performance, memory consumption and usability. For example, XCB3-GFX uses only 25x2 bytes for bitmap y-tables while 200x2 bytes would improve the performance. In VERY rough terms memory consumption is about 3k for hires routines and 3k for multicolor routines. If all features are in use then memory consumption is about 6k. Current release contains self modifying code that makes it unsuitable for ROM.
 
 - **Usage Note**: For the sake of maintaining a decent performance, there's no built-in sanity check for the input arguments. As a result, if users input values that instruct drawings outside of the screen boundaries, the library's behavior becomes undefined, and it won't provide warnings or errors.
 
@@ -37,7 +36,7 @@ CALL Circle(160, 100, 90, MODE_SET)
 CALL Draw(0, 0, 319, 199, MODE_SET)
 CALL Draw(0, 199, 319, 0, MODE_SET)
 
-CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CHARSET_LOWERCASE)
+CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOWERCASE)
 ```
 
 #### Line-by-Line Explanation:
@@ -60,10 +59,10 @@ CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CHARSET_LOWERCASE)
 - `CALL SetGraphicsMode(STANDARD_BITMAP_MODE)`:
   Activates the standard bitmap mode. In this mode, the screen displays a high-resolution 320x200 pixels bitmap.
 
-- `CALL FillBitmap(0)`:
+- `CALL FillBuffer(0)`:
   This fills the entire bitmap with the value 0 (clearing all pixels).
 
-- `CALL FillScreen(COLOR_WHITE, COLOR_RED)`:
+- `CALL FillColors(COLOR_RED, COLOR_WHITE)`:
   This sets the screen memory with a value derived from a combination of the white and red colors. This combination sets the foreground color to white and the background color to red.
 
 - `CALL Plot(160, 50, MODE_SET)`:
@@ -75,8 +74,8 @@ CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", CHARSET_LOWERCASE)
 - `CALL Draw(0, 0, 319, 199, MODE_SET)` and `CALL Draw(0, 199, 319, 0, MODE_SET)`:
   These lines draw two diagonal lines on the screen. The first line is drawn from the top-left to the bottom-right, and the second line is drawn from the bottom-left to the top-right, both in the foreground color.
 
-- `CALL Text(9, 2, 1, TRANSPARENT, TRUE, "Hello World", CHARSET_LOWERCASE)`:
-  This writes the text "Hello World" to the screen starting at cell (9, 2). The text is in the foreground color, the background is set to transparent, the text is doubled in size in the x-direction, and it uses the uppercase/lowercase character set from ROM memory defined by `CHARSET_LOWERCASE`.
+- `CALL Text(9, 2, 1, TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOWERCASE)`:
+  This writes the text "Hello World" to the screen starting at cell (9, 2). The text is in the foreground color, the background is set to transparent, the text is doubled in size in the x-direction, and it uses the uppercase/lowercase character set from ROM memory defined by `ROM_CHARSET_LOWERCASE`.
 
 ## API Documentation
 
@@ -100,9 +99,11 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 - [BufferSwap](#bufferswap)
 
 #### Color
-- [FillBitmap](#fillbitmap)
-- [FillScreen](#fillscreen)
-- [FillColorRam](#fillcolorram)
+- [FillColors](#fillcolors)
+- [FillColorsMC](#fillcolors)
+- [FillBuffer](#fillbuffer)
+- [FillScreenMemory](#fillscreenmemory)
+- [FillColorMemory](#fillcolormemory)
 - [SetColorInRect](#setcolor)
 
 #### Drawing
@@ -458,34 +459,70 @@ FillBuffer(0x00);  // This will clear the entire bitmap to black (or the respect
 
 **Note**: Core loops of this subroutine completes in 33364 clock cycles. It takes about 2 frames to fill the 8k buffer.
 
-**Note**: This subroutine only writes to the bitmap memory. If you wish to modify the screen memory or color RAM, you will need to utilize separate subroutines: `FillScreen(..)` for screen memory and `FillColorRam(...)` for color RAM. Ensure the respective areas are updated correctly to achieve the desired visual outcome.
+**Note**: This subroutine only writes to the bitmap memory. If you wish to modify the screen memory or color RAM, you will need to utilize separate subroutines: `FillScreenMemory(..)` for screen memory and `FillColorMemory(...)` for color RAM. Ensure the respective areas are updated correctly to achieve the desired visual outcome.
 
 [Back to TOC](#table-of-contents)
 
 ---
 
-### FillScreen
-#### FillScreen(ColorA AS BYTE, ColorB AS BYTE)
+### FillColors
+#### FillColors(Color0 AS BYTE, Color1 AS BYTE)
+
+Set the colors for entire hires screen.
+
+**Parameters:**
+- **Color0**: The color value for the entire display that denotes the Color 0 for each 8x8 pixel cell (paper color).
+- **Color1**: The color value for the entire display that denotes the Color 1 for each 8x8 pixel cell (ink color).
+
+**Usage:**
+```basic
+FillColors(COLOR_WHITE, COLOR_BLACK);  // This will fill make Color0 (paper) in the entire screen to appear white and color1 (ink) black.
+```
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### FillColorsMC
+#### FillColorsMC(Color0 AS BYTE, Color1 AS BYTE, Color2 AS BYTE, Color3 AS BYTE)
+
+Set the colors for entire multicolor screen.
+
+**Parameters:**
+- **Color0**: The color value for the entire display that denotes the Color 0 for each 4x8 pixel cell.
+- **Color1**: The color value for the entire display that denotes the Color 1 for each 4x8 pixel cell.
+- **Color2**: The color value for the entire display that denotes the Color 2 for each 4x8 pixel cell.
+- **Color3**: The color value for the entire display that denotes the Color 3 for each 4x8 pixel cell.
+
+**Usage:**
+```basic
+FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED);
+```
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### FillScreenMemory
+#### FillScreenMemory(Value AS BYTE)
 
 This subroutine offers a straightforward way to populate the entire screen memory with a specified byte value. Screen memory holds character codes or color data depending on the mode, which directly influences how the screen appears.
 
 **Parameters:**
-- **ColorA**: The color value to be filled into the entire screen memory. The interpretation of this byte will depend on the current graphics mode. In STANDARD_BITMAP_MODE it denotes the Color 1 for each 8x8 pixel cell (ink color) and in MULTICOLOR_BITMAP_MODE it denotes Color 1 for each 4x8 cell.
-- **ColorB**: The color value to be filled into the entire screen memory. In STANDARD_BITMAP_MODE it denotes the Color 0 (paper color) for each 8x8 pixel cell and in MULTICOLOR_BITMAP_MODE it denotes Color 2 for each 4x8 cell.
 
 **Usage:**
-```c
-FillScreen(0x20);  // This will fill the screen memory with spaces (assuming standard character mode).
+```basic
+FillScreenMemory(0x20);  // This will fill the screen memory with spaces (assuming standard character mode).
 ```
 
-**Note**: This subroutine solely modifies the screen memory. If you intend to adjust the bitmap graphics or color RAM, you must employ other relevant subroutines like `FillBitmap(..)` for bitmap memory and `FillColorRam(...)` for color RAM. It's essential to coordinate updates across these memories to attain the desired visual representation.
+**Note**: This subroutine solely modifies the screen memory. If you intend to adjust the bitmap graphics or color RAM, you must employ other relevant subroutines like `FillBuffer(..)` for bitmap memory and `FillColorMemory(...)` for color RAM. It's essential to coordinate updates across these memories to attain the desired visual representation.
 
 [Back to TOC](#table-of-contents)
 
 ---
 
-### FillColorRam
-#### FillColorRam(Value AS BYTE)
+### FillColorMemory
+#### FillColorMemory(Value AS BYTE)
 
 This subroutine provides a method to uniformly set all the values in the color RAM with a specified byte value. The color RAM is crucial in determining the colors of characters or bitmap graphics displayed on the screen, depending on the active mode.
 
@@ -494,10 +531,10 @@ This subroutine provides a method to uniformly set all the values in the color R
 
 **Usage:**
 ```c
-FillColorRam(0x0F);  // This will set all color RAM entries to light gray (assuming standard C64 color codes).
+FillColorMemory(0x0F);  // This will set all color RAM entries to light gray (assuming standard C64 color codes).
 ```
 
-**Note**: This subroutine only modifies the color RAM. If you need to change the bitmap graphics or screen memory, you should use the respective subroutines: `FillBitmap(..)` for bitmap memory and `FillScreen(..)` for screen memory. To achieve the intended visual display, ensure consistent and coordinated updates across these memories. Additionally, always ensure that the provided value is within the valid range of 0 to 15 to prevent unintended behaviors.
+**Note**: This subroutine only modifies the color RAM. If you need to change the bitmap graphics or screen memory, you should use the respective subroutines: `FillBuffer(..)` for bitmap memory and `FillScreenMemory(..)` for screen memory. To achieve the intended visual display, ensure consistent and coordinated updates across these memories. Additionally, always ensure that the provided value is within the valid range of 0 to 15 to prevent unintended behaviors.
 
 [Back to TOC](#table-of-contents)
 
@@ -734,8 +771,8 @@ The `TextMC` subroutine offers the ability to draw text on the screen in the mul
 - **Text**: A string of up to 40 characters. This subroutine does not recognize special codes. The actual shape drawn to the screen corresponds to the `CharMemAddr`. Each character in the string is converted from PETSCII to the C64 screen code, and the resulting pattern from the Character memory is rendered on screen.
 
 - **CharMemAddr**: Specifies the address within the 64k address space pointing to the character memory. This address can be outside the current VIC bank. Additionally, special constant values can be used:
-  - **CHARSET_UPPERCASE**: Uses the uppercase/graphics character set directly from the C64's ROM.
-  - **CHARSET_LOWERCASE**: Uses the lowercase/uppercase character set directly from the C64's ROM.
+  - **ROM_CHARSET_UPPERCASE**: Uses the uppercase/graphics character set directly from the C64's ROM.
+  - **ROM_CHARSET_LOWERCASE**: Uses the lowercase/uppercase character set directly from the C64's ROM.
 
 **Usage:**
 ```c
@@ -775,15 +812,15 @@ The `Text` subroutine offers a flexible way to display text on the screen. This 
 - **Text**: A string of up to 40 characters. The subroutine does not process special codes. Each character gets converted from PETSCII to C64 screen code, and the corresponding pattern from the Character memory is then displayed.
 
 - **CharMemAddr**: Specifies the address within the 64k address space pointing to the character memory. This address can be outside the current VIC bank. Additionally, special constant values can be used:
-  - **CHARSET_UPPERCASE**: Uses the uppercase/graphics character set directly from the C64's ROM.
-  - **CHARSET_LOWERCASE**: Uses the lowercase/uppercase character set directly from the C64's ROM.
+  - **ROM_CHARSET_UPPERCASE**: Uses the uppercase/graphics character set directly from the C64's ROM.
+  - **ROM_CHARSET_LOWERCASE**: Uses the lowercase/uppercase character set directly from the C64's ROM.
 
 **Usage:**
 ```c
-CALL Text(15, 10, MODE_SET, MODE_CLEAR, 0, "HELLO C64", CHARSET_UPPERCASE);
+CALL Text(15, 10, MODE_SET, MODE_CLEAR, 0, "HELLO C64", ROM_CHARSET_UPPERCASE);
 ```
 
-**Note**: The `Text` subroutine displays characters based on the provided character memory address (`CharMemAddr`). Customizations or changes made to the character set in RAM will be reflected in the displayed text. When using the ROM-based constants (CHARSET_UPPERCASE or CHARSET_LOWERCASE), it will directly utilize the respective character sets from the C64's internal ROM. Ensure that the `CharMemAddr` always points to valid character data to prevent unpredictable results.
+**Note**: The `Text` subroutine displays characters based on the provided character memory address (`CharMemAddr`). Customizations or changes made to the character set in RAM will be reflected in the displayed text. When using the ROM-based constants (ROM_CHARSET_UPPERCASE or ROM_CHARSET_LOWERCASE), it will directly utilize the respective character sets from the C64's internal ROM. Ensure that the `CharMemAddr` always points to valid character data to prevent unpredictable results.
 
 [Back to TOC](#table-of-contents)
 
