@@ -44,7 +44,6 @@ DIM _mc_mask(4) AS BYTE @__mc_mask
 DIM _mc_pattern(4) AS BYTE @__mc_pattern
 
 DIM _bitmap_y_tbl(50) AS WORD
-
 DIM _screen_y_tbl(50) AS WORD
 
 DIM _color_y_tbl_hi(25) AS BYTE @ __color_y_tbl_hi
@@ -60,8 +59,8 @@ _dbuf_nr = %00000000
 DIM _dbuf_on AS BYTE
 _dbuf_on = %00000000
 
-DIM _hbuf_d018 AS BYTE
-DIM _hbuf_dd00 AS BYTE
+DIM _dbuf_d018 AS BYTE
+DIM _dbuf_dd00 AS BYTE
 
 REM **********************
 REM *  PSEUDO REGISTERS  *
@@ -77,7 +76,6 @@ DIM ZP_B2 AS BYTE FAST  ' Y_INC
 DIM ZP_B3 AS BYTE FAST  ' PATTERN
 DIM ZP_B4 AS BYTE FAST  ' MASK
 DIM ZP_B5 AS BYTE FAST  ' TEMP TEMP0
-DIM ZP_B6 AS BYTE FAST  ' MASK TEMP1
 
 REM **********************
 REM *    DECLARATIONS    *
@@ -151,10 +149,10 @@ END SUB
 SUB DoubleBufferOn() SHARED STATIC
     ASM
         ;lda $d018
-        ;sta {_hbuf_d018}
+        ;sta {_dbuf_d018}
 
         ;lda $dd00
-        ;sta {_hbuf_dd00}
+        ;sta {_dbuf_dd00}
 
         lda #%00000010
         sta {_dbuf_on}
@@ -178,13 +176,13 @@ swap_wait2
         bpl swap_wait2
 
         ldx $d018
-        lda {_hbuf_d018}
-        stx {_hbuf_d018}
+        lda {_dbuf_d018}
+        stx {_dbuf_d018}
         sta $d018
 
         ldx $dd00
-        lda {_hbuf_dd00}
-        stx {_hbuf_dd00}
+        lda {_dbuf_dd00}
+        stx {_dbuf_dd00}
         sta $dd00
 
         lda {_dbuf_nr}
@@ -935,11 +933,11 @@ SUB SetVideoBank(BankNumber AS BYTE) SHARED STATIC
         beq _set_video_bank_single
 
 _set_video_bank_double
-        lda {_hbuf_dd00}
+        lda {_dbuf_dd00}
         and #%11111100
         ora {BankNumber}
         eor #%00000011
-        sta {_hbuf_dd00}
+        sta {_dbuf_dd00}
         jmp _set_video_bank_end
 
 _set_video_bank_single
@@ -966,10 +964,10 @@ SUB SetCharacterMemory(Ptr AS BYTE) SHARED STATIC
         beq _set_character_memory_single
 
 _set_character_memory_double
-        lda {_hbuf_d018}
+        lda {_dbuf_d018}
         and #%11110001
         ora {ZP_B0}
-        sta {_hbuf_d018}
+        sta {_dbuf_d018}
         jmp _set_character_memory_end
 
 _set_character_memory_single
@@ -996,10 +994,10 @@ SUB SetScreenMemory(Ptr AS BYTE) SHARED STATIC
         beq _set_screen_memory_single
 
 _set_screen_memory_double
-        lda {_hbuf_d018}
+        lda {_dbuf_d018}
         and #%00001111
         ora {ZP_B0}
-        sta {_hbuf_d018}
+        sta {_dbuf_d018}
         jmp _set_screen_memory_end
 
 _set_screen_memory_single
@@ -1026,10 +1024,10 @@ SUB SetBitmapMemory(Ptr AS BYTE) SHARED STATIC
         beq _set_bitmap_memory_single
 
 _set_bitmap_memory_double
-        lda {_hbuf_d018}
+        lda {_dbuf_d018}
         and #%11110111
         ora {ZP_B0}
-        sta {_hbuf_d018}
+        sta {_dbuf_d018}
         jmp _set_bitmap_memory_end
 
 _set_bitmap_memory_single
@@ -1862,9 +1860,9 @@ SUB _calc_bitmap_table() STATIC
         beq _calc_bitmap_table_single
 
 _calc_bitmap_table_double
-        lda {_hbuf_dd00}
+        lda {_dbuf_dd00}
         sta {ZP_B0}
-        lda {_hbuf_d018}
+        lda {_dbuf_d018}
         jmp _calc_bitmap_table_address
 
 _calc_bitmap_table_single
@@ -1933,9 +1931,9 @@ SUB _calc_screen_table() STATIC
         beq _calc_screen_table_single
 
 _calc_screen_table_double
-        lda {_hbuf_dd00}
+        lda {_dbuf_dd00}
         sta {ZP_B0}
-        lda {_hbuf_d018}
+        lda {_dbuf_d018}
         jmp _calc_screen_table_address
 
 _calc_screen_table_single
