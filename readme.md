@@ -44,7 +44,7 @@ CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOWERCAS
 #### Line-by-Line Explanation:
 
 - `INCLUDE "lib_gfx.bas"`:
-  This line imports the graphics library named "lib_gfx.bas". This library contains all the subroutines and functions required for graphical operations.
+  This line imports the graphics library "lib_gfx.bas". This library contains all the subroutines and functions required for graphical operations.
 
 - `CONST TRUE = $ff` and `CONST FALSE = 0`:
   These lines define cosmetic constants `TRUE` and `FALSE` which represent binary true and false values, respectively.
@@ -470,7 +470,7 @@ FillBuffer(0x00);  // This will clear the entire bitmap to black (or the respect
 ### FillColors
 #### FillColors(Color0 AS BYTE, Color1 AS BYTE)
 
-Set the colors for entire hires screen.
+Select colors from C64's 16 color palette to current hires screen's 2 color palette.
 
 **Parameters:**
 - **Color0**: The color value for the entire display that denotes the Color 0 for each 8x8 pixel cell (paper color).
@@ -488,7 +488,7 @@ FillColors(COLOR_WHITE, COLOR_BLACK);  // This will fill make Color0 (paper) in 
 ### FillColorsMC
 #### FillColorsMC(Color0 AS BYTE, Color1 AS BYTE, Color2 AS BYTE, Color3 AS BYTE)
 
-Set the colors for entire multicolor screen.
+Select colors from C64's 16 color palette to current multicolor screen's 4 color palette.
 
 **Parameters:**
 - **Color0**: The color value for the entire display that denotes the Color 0 for each 4x8 pixel cell.
@@ -854,7 +854,7 @@ We welcome contributions to the XCB3-GFX library. Please read the contribution g
 
 ## License
 
-This project is licensed under the MIT License. See `LICENSE` for details.
+This project is licensed under the BSD 2-Clause License License. See `LICENSE` for details.
 
 ---
 
