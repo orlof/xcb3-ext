@@ -221,7 +221,6 @@ SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Te
 END SUB
 
 SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC OVERLOAD
-    DIM ProcessorFlag AS BYTE
     ' BITMAP_BASE:  ZP_W0
     ' FONT_BASE:    ZP_W1
     ' TEXT_POS:     ZP_B0
@@ -239,8 +238,6 @@ SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Te
 
 _mc_text_rom
         sei
-        lda 1
-        sta {ProcessorFlag}
         lda #%00110001
         sta 1
 
@@ -258,9 +255,7 @@ _mc_text_rom1
 
 _mc_text_ram
         sei
-        lda 1
-        sta {ProcessorFlag}
-        and #%11111000
+        lda #%00110100
         sta 1
 
 _mc_text_init
@@ -493,7 +488,7 @@ _mc_text_char_double_next
 _mc_text_next_char
         jmp mc_text_loop_text
 _mc_text_end
-        lda {ProcessorFlag}
+        lda #%00110110
         sta 1
         cli
     END ASM
@@ -504,7 +499,6 @@ SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE,
 END SUB
 
 SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC OVERLOAD
-    DIM ProcessorFlag AS BYTE
     ' BITMAP_BASE:  ZP_W0
     ' FONT_BASE:    ZP_W1
     ' TEXT_POS:     ZP_B0
@@ -522,8 +516,6 @@ SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE,
 
 _text_rom
         sei
-        lda 1
-        sta {ProcessorFlag}
         lda #%00110001
         sta 1
 
@@ -541,8 +533,6 @@ _text_rom1
 
 _text_ram
         sei
-        lda 1
-        sta {ProcessorFlag}
         lda #%00110000
         sta 1
 
@@ -738,7 +728,7 @@ _text_pen_and_paper_set
         rts
 
 text_end
-        lda {ProcessorFlag}
+        lda #%00110110
         sta 1
         cli
     END ASM
@@ -748,10 +738,7 @@ SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
     ' TEMP = ZP_B0
     ASM
         sei
-        lda 1
-        sta {ZP_B0}
-        and #%11111000
-        ora #%00000001
+        lda #%00110001
         sta 1
     END ASM
     IF CharSet THEN
@@ -760,8 +747,8 @@ SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
         MEMCPY $d000, DestAddr, 2048
     END IF
     ASM
-        lda {ZP_B0}
-        sta $01
+        lda #%00110110
+        sta 1
         cli
     END ASM
 END SUB
@@ -875,8 +862,8 @@ END SUB
 SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
     ASM
         sei
-        dec 1
-        dec 1
+        lda #%00110100
+        sta 1
 
         lda {_dbuf_nr}
         eor {_dbuf_on}
@@ -888,8 +875,8 @@ SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
     END ASM
     MEMSET ZP_W0, 1000, Value
     ASM
-        inc 1
-        inc 1
+        lda #%00110110
+        sta 1
         cli
     END ASM
 END SUB
@@ -1106,8 +1093,8 @@ SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
     ASM
 _plot_ram_in
         sei
-        dec 1
-        dec 1
+        lda #%00110100
+        sta 1
 
 _plot_init
         lda {y}             ; 4
@@ -1156,8 +1143,8 @@ _plot_set
         sta ({ZP_W0}),y
 
 _plot_ram_out
-        inc 1
-        inc 1
+        lda #%00110110
+        sta 1
         cli
 _plot_end
     END ASM
@@ -1176,8 +1163,8 @@ SUB Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE) SHARED ST
     ASM
 _draw_ram_in
         sei
-        dec 1
-        dec 1
+        lda #%00110100
+        sta 1
 
 _draw_init
         lda {Mode}
@@ -1485,8 +1472,8 @@ _draw_smc2
         bne _draw_y_loop            ;next
 
 _draw_ram_out
-        inc 1
-        inc 1
+        lda #%00110110
+        sta 1
         cli
     END ASM
 END SUB
@@ -1496,8 +1483,8 @@ SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
     ASM
 _plotmc_ram_in
         sei
-        dec 1
-        dec 1
+        lda #%00110100
+        sta 1
 
 _plotmc_init
         lda #0
@@ -1545,8 +1532,8 @@ _plotmc_draw
         sta  ({ZP_W0}),y
 
 _plotmc_ram_out:
-        inc 1
-        inc 1
+        lda #%00110110
+        sta 1
         cli
 
 _plotmc_end:
@@ -1567,8 +1554,8 @@ SUB DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE) SHARED S
         ;  DISTANCE 16 ZP_I0
 _drawmc_ram_in
         sei
-        dec 1
-        dec 1
+        lda #%00110100
+        sta 1
 
 _drawmc_init
         ldx  {Ink}
@@ -1843,8 +1830,8 @@ _drawmc_y_plot:
       bne  _drawmc_y_loop
 
 _drawmc_ram_out:
-        inc 1
-        inc 1
+        lda #%00110110
+        sta 1
         cli
 _drawmc_end:
     END ASM
