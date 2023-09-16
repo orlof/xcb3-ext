@@ -27,7 +27,7 @@ CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
 CALL FillBuffer(0)
-CALL FillScreen(SHL(COLOR_WHITE, 4) OR COLOR_RED)
+CALL FillColors(COLOR_RED, COLOR_WHITE)
 
 CALL Plot(160, 50, MODE_SET)
 
@@ -100,7 +100,7 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 
 #### Color
 - [FillColors](#fillcolors)
-- [FillColorsMC](#fillcolors)
+- [FillColorsMC](#fillcolorsmc)
 - [FillBuffer](#fillbuffer)
 - [FillScreenMemory](#fillscreenmemory)
 - [FillColorMemory](#fillcolormemory)
