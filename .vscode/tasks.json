@@ -9,6 +9,7 @@
             "osx": {
                 "command": "./bin/macOS/xcbasic3",
                 "args": [
+                    "-p=False",
                     "-k=True",
                     "-s symbols.sym",
                     "${file}",

@@ -22,16 +22,16 @@ TYPE Point
     dy AS INT
 
     SUB Init() STATIC
-        THIS.x = rnd8(1, MAX_X-1)
-        THIS.y = rnd8(1, MAX_Y-1)
+        THIS.x = RndByte(1, MAX_X-1)
+        THIS.y = RndByte(1, MAX_Y-1)
 
-        IF rnd8(0,1) = 0 THEN
+        IF RndByte(0,1) = 0 THEN
             THIS.dx = 1
         ELSE
             THIS.dx = -1
         END IF
 
-        IF rnd8(0,1) = 0 THEN
+        IF RndByte(0,1) = 0 THEN
             THIS.dy = 1
         ELSE
             THIS.dy = -1
