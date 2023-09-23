@@ -113,6 +113,8 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 - [PlotMC](#plotmc)
 - [Draw](#draw)
 - [DrawMC](#drawmc)
+- [HDraw](#hdraw)
+- [VDraw](#vdraw)
 - [Circle](#circle)
 - [CircleMC](#circlemc)
 
@@ -634,8 +636,7 @@ CALL PlotMC(80, 50, 2);  // This will set the multicolor pixel at position (80, 
 The `Draw` subroutine provides a method to draw a straight line between two points on the screen when operating in `STANDARD_BITMAP_MODE`.
 
 **Parameters:**
-- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if
-you are using a variable of type Word instead of literal value).
+- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if you are using a variable of type Word instead of literal value).
 - **y0, y1**: The vertical starting and ending positions of the line on the screen. Valid values for each range from 0 to 199.
 - **Mode**: The operation mode for drawing the line. It can be one of the following constants:
   - `MODE_SET`: Draws the line using the foreground color.
@@ -673,6 +674,64 @@ CALL DrawMC(20, 30, 140, 170, 2);  // This will draw a line in multicolor mode f
 ```
 
 **Note**: Before employing the `DrawMC` subroutine, ensure that your system is configured in multicolor mode. Set up the screen and color RAM appropriately to get the desired color results. Always verify that the provided `x0`, `y0`, `x1`, `y1`, and `Ink` values fall within the legitimate ranges to prevent unexpected outcomes. Using this subroutine in non-multicolor modes might yield unpredictable results.
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### HDraw
+#### HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE)
+
+The `HDraw()` subroutine is designed to draw horizontal lines efficiently in the `STANDARD_BITMAP_MODE`. It provides a faster way to render horizontal lines compared to the more general-purpose `Draw()` subroutine. Users can specify the starting and ending horizontal coordinates (`x0` and `x1`), the vertical coordinate (`y`), and the drawing mode (`Mode`).
+
+**Parameters:**
+- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if you are using a variable of type Word instead of literal value).
+- **y**: The vertical position of the line on the screen. Valid values for each range from 0 to 199.
+- **Mode**: The operation mode for drawing the line. It can be one of the following constants:
+  - `MODE_SET`: Draws the line using the foreground color.
+  - `MODE_CLEAR`: Draws the line using the background color.
+  - `MODE_FLIP`: Inverts the color of the pixels on the line's path, toggling between background and foreground.
+
+**Usage:**
+```basic
+CALL HDraw(CWORD(10), CWORD(100), 190, MODE_SET);  // This will draw a horizontal line from point (10, 190) to point (100, 190) using the foreground color.
+```
+
+### **Usage Notes:**
+
+- Utilize `HDraw()` when you need to draw horizontal lines efficiently in the `STANDARD_BITMAP_MODE`. It is a high-performance alternative to the more generic `Draw()` subroutine.
+
+- Ensure that `x0` and `x1` are within the valid horizontal coordinate range of 0 to 319, and `y` is within the range of 0 to 199.
+
+
+[Back to TOC](#table-of-contents)
+
+---
+### VDraw
+#### HDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE)
+
+The `VDraw()` subroutine is designed to draw vertical lines efficiently in the `STANDARD_BITMAP_MODE`. It provides a faster way to render vertical lines compared to the more general-purpose `Draw()` subroutine. Users can specify the starting and ending vertical coordinates (`y0` and `y1`), the horizontal coordinate (`x`), and the drawing mode (`Mode`).
+
+**Parameters:**
+- **x**: The horizontal position of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if you are using a variable of type Word instead of literal value).
+- **y0, y1**: The vertical starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 199.
+- **y**: The vertical position of the line on the screen. Valid values for each range from 0 to 199.
+- **Mode**: The operation mode for drawing the line. It can be one of the following constants:
+  - `MODE_SET`: Draws the line using the foreground color.
+  - `MODE_CLEAR`: Draws the line using the background color.
+  - `MODE_FLIP`: Inverts the color of the pixels on the line's path, toggling between background and foreground.
+
+**Usage:**
+```basic
+CALL VDraw(CWORD(10), 100, 190, MODE_SET);  // This will draw a vertical line from point (10, 100) to point (10, 190) using the foreground color.
+```
+
+### **Usage Notes:**
+
+- Utilize `VDraw()` when you need to draw vertical lines efficiently in the `STANDARD_BITMAP_MODE`. It is a high-performance alternative to the more generic `Draw()` subroutine.
+
+- Ensure that `y0` and `y1` are within the valid vertical coordinate range of 0 to 199, and `x` is within the range of 0 to 319.
+
 
 [Back to TOC](#table-of-contents)
 

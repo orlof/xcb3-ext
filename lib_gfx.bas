@@ -1173,7 +1173,6 @@ SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
     ' ZP_B1: y1
     ' ZP_B5: x and %11111000
     ASM
-        sta $400
 _vdraw_ram_in
         sei
         lda #%00110100
