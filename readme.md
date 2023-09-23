@@ -543,16 +543,16 @@ FillColorMemory(0x0F);  // This will set all color RAM entries to light gray (as
 ---
 
 ### SetColorInRect
-#### `SetColorInRect(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE)`
+#### `SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE)`
 
 This subroutine allows users to change the color of specific regions in the C64 graphics screen.
 
 **Parameters:**
-- **X0, Y0**: Defines the top-left cell of the rectangle that will be recolored.
-- **X1, Y1**: Defines the bottom-right cell of the rectangle that will be recolored. The provided rectangle is inclusive of these coordinates.
+- **x0, y0**: Defines the top-left cell of the rectangle that will be recolored.
+- **x1, y1**: Defines the bottom-right cell of the rectangle that will be recolored. The provided rectangle is inclusive of these coordinates.
   - **Valid values**:
-    - X0, X1: 0-39 (Representing the horizontal cell index on the screen)
-    - Y0, Y1: 0-24 (Representing the vertical cell index on the screen)
+    - x0, x1: 0-39 (Representing the horizontal cell index on the screen)
+    - y0, y1: 0-24 (Representing the vertical cell index on the screen)
 
 - **Ink**: This specifies the index of the color that you wish to set.
   - For graphics in `HIRES` mode, valid values are `0-1`.
@@ -573,7 +573,7 @@ Let's say you want to change the background color of a rectangle that starts fro
 CALL SetColorInRect(5, 5, 10, 10, 0, COLOR_BLUE)
 ```
 
-Note: Remember to ensure that the specified region (from X0, Y0 to X1, Y1) lies within the valid screen dimensions and that you choose appropriate values for `Ink` and `ColorId` based on the graphics mode you're operating in.
+Note: Remember to ensure that the specified region (from x0, y0 to x1, y1) lies within the valid screen dimensions and that you choose appropriate values for `Ink` and `ColorId` based on the graphics mode you're operating in.
 
 [Back to TOC](#table-of-contents)
 
@@ -629,14 +629,14 @@ CALL PlotMC(80, 50, 2);  // This will set the multicolor pixel at position (80, 
 ---
 
 ### Draw
-#### Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE)
+#### Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE)
 
 The `Draw` subroutine provides a method to draw a straight line between two points on the screen when operating in `STANDARD_BITMAP_MODE`.
 
 **Parameters:**
-- **x1, x2**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if
+- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if
 you are using a variable of type Word instead of literal value).
-- **y1, y2**: The vertical starting and ending positions of the line on the screen. Valid values for each range from 0 to 199.
+- **y0, y1**: The vertical starting and ending positions of the line on the screen. Valid values for each range from 0 to 199.
 - **Mode**: The operation mode for drawing the line. It can be one of the following constants:
   - `MODE_SET`: Draws the line using the foreground color.
   - `MODE_CLEAR`: Draws the line using the background color.
@@ -647,20 +647,20 @@ you are using a variable of type Word instead of literal value).
 CALL Draw(CWORD(10), 10, CWORD(150), 190, MODE_SET);  // This will draw a line from point (10, 10) to point (150, 190) using the foreground color.
 ```
 
-**Note**: This subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. It's essential to ensure that this mode is active before invoking `Draw`. Using this subroutine in other modes might produce unexpected results. Always ensure that the provided `x1`, `y1`, `x2`, `y2`, and `Mode` values are within the valid ranges to avoid unintended behaviors.
+**Note**: This subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. It's essential to ensure that this mode is active before invoking `Draw`. Using this subroutine in other modes might produce unexpected results. Always ensure that the provided `x0`, `y0`, `x1`, `y1`, and `Mode` values are within the valid ranges to avoid unintended behaviors.
 
 [Back to TOC](#table-of-contents)
 
 ---
 
 ### DrawMC
-#### DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE)
+#### DrawMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE)
 
 The `DrawMC` subroutine facilitates drawing straight lines on the screen in multicolor mode.
 
 **Parameters:**
-- **x1, x2**: The horizontal starting and ending positions of the line on the screen in multicolor mode. Valid values for each range from 0 to 159.
-- **y1, y2**: The vertical starting and ending positions of the line on the screen. Acceptable values for each are between 0 and 199.
+- **x0, x1**: The horizontal starting and ending positions of the line on the screen in multicolor mode. Valid values for each range from 0 to 159.
+- **y0, y1**: The vertical starting and ending positions of the line on the screen. Acceptable values for each are between 0 and 199.
 - **Ink**: Specifies the color to be used to draw the line. It can have one of the following values:
   - `0`: Background color (addressed by `$D021`).
   - `1`: Color1, determined by bits #4-7 of the corresponding byte in screen RAM.
@@ -672,20 +672,20 @@ The `DrawMC` subroutine facilitates drawing straight lines on the screen in mult
 CALL DrawMC(20, 30, 140, 170, 2);  // This will draw a line in multicolor mode from point (20, 30) to point (140, 170) using Color2 as defined in screen RAM.
 ```
 
-**Note**: Before employing the `DrawMC` subroutine, ensure that your system is configured in multicolor mode. Set up the screen and color RAM appropriately to get the desired color results. Always verify that the provided `x1`, `y1`, `x2`, `y2`, and `Ink` values fall within the legitimate ranges to prevent unexpected outcomes. Using this subroutine in non-multicolor modes might yield unpredictable results.
+**Note**: Before employing the `DrawMC` subroutine, ensure that your system is configured in multicolor mode. Set up the screen and color RAM appropriately to get the desired color results. Always verify that the provided `x0`, `y0`, `x1`, `y1`, and `Ink` values fall within the legitimate ranges to prevent unexpected outcomes. Using this subroutine in non-multicolor modes might yield unpredictable results.
 
 [Back to TOC](#table-of-contents)
 
 ---
 
 ### Circle
-#### Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE)
+#### Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE)
 
 The `Circle` subroutine enables drawing circles in the `STANDARD_BITMAP_MODE` on the screen.
 
 **Parameters:**
-- **X0**: The horizontal position of the circle's center. Valid values range from 0 to 319. For literal values less than 256, you might need to use the `CWORD(255)` type conversion. For instance: `CALL Circle(CWORD(255), 100, 50, MODE_SET)`.
-- **Y0**: The vertical position of the circle's center. Acceptable values range from 0 to 199.
+- **x0**: The horizontal position of the circle's center. Valid values range from 0 to 319. For literal values less than 256, you might need to use the `CWORD(255)` type conversion. For instance: `CALL Circle(CWORD(255), 100, 50, MODE_SET)`.
+- **y0**: The vertical position of the circle's center. Acceptable values range from 0 to 199.
 - **Radius**: Defines the radius of the circle in pixels.
 - **Mode**: The operation mode for drawing the circle. It can be one of the following constants:
   - `MODE_SET`: Draws the circle using the foreground color.
@@ -697,20 +697,20 @@ The `Circle` subroutine enables drawing circles in the `STANDARD_BITMAP_MODE` on
 CALL Circle(150, 100, 40, MODE_SET);  // This draws a circle centered at point (150, 100) with a radius of 40 pixels using the foreground color.
 ```
 
-**Note**: The `Circle` subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. Before calling this subroutine, ensure that the correct mode is active. Pixels drawn must be within the screen boundaries; always ensure that the combination of the center (`X0`, `Y0`) and `Radius` will result in a circle completely inside the screen dimensions to avoid unexpected behaviors. Using this subroutine outside the `STANDARD_BITMAP_MODE` might produce unpredictable results.
+**Note**: The `Circle` subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. Before calling this subroutine, ensure that the correct mode is active. Pixels drawn must be within the screen boundaries; always ensure that the combination of the center (`x0`, `y0`) and `Radius` will result in a circle completely inside the screen dimensions to avoid unexpected behaviors. Using this subroutine outside the `STANDARD_BITMAP_MODE` might produce unpredictable results.
 
 [Back to TOC](#table-of-contents)
 
 ---
 
 ### CircleMC
-#### CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE)
+#### CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE)
 
 The `CircleMC` subroutine is tailored for drawing circles in multicolor mode on the screen.
 
 **Parameters:**
-- **X0**: The horizontal position of the circle's center in multicolor mode. Acceptable values range from 0 to 159.
-- **Y0**: The vertical position of the circle's center. Valid values range from 0 to 199.
+- **x0**: The horizontal position of the circle's center in multicolor mode. Acceptable values range from 0 to 159.
+- **y0**: The vertical position of the circle's center. Valid values range from 0 to 199.
 - **Radius**: Defines the radius of the circle in pixels.
 - **Ink**: Specifies the color to be used to draw the circle. It can have one of the following values:
   - `0`: Background color (addressed by `$D021`).
@@ -723,7 +723,7 @@ The `CircleMC` subroutine is tailored for drawing circles in multicolor mode on 
 CALL CircleMC(80, 100, 40, 2);  // This will draw a circle centered at point (80, 100) with a radius of 40 pixels using Color2 as defined in screen RAM.
 ```
 
-**Note**: The `CircleMC` subroutine is specifically devised for use in multicolor mode. Before using this subroutine, ensure that your system is configured to this mode. Pixels drawn must be within the screen boundaries; make sure that the combination of center (`X0`, `Y0`) and `Radius` keeps the circle entirely inside the screen dimensions to prevent unexpected behaviors. Using this subroutine outside of multicolor mode can yield unpredictable outcomes.
+**Note**: The `CircleMC` subroutine is specifically devised for use in multicolor mode. Before using this subroutine, ensure that your system is configured to this mode. Pixels drawn must be within the screen boundaries; make sure that the combination of center (`x0`, `y0`) and `Radius` keeps the circle entirely inside the screen dimensions to prevent unexpected behaviors. Using this subroutine outside of multicolor mode can yield unpredictable outcomes.
 
 [Back to TOC](#table-of-contents)
 

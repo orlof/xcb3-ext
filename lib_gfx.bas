@@ -103,11 +103,11 @@ DECLARE SUB FillColorMemory(Value AS BYTE) SHARED STATIC
 
 DECLARE SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
-DECLARE SUB Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE) SHARED STATIC
-DECLARE SUB DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE) SHARED STATIC
+DECLARE SUB Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
+DECLARE SUB DrawMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
-DECLARE SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
-DECLARE SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
+DECLARE SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
+DECLARE SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
 
 DECLARE SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
 DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, RomCharSet AS BYTE) SHARED STATIC OVERLOAD
@@ -1044,7 +1044,7 @@ _set_bitmap_memory_end
     CALL _calc_bitmap_table()
 END SUB
 
-SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
+SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
     ' DISTANCE = ZP_I0
     ' X = ZP_B1,
     ' Y = ZP_B2
@@ -1057,23 +1057,23 @@ SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
         ZP_I0 = ZP_I0 - ZP_B2
         IF ZP_I0 < 0 THEN ZP_B1 = ZP_B1 - 1: ZP_I0 = ZP_I0 + ZP_B1
 
-        CALL PlotMC(X0+ZP_B1, Y0+ZP_B2, Ink)
-        CALL PlotMC(X0+ZP_B1, Y0-ZP_B2, Ink)
-        CALL PlotMC(X0-ZP_B1, Y0+ZP_B2, Ink)
-        CALL PlotMC(X0-ZP_B1, Y0-ZP_B2, Ink)
-        CALL PlotMC(X0+ZP_B2, Y0+ZP_B1, Ink)
-        CALL PlotMC(X0+ZP_B2, Y0-ZP_B1, Ink)
-        CALL PlotMC(X0-ZP_B2, Y0+ZP_B1, Ink)
-        CALL PlotMC(X0-ZP_B2, Y0-ZP_B1, Ink)
+        CALL PlotMC(x0+ZP_B1, y0+ZP_B2, Ink)
+        CALL PlotMC(x0+ZP_B1, y0-ZP_B2, Ink)
+        CALL PlotMC(x0-ZP_B1, y0+ZP_B2, Ink)
+        CALL PlotMC(x0-ZP_B1, y0-ZP_B2, Ink)
+        CALL PlotMC(x0+ZP_B2, y0+ZP_B1, Ink)
+        CALL PlotMC(x0+ZP_B2, y0-ZP_B1, Ink)
+        CALL PlotMC(x0-ZP_B2, y0+ZP_B1, Ink)
+        CALL PlotMC(x0-ZP_B2, y0-ZP_B1, Ink)
     LOOP UNTIL ZP_B1 <= ZP_B2
 
-    CALL PlotMC(X0+Radius, Y0, Ink)
-    CALL PlotMC(X0-Radius, Y0, Ink)
-    CALL PlotMC(X0, Y0+Radius, Ink)
-    CALL PlotMC(X0, Y0-Radius, Ink)
+    CALL PlotMC(x0+Radius, y0, Ink)
+    CALL PlotMC(x0-Radius, y0, Ink)
+    CALL PlotMC(x0, y0+Radius, Ink)
+    CALL PlotMC(x0, y0-Radius, Ink)
 END SUB
 
-SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
+SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
     ' DISTANCE = ZP_I0
     ' ZP_W1 = x
     ' ZP_B0 = y
@@ -1088,20 +1088,20 @@ SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
         ZP_I0 = ZP_I0 - ZP_B0
         IF ZP_I0 < 0 THEN ZP_W1 = ZP_W1 - 1: ZP_I0 = ZP_I0 + ZP_W1
 
-        CALL Plot(X0+ZP_W1, Y0+ZP_B0, Mode)
-        CALL Plot(X0+ZP_W1, Y0-ZP_B0, Mode)
-        CALL Plot(X0-ZP_W1, Y0+ZP_B0, Mode)
-        CALL Plot(X0-ZP_W1, Y0-ZP_B0, Mode)
-        CALL Plot(X0+ZP_B0, Y0+ZP_W1, Mode)
-        CALL Plot(X0+ZP_B0, Y0-ZP_W1, Mode)
-        CALL Plot(X0-ZP_B0, Y0+ZP_W1, Mode)
-        CALL Plot(X0-ZP_B0, Y0-ZP_W1, Mode)
+        CALL Plot(x0+ZP_W1, y0+ZP_B0, Mode)
+        CALL Plot(x0+ZP_W1, y0-ZP_B0, Mode)
+        CALL Plot(x0-ZP_W1, y0+ZP_B0, Mode)
+        CALL Plot(x0-ZP_W1, y0-ZP_B0, Mode)
+        CALL Plot(x0+ZP_B0, y0+ZP_W1, Mode)
+        CALL Plot(x0+ZP_B0, y0-ZP_W1, Mode)
+        CALL Plot(x0-ZP_B0, y0+ZP_W1, Mode)
+        CALL Plot(x0-ZP_B0, y0-ZP_W1, Mode)
     LOOP UNTIL ZP_W1 <= ZP_B0
 
-    CALL Plot(X0 + Radius, Y0, Mode)
-    CALL Plot(X0 - Radius, Y0, Mode)
-    CALL Plot(X0, Y0 + Radius, Mode)
-    CALL Plot(X0, Y0 - Radius, Mode)
+    CALL Plot(x0 + Radius, y0, Mode)
+    CALL Plot(x0 - Radius, y0, Mode)
+    CALL Plot(x0, y0 + Radius, Mode)
+    CALL Plot(x0, y0 - Radius, Mode)
 END SUB
 
 SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
@@ -1309,7 +1309,7 @@ _hdraw_start_mask
 
 _hdraw_loop
         ; draw byte
-_hdraw_smc0
+_hdraw_smc
         bit $ff
         ora ({ZP_W0}),y
         sta ({ZP_W0}),y
@@ -1342,7 +1342,7 @@ _hdraw_smc1
 END SUB
 
 
-SUB Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE) SHARED STATIC
+SUB Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
     ' ZP_W0: Base
     ' ZP_W1: Dx
     ' ZP_W2: Count
@@ -1397,12 +1397,12 @@ _draw_smc_init_end
         ldy #0              ;yinc=down
 
 _draw_dx
-        lda {x2}            ;calculate dx=x2-x1
+        lda {x1}            ;calculate dx=x1-x0
         sec
-        sbc {x1}
+        sbc {x0}
         sta {ZP_W1}
-        lda {x2}+1
-        sbc {x1}+1
+        lda {x1}+1
+        sbc {x0}+1
         sta {ZP_W1}+1
         bcs _draw_dy
 
@@ -1415,9 +1415,9 @@ _draw_dx
         sta {ZP_W1}+1          ;dx=abs(dx)
 
 _draw_dy
-        lda {y2}            ;dy=y2-y1
+        lda {y1}            ;dy=y1-y0
         sec
-        sbc {y1}
+        sbc {y0}
         bcs _draw_store_dy
         dey                 ;dy<0, yinc=up
         eor #$ff            ;dy=abs(dy)
@@ -1427,27 +1427,27 @@ _draw_store_dy
         sta {ZP_B0}
 
         stx {ZP_B1}         ;xi: $00 or $ff
-        sty {ZP_B2}         ;y1: $00 or $ff
+        sty {ZP_B2}         ;y0: $00 or $ff
 
-        lda {y1}            ;plot (x1, y1)
+        lda {y0}            ;plot (x0, y0)
         and #%00000111
         tay
 
-        eor {y1}
+        eor {y0}
         lsr
         eor {_dbuf_nr}
         eor {_dbuf_on}
         tax
 
-        lda {x1}
+        lda {x0}
         and #%11111000
         adc {_bitmap_y_tbl},x
         sta {ZP_W0}         ;save base
         lda {_bitmap_y_tbl}+1,x
-        adc {x1}+1
+        adc {x0}+1
         sta {ZP_W0}+1
 
-        lda {x1}
+        lda {x0}
         and #%00000111
         tax
         lda {_hires_mask1},x    ; mc
@@ -1732,7 +1732,7 @@ _plotmc_end:
     END ASM
 END SUB
 
-SUB DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE) SHARED STATIC
+SUB DrawMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
     '180 pixels per jiffy (average line length 94 pixels)
     ASM
         ;altered:
@@ -1759,9 +1759,9 @@ _drawmc_init
         sty {ZP_W0}+1
         sty {ZP_I0}+1
 
-        lda  {x2}             ; dx = abs(x2 - x1)
+        lda  {x1}             ; dx = abs(x1 - x0)
         sec
-        sbc  {x1}
+        sbc  {x0}
         bcs  _drawmc_store_dx
         dex
         eor  #$FF
@@ -1769,9 +1769,9 @@ _drawmc_init
 _drawmc_store_dx:
         sta  {ZP_W1}
 
-        lda  {y2}             ; dy = abs(y2 - y1)
+        lda  {y1}             ; dy = abs(y1 - y0)
         sec
-        sbc  {y1}
+        sbc  {y0}
         bcs  _drawmc_store_dy
         dey
         eor  #$FF
@@ -1782,17 +1782,17 @@ _drawmc_store_dy:
         stx  {ZP_B1}
         sty  {ZP_B2}
 
-        lda  {y1}     ; y1 & %00000111
+        lda  {y0}     ; y0 & %00000111
         and  #7
         tay
 
-        eor  {y1}     ; (y1 & %11111000) << 2
+        eor  {y0}     ; (y0 & %11111000) << 2
         lsr
         eor {_dbuf_nr}
         eor {_dbuf_on}
         tax
 
-        lda  {x1}
+        lda  {x0}
         and  #$FC
         asl
         rol  {ZP_W0}+1
@@ -1803,7 +1803,7 @@ _drawmc_store_dy:
         adc  {ZP_W0}+1
         sta  {ZP_W0}+1
 
-        lda  {x1}
+        lda  {x0}
         and  #3
         tax
 
