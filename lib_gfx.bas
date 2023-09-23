@@ -110,7 +110,7 @@ DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS 
 DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC OVERLOAD
 DECLARE SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, RomCharSet AS BYTE) SHARED STATIC OVERLOAD
 DECLARE SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE, Text AS STRING * 40, CharMemAddr AS WORD) SHARED STATIC OVERLOAD
-DECLARE SUB SetColorInRect(X0 AS BYTE, Y0 AS BYTE, X1 AS BYTE, Y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE) SHARED STATIC
+DECLARE SUB SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE) SHARED STATIC
 DECLARE SUB WaitRasterLine256() SHARED STATIC
 DECLARE FUNCTION PetsciiToScreenCode AS BYTE(Petscii AS BYTE) SHARED STATIC
 
@@ -758,8 +758,13 @@ SUB SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, 
         lda {ColorId}
         sta {ZP_B2}
 
-        lda {Ink}
-        cmp #3
+        ldy {Ink}
+        lda $d016
+        and #%00010000
+        bne *+3
+            iny
+
+        cpy #3
         beq _set_color_mc_3
 
         lda {y0}
@@ -773,8 +778,11 @@ SUB SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, 
         lda {_screen_y_tbl},x
         sta {ZP_W0}
 
-        lda {Ink}
-        cmp #2
+        sei
+        lda #%00110100
+        sta 1
+
+        cpy #2
         beq _set_color_mc_2
 
 _set_color_mc_1
@@ -833,6 +841,10 @@ _set_color_x_loop
 
         dex
         bpl _set_color_y_loop
+
+        lda #%00110110
+        sta 1
+        cli
     END ASM
 END SUB
 
@@ -1839,7 +1851,6 @@ END SUB
 
 SUB _calc_bitmap_table() STATIC
     ASM
-        sta $400
         lda #0
         sta {ZP_W0}
 
