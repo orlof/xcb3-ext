@@ -106,6 +106,7 @@ DECLARE SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB DrawMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
+DECLARE SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
 
@@ -1166,6 +1167,106 @@ _plot_end
     END ASM
 END SUB
 
+SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
+    ' ZP_W0: Base
+    ' ZP_B0: dy
+    ' ZP_B1: y1
+    ' ZP_B5: x and %11111000
+    ASM
+        sta $400
+_vdraw_ram_in
+        sei
+        lda #%00110100
+        sta 1
+
+_vdraw_init
+        lda {y0}
+        cmp {y1}
+        bcs _vdraw_start_y1
+
+_vdraw_start_y0
+        sta {ZP_B0}
+        lda {y1}
+        sta {ZP_B1}
+
+        jmp _vdraw_init_end
+
+_vdraw_start_y1
+        sta {ZP_B1}
+        lda {y1}
+        sta {ZP_B0}
+
+_vdraw_init_end
+        lda {ZP_B0}
+        and #7              ; 2 these cycles are needed to calculate the index to y table
+        sta {ZP_B5}         ; 2 not needed if the table were 250 words long
+
+        eor {ZP_B0}         ; 4
+        lsr                 ; 2
+        eor {_dbuf_nr}      ; 4
+        eor {_dbuf_on}      ; 4
+        tax                 ; 2
+
+        lda  {_bitmap_y_tbl}+1,x
+        adc {x}+1
+        sta {ZP_W0}+1
+        lda {_bitmap_y_tbl},x
+        sta {ZP_W0}
+
+        lda {x}
+        and #7
+        tax
+
+        eor {x}
+        ora {ZP_B5}
+
+        clc
+        adc {ZP_W0}
+        sta {ZP_W0}
+        bcc *+4
+            inc {ZP_W0}+1
+
+        lda {ZP_W0}
+        sec
+        sbc {ZP_B0}
+        sta {ZP_W0}
+        bcs *+4
+            dec {ZP_W0}+1
+
+        lda {_hires_mask1},x
+        sta {ZP_B2}
+
+        ldy {ZP_B0}
+
+_vdraw_loop
+        lda {ZP_B2}
+        ora ({ZP_W0}),y
+        sta ({ZP_W0}),y
+
+        cpy {ZP_B1}
+        beq _vdraw_end
+
+        iny
+        tya
+        and #%00000111
+        bne _vdraw_loop
+
+        lda {ZP_W0}
+        clc
+        adc #$38
+        sta {ZP_W0}
+        lda {ZP_W0}+1
+        adc #1
+        sta {ZP_W0}+1
+        jmp _vdraw_loop
+
+_vdraw_end
+        lda #%00110110
+        sta 1
+        cli
+    END ASM
+END SUB
+
 SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
     ' ZP_W0: Base
     ' ZP_B0: y & 7
@@ -1174,41 +1275,21 @@ SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
     ' ZP_B3: Count
     ' ZP_B4: End Mask
     ASM
-        sta $400
 _hdraw_ram_in
         sei
         lda #%00110100
         sta 1
 
 _hdraw_init
-        lda {Mode}
-        beq _hdraw_smc_init_clr
-        bpl _hdraw_smc_init_set
-_hdraw_smc_init_flip
-        lda #$24            ; -> bit <- $ad
-        sta _hdraw_smc0
-        sta _hdraw_smc1
-        lda #$51            ; -> eor <- ($af),y
-        sta _hdraw_smc0+2
-        sta _hdraw_smc1+2
-        jmp _hdraw_smc_init_end
-_hdraw_smc_init_clr
-        lda #$49            ; -> eor <- #$ff
-        sta _hdraw_smc0
-        sta _hdraw_smc1
-        lda #$31            ; -> and <- ($af),y
-        sta _hdraw_smc0+2
-        sta _hdraw_smc1+2
-        jmp _hdraw_smc_init_end
-_hdraw_smc_init_set
-        lda #$24            ; -> bit <- $ad
-        sta _hdraw_smc0
-        sta _hdraw_smc1
-        lda #$11            ; -> ora <- ($af),y
-        sta _hdraw_smc0+2
-        sta _hdraw_smc1+2
-_hdraw_smc_init_end
+        ldx {Mode}
+        inx
 
+        lda _hdraw_mode_lo,x
+        sta {ZP_W1}
+        lda _hdraw_mode_hi,x
+        sta {ZP_W1}+1
+
+_hdraw_init_end
         lda {y}             ; 4
         and #7              ; 2 these cycles are needed to calculate the index to y table
         sta {ZP_B0}         ; 2 not needed if the table were 250 words long
@@ -1307,13 +1388,15 @@ _hdraw_start_mask
         ldx {ZP_B3}
         beq _hdraw_end
 
-_hdraw_loop
+_hdraw_start_loop
         ; draw byte
-_hdraw_smc
-        bit $ff
+        jmp ({ZP_W1})
+
+_hdraw_set
         ora ({ZP_W0}),y
         sta ({ZP_W0}),y
 
+_hdraw_shared_loop
         ;addr += 8
         tya
         clc
@@ -1326,15 +1409,30 @@ _hdraw_smc
 
         ;loop until addr = end
         dex
-        bne _hdraw_loop
+        bmi _hdraw_end
+        bne *+4
+            and {ZP_B4}
+        jmp ({ZP_W1})
 
-_hdraw_end
-        and {ZP_B4}
-_hdraw_smc1
-        bit $ff
-        ora ({ZP_W0}),y
+_hdraw_clear
+        eor #$ff
+        and ({ZP_W0}),y
         sta ({ZP_W0}),y
 
+        jmp _hdraw_shared_loop
+
+_hdraw_flip
+        eor ({ZP_W0}),y
+        sta ({ZP_W0}),y
+
+        jmp _hdraw_shared_loop
+
+_hdraw_mode_hi
+        .byte #>_hdraw_flip, #>_hdraw_clear, #>_hdraw_set
+_hdraw_mode_lo
+        .byte #<_hdraw_flip, #<_hdraw_clear, #<_hdraw_set
+
+_hdraw_end
         lda #%00110110
         sta 1
         cli
