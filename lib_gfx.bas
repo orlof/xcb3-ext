@@ -40,6 +40,9 @@ REM **********************
 DIM _hires_mask0(8) AS BYTE @__hires_mask0
 DIM _hires_mask1(8) AS BYTE @__hires_mask1
 
+DIM _hdraw_end_mask(8) AS BYTE @__hdraw_end_mask
+DIM _hdraw_start_mask(8) AS BYTE @__hdraw_start_mask
+
 DIM _mc_mask(4) AS BYTE @__mc_mask
 DIM _mc_pattern(4) AS BYTE @__mc_pattern
 
@@ -102,6 +105,7 @@ DECLARE SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB DrawMC(x1 AS BYTE, y1 AS BYTE, x2 AS BYTE, y2 AS BYTE, Ink AS BYTE) SHARED STATIC
+DECLARE SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB Circle(X0 AS WORD, Y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB CircleMC(X0 AS BYTE, Y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
 
@@ -1130,7 +1134,7 @@ _plot_init
         tax
 
         eor {x}
-        adc {ZP_B5}
+        ora {ZP_B5}
         tay
 
         lda {Mode}
@@ -1161,6 +1165,182 @@ _plot_ram_out
 _plot_end
     END ASM
 END SUB
+
+SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
+    ' ZP_W0: Base
+    ' ZP_B0: y & 7
+    ' ZP_B1: x0
+    ' ZP_B2: x1
+    ' ZP_B3: Count
+    ' ZP_B4: End Mask
+    ASM
+        sta $400
+_hdraw_ram_in
+        sei
+        lda #%00110100
+        sta 1
+
+_hdraw_init
+        lda {Mode}
+        beq _hdraw_smc_init_clr
+        bpl _hdraw_smc_init_set
+_hdraw_smc_init_flip
+        lda #$24            ; -> bit <- $ad
+        sta _hdraw_smc0
+        sta _hdraw_smc1
+        lda #$51            ; -> eor <- ($af),y
+        sta _hdraw_smc0+2
+        sta _hdraw_smc1+2
+        jmp _hdraw_smc_init_end
+_hdraw_smc_init_clr
+        lda #$49            ; -> eor <- #$ff
+        sta _hdraw_smc0
+        sta _hdraw_smc1
+        lda #$31            ; -> and <- ($af),y
+        sta _hdraw_smc0+2
+        sta _hdraw_smc1+2
+        jmp _hdraw_smc_init_end
+_hdraw_smc_init_set
+        lda #$24            ; -> bit <- $ad
+        sta _hdraw_smc0
+        sta _hdraw_smc1
+        lda #$11            ; -> ora <- ($af),y
+        sta _hdraw_smc0+2
+        sta _hdraw_smc1+2
+_hdraw_smc_init_end
+
+        lda {y}             ; 4
+        and #7              ; 2 these cycles are needed to calculate the index to y table
+        sta {ZP_B0}         ; 2 not needed if the table were 250 words long
+
+        eor {y}             ; 4
+        lsr                 ; 2
+        eor {_dbuf_nr}      ; 4
+        eor {_dbuf_on}      ; 4
+        tax                 ; 2
+
+        lda {_bitmap_y_tbl},x
+        sta {ZP_W0}
+
+        ; calculate DX
+        lda {x0}+1
+        ror
+        lda {x0}
+        sta {ZP_B1}
+        ror
+        lsr
+        lsr
+        sta {ZP_B4}
+
+        lda {x1}+1
+        ror
+        lda {x1}
+        sta {ZP_B2}
+        ror
+        lsr
+        lsr
+
+        sec
+        sbc {ZP_B4}
+        bcs _hdraw_start_x0
+
+_hdraw_start_x1
+        eor #$ff
+        clc
+        adc #1
+        sta {ZP_B3}
+
+        ; calc base hi
+        lda  {_bitmap_y_tbl}+1,x
+        clc
+        adc {x1}+1
+        sta {ZP_W0}+1
+
+        ; store end mask
+        lda {ZP_B1}
+        and #%00000111
+        tax
+        lda {_hdraw_end_mask},x
+        sta {ZP_B4}
+
+        ; calc base offset
+        lda {ZP_B2}
+        and #%11111000
+        ora {ZP_B0}
+        tay
+
+        lda {ZP_B2}
+
+        jmp _hdraw_start_mask
+
+_hdraw_start_x0
+        sta {ZP_B3}
+
+        ; calc base hi
+        lda  {_bitmap_y_tbl}+1,x
+        clc
+        adc {x0}+1
+        sta {ZP_W0}+1
+
+        ; store end mask
+        lda {ZP_B2}
+        and #%00000111
+        tax
+        lda {_hdraw_end_mask},x
+        sta {ZP_B4}
+
+        ; calc base offset
+        lda {ZP_B1}
+        and #%11111000
+        ora {ZP_B0}
+        tay
+
+        lda {ZP_B1}
+
+_hdraw_start_mask
+        ; load start mask
+        and #7
+        tax
+        lda {_hdraw_start_mask},x
+
+        ; load counter
+        ldx {ZP_B3}
+        beq _hdraw_end
+
+_hdraw_loop
+        ; draw byte
+_hdraw_smc0
+        bit $ff
+        ora ({ZP_W0}),y
+        sta ({ZP_W0}),y
+
+        ;addr += 8
+        tya
+        clc
+        adc #8
+        tay
+        bcc *+4
+            inc {ZP_W0}+1
+
+        lda #$ff
+
+        ;loop until addr = end
+        dex
+        bne _hdraw_loop
+
+_hdraw_end
+        and {ZP_B4}
+_hdraw_smc1
+        bit $ff
+        ora ({ZP_W0}),y
+        sta ({ZP_W0}),y
+
+        lda #%00110110
+        sta 1
+        cli
+    END ASM
+END SUB
+
 
 SUB Draw(x1 AS WORD, y1 AS BYTE, x2 AS WORD, y2 AS BYTE, Mode AS BYTE) SHARED STATIC
     ' ZP_W0: Base
@@ -2002,6 +2182,11 @@ _petscii_to_screencode_end
     END ASM
 END FUNCTION
 
+
+__hdraw_start_mask:
+DATA AS BYTE %11111111, %01111111, %00111111, %00011111, %00001111, %00000111, %00000011, %00000001
+__hdraw_end_mask:
+DATA AS BYTE %10000000, %11000000, %11100000, %11110000, %11111000, %11111100, %11111110, %11111111
 
 __color_y_tbl_hi:
 DATA AS BYTE $d8, $d8, $d8, $d8, $d8, $d8, $d8, $d9, $d9, $d9, $d9, $d9, $d9, $da, $da, $da
