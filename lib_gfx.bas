@@ -1179,6 +1179,29 @@ _vdraw_ram_in
         lda #%00110100
         sta 1
 
+_vdraw_smc_init
+        lda {Mode}
+        beq _vdraw_smc_init_clear
+        bpl _vdraw_smc_init_set
+_vdraw_smc_init_flip
+        lda #$24            ; -> bit <- #$ff
+        sta _vdraw_smc0
+        lda #$51            ; -> eor <- ($af),y
+        sta _vdraw_smc1
+        jmp _vdraw_smc_init_end
+_vdraw_smc_init_clear
+        lda #$49            ; -> eor <- #$ff
+        sta _vdraw_smc0
+        lda #$31            ; -> and <- ($af),y
+        sta _vdraw_smc1
+        jmp _vdraw_smc_init_end
+_vdraw_smc_init_set
+        lda #$24            ; -> bit <- #$ff
+        sta _vdraw_smc0
+        lda #$11            ; -> ora <- ($af),y
+        sta _vdraw_smc1
+_vdraw_smc_init_end
+
 _vdraw_init
         lda {y0}
         cmp {y1}
@@ -1234,12 +1257,14 @@ _vdraw_init_end
             dec {ZP_W0}+1
 
         lda {_hires_mask1},x
-        sta {ZP_B2}
+_vdraw_smc0
+        bit $ff
+        tax
 
         ldy {ZP_B0}
-
 _vdraw_loop
-        lda {ZP_B2}
+        txa
+_vdraw_smc1
         ora ({ZP_W0}),y
         sta ({ZP_W0}),y
 
@@ -1258,6 +1283,7 @@ _vdraw_loop
         lda {ZP_W0}+1
         adc #1
         sta {ZP_W0}+1
+
         jmp _vdraw_loop
 
 _vdraw_end
