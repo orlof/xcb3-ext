@@ -1,6 +1,6 @@
 ASM
     MAC OPEN_BANK3
-        IFCONST LIB_GFX_ENABLE_BANK_3
+        IFNCONST LIB_GFX_DISABLE_BANK_3
             sei
             lda #%00110100
             sta 1
@@ -8,7 +8,7 @@ ASM
     ENDM
 
     MAC CLOSE_BANK3
-        IFCONST LIB_GFX_ENABLE_BANK_3
+        IFNCONST LIB_GFX_DISABLE_BANK_3
             lda #%00110110
             sta 1
             cli
