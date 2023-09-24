@@ -16,6 +16,16 @@
 
 - **Color Palette**: This library is designed to have constant color palette in the whole screen. I.e. in multicolor operations you have only the 4 color palette defined with  `FillColorsMC(c0, c1, c2, c3)`. This limitation is for performance reasons but also because VIC supports separate colors only in 8x8 (or 4x8) cells and exact coloring is anyway impossible.
 
+- **Interrupt Protection and Bank 3:** Every routine that manipulates bitmap or screen memory in the library is protected by disabling interrupts. This protection is necessary to bank out the kernel and I/O for reading these memory locations. While some routines, like `Plot`, disable interrupts for a short duration (around 100 cycles), others, such as `FillBuffer`, may disable them for an extended period (about 33,000 cycles). Consequently, raster interrupts are not compatible with Bank 3. By default, interrupts are disabled even if you are not using Bank 3 ($C000-$FFFF). However, if you do not intend to use Bank 3, you can disable this protection using the following code in your main program:
+
+  ```assembly
+  ASM
+      LIB_GFX_DISABLE_BANK_3
+  END ASM
+  ```
+
+  After executing this command, only routines that require access to ROM fonts will disable interrupts. In summary, if you need to use interrupts, it's advisable to disable Bank 3 and avoid using it for bitmap graphics to ensure compatibility and smooth operation.
+
 ### Example
 
 ```basic
