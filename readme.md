@@ -57,7 +57,7 @@ CALL Circle(160, 100, 90, MODE_SET)
 CALL Draw(0, 0, 319, 199, MODE_SET)
 CALL Draw(0, 199, 319, 0, MODE_SET)
 
-CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOWERCASE)
+CALL Text(9, 2, MODE_SET, MODE_TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOWERCASE)
 ```
 
 #### Line Explanation:
@@ -121,6 +121,7 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 - [VDraw](#vdraw)
 - [Circle](#circle)
 - [CircleMC](#circlemc)
+- [Rect](#rect)
 
 #### Text
 - [CopyCharROM](#copycharrom)
@@ -792,6 +793,44 @@ CALL CircleMC(80, 100, 40, 2)  ' This will draw a circle centered at point (80, 
 
 ---
 
+Certainly! Here's the documentation for the `Rect()` subroutine:
+
+---
+
+### Rect
+#### Rect(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE, FillMode AS BYTE)
+
+The `Rect()` subroutine is used to draw rectangles in the `STANDARD_BITMAP_MODE`. You can define the position and size of the rectangle using coordinates (`x0`, `y0`, `x1`, `y1`) and choose the drawing mode (`Mode`) to rectangle frame and (`FillMode`) interior sparately.
+
+**Parameters:**
+
+- **Coordinates:** You can specify the position and size of the rectangle using the following parameters:
+  - `x0`: The horizontal coordinate of the top-left corner of the rectangle (0-319).
+  - `y0`: The vertical coordinate of the top-left corner of the rectangle (0-199).
+  - `x1`: The horizontal coordinate of the bottom-right corner of the rectangle (0-319).
+  - `y1`: The vertical coordinate of the bottom-right corner of the rectangle (0-199).
+
+- **Drawing Modes:** The `Mode` parameter defines the drawing mode for rectangle frame. It can take one of the following constants:
+  - `MODE_SET`: Sets pixels to the foreground color.
+  - `MODE_CLEAR`: Sets pixels to the background color.
+  - `MODE_FLIP`: Flips the current pixel color from background to foreground or vice versa.
+  - `MODE_TRANSPARENT`: Does not draw the edges
+
+- **Fill Modes:** The `FillMode` parameter defines how interior of the rectangle is drawn. It can also take one of the following constants:
+  - `MODE_SET`: Fills the rectangle with the foreground color.
+  - `MODE_CLEAR`: Clears the pixels within the rectangle.
+  - `MODE_FLIP`: Flips the color of the pixels within the rectangle.
+  - `MODE_TRANSPARENT`: Renders the rectangle as hollow, leaving its interior transparent.
+
+### **Usage Notes:**
+
+- Use the `Rect()` subroutine when you need to draw rectangles in the `STANDARD_BITMAP_MODE`. You can control the drawing mode and fill mode to achieve various visual effects, including filled or hollow rectangles.
+
+
+[Back to TOC](#table-of-contents)
+
+---
+
 ### CopyCharROM
 #### CopyCharROM(CharSet AS BYTE, DestAddr AS WORD)
 
@@ -825,9 +864,9 @@ The `TextMC` subroutine offers the ability to draw text on the screen in the mul
 
 - **Row**: Row index (4x8 cell) where the text starts. Valid range: `0-24`.
 
-- **Ink**: Defines the color used for the text's shapes. Possible values include `TRANSPARENT` (to leave the bitmap untouched for the letter shape) or a value from `0-3` representing the desired color.
+- **Ink**: Defines the color used for the text's shapes. Possible values include `MODE_TRANSPARENT` (to leave the bitmap untouched for the letter shape) or a value from `0-3` representing the desired color.
 
-- **Bg**: Defines the background color for the text. It can be set to `TRANSPARENT` (to leave the bitmap as is for the letter's background) or a color value from `0-3`.
+- **Bg**: Defines the background color for the text. It can be set to `MODE_TRANSPARENT` (to leave the bitmap as is for the letter's background) or a color value from `0-3`.
 
 - **Double**: Option to enlarge each letter to span across 2 cells horizontally.
   - `0`: FALSE - Regular width.
@@ -863,12 +902,12 @@ The `Text` subroutine offers a flexible way to display text on the screen. This 
 - **Mode**: Determines the display mode for the text.
   - **MODE_SET**: Sets text to the foreground color.
   - **MODE_CLEAR**: Sets text to the background color.
-  - **TRANSPARENT**: Leaves the pixels unchanged.
+  - **MODE_TRANSPARENT**: Leaves the pixels unchanged.
 
 - **BgMode**: Determines the mode for the text's background.
   - **MODE_SET**: Sets the background to the foreground color.
   - **MODE_CLEAR**: Sets the background to the background color.
-  - **TRANSPARENT**: Leaves the pixels unchanged.
+  - **MODE_TRANSPARENT**: Leaves the pixels unchanged.
 
 - **Double**: Option to enlarge each letter's width to span 2 cells.
   - `0`: FALSE - Regular width.
