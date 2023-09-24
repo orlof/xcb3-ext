@@ -122,7 +122,7 @@ NEXT Counter
 REM *************************************
 REM * SHOW DOUBLE BUFFER ANIMATION      *
 REM *************************************
-CALL TextMC(7, 10, 3, TRANSPARENT, 1, "Double Buffer", ROM_CHARSET_LOWERCASE)
+CALL TextMC(7, 10, 3, MODE_TRANSPARENT, 1, "Double Buffer", ROM_CHARSET_LOWERCASE)
 
 FOR Counter = 0 TO 96
     CALL WaitRasterLine256()

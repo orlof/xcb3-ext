@@ -14,6 +14,9 @@ ASM
             cli
         ENDIF
     ENDM
+
+TRANSPARENT =  $fe
+FLIP        =  $ff
 END ASM
 
 REM **********************
@@ -32,7 +35,7 @@ SHARED CONST MODE_SET   = 1
 SHARED CONST MODE_CLEAR = 0
 SHARED CONST MODE_FLIP  = $ff
 
-SHARED CONST TRANSPARENT = $ff
+SHARED CONST MODE_TRANSPARENT = $fe
 
 SHARED CONST COLOR_BLACK       = $0
 SHARED CONST COLOR_WHITE       = $1
@@ -125,6 +128,7 @@ DECLARE SUB Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE) S
 DECLARE SUB DrawMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
+DECLARE SUB Rect(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE, FillMode AS BYTE) SHARED STATIC
 DECLARE SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
 
@@ -143,6 +147,27 @@ DECLARE SUB _calc_screen_table() STATIC
 REM **********************
 REM *     FUNCTIONS      *
 REM **********************
+SUB Rect(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE, FillMode AS BYTE) SHARED STATIC
+    IF Mode <> MODE_TRANSPARENT THEN
+        CALL HDraw(x0, x1, y0, Mode)
+        CALL HDraw(x0, x1, y1, Mode)
+        CALL VDraw(x0, y0, y1, Mode)
+        CALL VDraw(x1, y0, y1, Mode)
+    END IF
+
+    IF FillMode <> MODE_TRANSPARENT THEN
+        ASM
+            inc {x0}
+            dec {x1}
+            inc {y0}
+            dec {y1}
+        END ASM
+        FOR Y AS BYTE = y0 TO y1
+            CALL HDraw(x0, x1, Y, FillMode)
+        NEXT Y
+    END IF
+END SUB
+
 SUB FillBuffer(Value AS BYTE) SHARED STATIC
     ASM
         OPEN_BANK3
@@ -364,16 +389,14 @@ _mc_text_init_font_base
 mc_text_font_loop
         ;choose foreground
         ldx {Ink}
-        cpx #$ff
-        bne _mc_text_font_loop_left_bg
+        bpl _mc_text_font_loop_left_bg
         lda ({ZP_W0}),y
         sta {ZP_B5}
 
 _mc_text_font_loop_left_bg
         ;choose background
         ldx {Bg}
-        cpx #$ff
-        bne _mc_text_char_sx_or_dx
+        bpl _mc_text_char_sx_or_dx
         lda ({ZP_W0}),y
         sta {ZP_B4}
 
@@ -463,16 +486,14 @@ _mc_text_font_loop_left_nible
 
         ;choose foreground
         ldx {Ink}
-        cpx #$ff
-        bne _mc_text_font_loop_right_bg
+        bpl _mc_text_font_loop_right_bg
         lda ({ZP_W0}),y
         sta {ZP_B5}
 
 _mc_text_font_loop_right_bg
         ;choose background
         ldx {Bg}
-        cpx #$ff
-        bne _mc_text_font_loop_store_right_nible
+        bpl _mc_text_font_loop_store_right_nible
         lda ({ZP_W0}),y
         sta {ZP_B4}
 
@@ -793,8 +814,6 @@ SUB SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, 
         lda {_screen_y_tbl},x
         sta {ZP_W0}
 
-        OPEN_BANK3
-
         cpy #2
         beq _set_color_mc_2
 
@@ -832,6 +851,8 @@ _set_color_init_loops
 
 _set_color_y_loop
         ldy {x0}
+
+        OPEN_BANK3
 
 _set_color_x_loop
         lda ({ZP_W0}),y
@@ -884,8 +905,6 @@ END SUB
 
 SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
     ASM
-        OPEN_BANK3
-
         lda {_dbuf_nr}
         eor {_dbuf_on}
         tax
@@ -893,6 +912,8 @@ SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
         sta {ZP_W0}+1
         lda {_screen_y_tbl},x
         sta {ZP_W0}
+
+        OPEN_BANK3
     END ASM
     MEMSET ZP_W0, 1000, Value
     ASM
@@ -1110,9 +1131,6 @@ END SUB
 SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
     'ABOUT 235 pixels per 1/50 s (average 142 pixels per line)
     ASM
-_plot_ram_in
-        OPEN_BANK3
-
 _plot_init
         lda {y}             ; 4
         and #7              ; 2 these cycles are needed to calculate the index to y table
@@ -1137,6 +1155,9 @@ _plot_init
         eor {x}
         ora {ZP_B5}
         tay
+
+_plot_ram_in
+        OPEN_BANK3
 
         lda {Mode}
         beq _plot_clr
@@ -1782,9 +1803,6 @@ END SUB
 SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
     ' BASE = ZP_W0
     ASM
-_plotmc_ram_in
-        OPEN_BANK3
-
 _plotmc_init
         lda #0
         sta {ZP_W0}+1
@@ -1822,6 +1840,9 @@ _plotmc_ink
         ldx {Ink}
         and {_mc_pattern},x
         sta  {ZP_B5}
+
+_plotmc_ram_in
+        OPEN_BANK3
 
 _plotmc_draw
         lda  {ZP_B4}

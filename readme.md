@@ -16,6 +16,15 @@
 
 - **Color Palette**: This library is designed to have constant color palette in the whole screen. I.e. in multicolor operations you have only the 4 color palette defined with  `FillColorsMC(c0, c1, c2, c3)`. This limitation is for performance reasons but also because VIC supports separate colors only in 8x8 (or 4x8) cells and exact coloring is anyway impossible.
 
+- **Impact on XC-Basic Keywords:** Changing the screen memory or bank address within your program can disrupt XC-Basic keywords and commands that depend on those memory locations. Examples of such commands include Sprite Shape, Print, and others. When altering these settings in your code, it's important to consider the potential impact on XC-Basic's functionality.
+
+  To address this issue, you can follow these steps:
+  1. Set the desired video bank using `CALL SetVideoBank(...)`
+  2. Set the screen memory location with `CALL SetScreenMemory(...)`
+  3. Call XC-Basic's `Screen` command to update its internal configuration.
+
+  However, keep in mind that the XC-Basic `Screen` command can be slow and may introduce delays in your program. Therefore, it is not recommended for use in time-critical scenarios, especially when working with double buffering or other performance-sensitive operations.
+
 - **Interrupt Protection and Bank 3:** Every routine that manipulates bitmap or screen memory in the library is protected by disabling interrupts. This protection is necessary to bank out the kernel and I/O for reading these memory locations. While some routines, like `Plot`, disable interrupts for a short duration (around 100 cycles), others, such as `FillBuffer`, may disable them for an extended period (about 33,000 cycles). Consequently, raster interrupts are not compatible with Bank 3. By default, interrupts are disabled even if you are not using Bank 3 ($C000-$FFFF). However, if you do not intend to use Bank 3, you can disable this protection using the following code in your main program:
 
   ```assembly
@@ -51,13 +60,10 @@ CALL Draw(0, 199, 319, 0, MODE_SET)
 CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOWERCASE)
 ```
 
-#### Line-by-Line Explanation:
+#### Line Explanation:
 
 - `INCLUDE "lib_gfx.bas"`:
   This line imports the graphics library "lib_gfx.bas". This library contains all the subroutines and functions required for graphical operations.
-
-- `CONST TRUE = $ff` and `CONST FALSE = 0`:
-  These lines define cosmetic constants `TRUE` and `FALSE` which represent binary true and false values, respectively.
 
 - `CALL SetVideoBank(3)`:
   This sets the VIC bank to Bank #3 (address range: $C000-$FFFF, 49152-65535).
@@ -76,18 +82,6 @@ CALL Text(9, 2, MODE_SET, TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOWERCAS
 
 - `CALL FillColors(COLOR_RED, COLOR_WHITE)`:
   This sets the screen memory with a value derived from a combination of the white and red colors. This combination sets the foreground color to white and the background color to red.
-
-- `CALL Plot(160, 50, MODE_SET)`:
-  This plots (or draws) a pixel at coordinates (160, 50) in the foreground color.
-
-- `CALL Circle(160, 100, 90, MODE_SET)`:
-  Draws a circle with its center at (160, 100) and a radius of 90 pixels in the foreground color.
-
-- `CALL Draw(0, 0, 319, 199, MODE_SET)` and `CALL Draw(0, 199, 319, 0, MODE_SET)`:
-  These lines draw two diagonal lines on the screen. The first line is drawn from the top-left to the bottom-right, and the second line is drawn from the bottom-left to the top-right, both in the foreground color.
-
-- `CALL Text(9, 2, 1, TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOWERCASE)`:
-  This writes the text "Hello World" to the screen starting at cell (9, 2). The text is in the foreground color, the background is set to transparent, the text is doubled in size in the x-direction, and it uses the uppercase/lowercase character set from ROM memory defined by `ROM_CHARSET_LOWERCASE`.
 
 ## API Documentation
 
