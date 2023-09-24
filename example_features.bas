@@ -114,21 +114,21 @@ SUB TestSuiteLines() STATIC
     CALL FillBuffer(0)
     CALL FillColors(COLOR_WHITE, COLOR_RED)
 
-    DIM Y AS BYTE
-    DIM X AS WORD
-
     DO
-        Y = 0
-        DO
-            CALL Draw(0, Y, 319, Y, MODE_SET)
-            Y=Y+1
-        LOOP UNTIL Y = 200
-
-        X = 0
-        DO
-            CALL Draw(X, 0, X, 199, MODE_CLEAR)
-            X=X+1
-        LOOP UNTIL X = 320
+        CALL Text(30,24,1,0,0,"Draw",ROM_CHARSET_LOWERCASE)
+        FOR Y AS BYTE = 0 TO 199
+            CALL Draw(0, Y, 319, Y, MODE_FLIP)
+        NEXT Y
+        CALL Text(30,24,0,1,0,"VDraw",ROM_CHARSET_LOWERCASE)
+        FOR X AS WORD = 0 TO 319
+            CALL VDraw(X, 0, 199, MODE_FLIP)
+        NEXT X
+        CALL Text(30,24,1,0,0,"HDraw",ROM_CHARSET_LOWERCASE)
+        FOR Y = 0 TO 199
+            CALL HDraw(0, 319, Y, MODE_FLIP)
+        NEXT Y
+        CALL Text(30,24,1,0,0,"FillBuffer",ROM_CHARSET_LOWERCASE)
+        CALL FillBuffer(0)
     LOOP
 END SUB
 
