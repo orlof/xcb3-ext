@@ -1,3 +1,21 @@
+ASM
+    MAC OPEN_BANK3
+        IFCONST LIB_GFX_ENABLE_BANK_3
+            sei
+            lda #%00110100
+            sta 1
+        ENDIF
+    ENDM
+
+    MAC CLOSE_BANK3
+        IFCONST LIB_GFX_ENABLE_BANK_3
+            lda #%00110110
+            sta 1
+            cli
+        ENDIF
+    ENDM
+END ASM
+
 REM **********************
 REM *     CONSTANTS      *
 REM **********************
@@ -127,9 +145,7 @@ REM *     FUNCTIONS      *
 REM **********************
 SUB FillBuffer(Value AS BYTE) SHARED STATIC
     ASM
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
         lda {_dbuf_nr}
         eor {_dbuf_on}
@@ -145,9 +161,7 @@ _clear_buffer_choose1
         jsr _clear_buffer1
 
 _clear_buffer_end
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
     END ASM
 END SUB
 
@@ -242,7 +256,7 @@ SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Te
         bcs _mc_text_ram
 
 _mc_text_rom
-        sei
+        sei             ; access ROM characters
         lda #%00110001
         sta 1
 
@@ -259,9 +273,7 @@ _mc_text_rom1
         jmp _mc_text_init
 
 _mc_text_ram
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
 _mc_text_init
         ;init color patterns
@@ -493,7 +505,7 @@ _mc_text_char_double_next
 _mc_text_next_char
         jmp mc_text_loop_text
 _mc_text_end
-        lda #%00110110
+        lda #%00110110      ; Disable ROM characters (or bank3 access)
         sta 1
         cli
     END ASM
@@ -520,7 +532,7 @@ SUB Text(Col AS BYTE, Row AS BYTE, Mode AS BYTE, BgMode AS BYTE, Double AS BYTE,
         bcs _text_ram
 
 _text_rom
-        sei
+        sei             ; access ROM characters
         lda #%00110001
         sta 1
 
@@ -537,9 +549,7 @@ _text_rom1
         jmp _text_init
 
 _text_ram
-        sei
-        lda #%00110000
-        sta 1
+        OPEN_BANK3
 
 _text_init
         ;init bitmap pointer
@@ -733,7 +743,7 @@ _text_pen_and_paper_set
         rts
 
 text_end
-        lda #%00110110
+        lda #%00110110          ; Disable ROM characters (or bank3 access)
         sta 1
         cli
     END ASM
@@ -742,7 +752,7 @@ END SUB
 SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
     ' TEMP = ZP_B0
     ASM
-        sei
+        sei                 ; access ROM characters
         lda #%00110001
         sta 1
     END ASM
@@ -752,7 +762,7 @@ SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
         MEMCPY $d000, DestAddr, 2048
     END IF
     ASM
-        lda #%00110110
+        lda #%00110110      ; Disable ROM characters
         sta 1
         cli
     END ASM
@@ -783,9 +793,7 @@ SUB SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, 
         lda {_screen_y_tbl},x
         sta {ZP_W0}
 
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
         cpy #2
         beq _set_color_mc_2
@@ -847,9 +855,7 @@ _set_color_x_loop
         dex
         bpl _set_color_y_loop
 
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
     END ASM
 END SUB
 
@@ -878,9 +884,7 @@ END SUB
 
 SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
     ASM
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
         lda {_dbuf_nr}
         eor {_dbuf_on}
@@ -892,9 +896,7 @@ SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
     END ASM
     MEMSET ZP_W0, 1000, Value
     ASM
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
     END ASM
 END SUB
 
@@ -1109,9 +1111,7 @@ SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
     'ABOUT 235 pixels per 1/50 s (average 142 pixels per line)
     ASM
 _plot_ram_in
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
 _plot_init
         lda {y}             ; 4
@@ -1160,9 +1160,7 @@ _plot_set
         sta ({ZP_W0}),y
 
 _plot_ram_out
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
 _plot_end
     END ASM
 END SUB
@@ -1174,9 +1172,7 @@ SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
     ' ZP_B5: x and %11111000
     ASM
 _vdraw_ram_in
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
 _vdraw_smc_init
         lda {Mode}
@@ -1286,9 +1282,7 @@ _vdraw_smc1
         jmp _vdraw_loop
 
 _vdraw_end
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
     END ASM
 END SUB
 
@@ -1301,9 +1295,7 @@ SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
     ' ZP_B4: End Mask
     ASM
 _hdraw_ram_in
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
 _hdraw_init
         ldx {Mode}
@@ -1458,9 +1450,7 @@ _hdraw_mode_lo
         .byte #<_hdraw_flip, #<_hdraw_clear, #<_hdraw_set
 
 _hdraw_end
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
     END ASM
 END SUB
 
@@ -1477,9 +1467,7 @@ SUB Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE) SHARED ST
     ' DX ZP_W1
     ASM
 _draw_ram_in
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
 _draw_init
         lda {Mode}
@@ -1787,9 +1775,7 @@ _draw_smc2
         bne _draw_y_loop            ;next
 
 _draw_ram_out
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
     END ASM
 END SUB
 
@@ -1797,9 +1783,7 @@ SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
     ' BASE = ZP_W0
     ASM
 _plotmc_ram_in
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
 _plotmc_init
         lda #0
@@ -1847,9 +1831,7 @@ _plotmc_draw
         sta  ({ZP_W0}),y
 
 _plotmc_ram_out:
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
 
 _plotmc_end:
     END ASM
@@ -1868,9 +1850,7 @@ SUB DrawMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED S
         ;  COUNT 8 ZP_W2
         ;  DISTANCE 16 ZP_I0
 _drawmc_ram_in
-        sei
-        lda #%00110100
-        sta 1
+        OPEN_BANK3
 
 _drawmc_init
         ldx  {Ink}
@@ -2048,106 +2028,104 @@ _drawmc_x_plot:
         jmp  _drawmc_ram_out
 
 _drawmc_y:
-      lda  {ZP_B0}
-      bne  _drawmc_y_init
-      jmp  _drawmc_ram_out
+        lda  {ZP_B0}
+        bne  _drawmc_y_init
+        jmp  _drawmc_ram_out
 
 _drawmc_y_init:
-      sta  {ZP_W2}
-      lsr
-      sta  {ZP_I0}
+        sta  {ZP_W2}
+        lsr
+        sta  {ZP_I0}
 _drawmc_y_loop:
-      lda  {ZP_B2}
-      bmi  _drawmc_y_up
+        lda  {ZP_B2}
+        bmi  _drawmc_y_up
 
 _drawmc_y_down:
-      iny
-      cpy  #8
-      bcc  _drawmc_y_add_dx
-      ldy  #0
-      lda  {ZP_W0}
-      adc  #$3F
-      sta  {ZP_W0}
-      lda  {ZP_W0}+1
-      adc  #$01
-      bcc  _drawmc_y_store_base
+        iny
+        cpy  #8
+        bcc  _drawmc_y_add_dx
+        ldy  #0
+        lda  {ZP_W0}
+        adc  #$3F
+        sta  {ZP_W0}
+        lda  {ZP_W0}+1
+        adc  #$01
+        bcc  _drawmc_y_store_base
 
 _drawmc_y_up:
-      dey
-      bpl  _drawmc_y_add_dx
-      ldy  #7
-      sec
-      lda  {ZP_W0}
-      sbc  #$40
-      sta  {ZP_W0}
-      lda  {ZP_W0}+1
-      sbc  #$01
+        dey
+        bpl  _drawmc_y_add_dx
+        ldy  #7
+        sec
+        lda  {ZP_W0}
+        sbc  #$40
+        sta  {ZP_W0}
+        lda  {ZP_W0}+1
+        sbc  #$01
 _drawmc_y_store_base:
-      sta  {ZP_W0}+1
+        sta  {ZP_W0}+1
 
 _drawmc_y_add_dx:
-      ldx  #0
-      lda  {ZP_I0}
-      clc
-      adc  {ZP_W1}
-      sta  {ZP_I0}
-      bcs  _drawmc_y_sub_dy
-      inx
-      sec
+        ldx  #0
+        lda  {ZP_I0}
+        clc
+        adc  {ZP_W1}
+        sta  {ZP_I0}
+        bcs  _drawmc_y_sub_dy
+        inx
+        sec
 
 _drawmc_y_sub_dy:
-      sbc  {ZP_B0}
-      bcs  _drawmc_y_distance
-      dex
-      beq  _drawmc_y_plot
+        sbc  {ZP_B0}
+        bcs  _drawmc_y_distance
+        dex
+        beq  _drawmc_y_plot
 
 _drawmc_y_distance:
-      sta  {ZP_I0}
+        sta  {ZP_I0}
 
-      lda  {ZP_B1}
-      bmi  _drawmc_y_left
+        lda  {ZP_B1}
+        bmi  _drawmc_y_left
 
 _drawmc_y_right
-      lsr  {ZP_B4}
-      ror  {ZP_B4}
-      bcc  _drawmc_y_plot
-      ror  {ZP_B4}
-      lda  {ZP_W0}
-      adc  #8
-      sta  {ZP_W0}
-      bcc  _drawmc_y_plot
-      inc  {ZP_W0}+1
-      bne  _drawmc_y_plot
+        lsr  {ZP_B4}
+        ror  {ZP_B4}
+        bcc  _drawmc_y_plot
+        ror  {ZP_B4}
+        lda  {ZP_W0}
+        adc  #8
+        sta  {ZP_W0}
+        bcc  _drawmc_y_plot
+        inc  {ZP_W0}+1
+        bne  _drawmc_y_plot
 
 _drawmc_y_left:
-      asl  {ZP_B4}
-      rol  {ZP_B4}
-      bcc  _drawmc_y_plot
-      rol  {ZP_B4}
-      sec
-      lda  {ZP_W0}
-      sbc  #8
-      sta  {ZP_W0}
-      bcs  _drawmc_y_plot
-      dec  {ZP_W0}+1
+        asl  {ZP_B4}
+        rol  {ZP_B4}
+        bcc  _drawmc_y_plot
+        rol  {ZP_B4}
+        sec
+        lda  {ZP_W0}
+        sbc  #8
+        sta  {ZP_W0}
+        bcs  _drawmc_y_plot
+        dec  {ZP_W0}+1
 
 _drawmc_y_plot:
-      lda  {ZP_B4}
-      and  {ZP_B3}
-      sta  {ZP_B5}
-      lda  {ZP_B4}
-      eor  #$FF
-      and  ({ZP_W0}),y
-      ora  {ZP_B5}
-      sta  ({ZP_W0}),y
+        lda  {ZP_B4}
+        and  {ZP_B3}
+        sta  {ZP_B5}
+        lda  {ZP_B4}
+        eor  #$FF
+        and  ({ZP_W0}),y
+        ora  {ZP_B5}
+        sta  ({ZP_W0}),y
 
-      dec  {ZP_W2}
-      bne  _drawmc_y_loop
+        dec  {ZP_W2}
+        bne  _drawmc_y_loop
 
 _drawmc_ram_out:
-        lda #%00110110
-        sta 1
-        cli
+        CLOSE_BANK3
 _drawmc_end:
     END ASM
 END SUB
