@@ -64,6 +64,9 @@ DIM _hires_mask1(8) AS BYTE @__hires_mask1
 DIM _hdraw_end_mask(8) AS BYTE @__hdraw_end_mask
 DIM _hdraw_start_mask(8) AS BYTE @__hdraw_start_mask
 
+DIM _hdrawmc_end_mask(4) AS BYTE @__hdrawmc_end_mask
+DIM _hdrawmc_start_mask(4) AS BYTE @__hdrawmc_start_mask
+
 DIM _mc_mask(4) AS BYTE @__mc_mask
 DIM _mc_pattern(4) AS BYTE @__mc_pattern
 
@@ -127,9 +130,11 @@ DECLARE SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB DrawMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
+DECLARE SUB HDrawMC(x0 AS BYTE, x1 AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB Rect(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE, FillMode AS BYTE) SHARED STATIC
+DECLARE SUB RectMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, Fill AS BYTE) SHARED STATIC
 DECLARE SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
 
@@ -148,6 +153,27 @@ DECLARE SUB _calc_screen_table() STATIC
 REM **********************
 REM *     FUNCTIONS      *
 REM **********************
+SUB RectMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, Fill AS BYTE) SHARED STATIC
+    IF Ink <> MODE_TRANSPARENT THEN
+        CALL HDrawMC(x0, x1, y0, Ink)
+        CALL HDrawMC(x0, x1, y1, Ink)
+        CALL VDrawMC(x0, y0, y1, Ink)
+        CALL VDrawMC(x1, y0, y1, Ink)
+    END IF
+
+    IF Fill <> MODE_TRANSPARENT THEN
+        ASM
+            inc {x0}
+            dec {x1}
+            inc {y0}
+            dec {y1}
+        END ASM
+        FOR Y AS BYTE = y0 TO y1
+            CALL HDrawMC(x0, x1, Y, Fill)
+        NEXT Y
+    END IF
+END SUB
+
 SUB Rect(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE, FillMode AS BYTE) SHARED STATIC
     IF Mode <> MODE_TRANSPARENT THEN
         CALL HDraw(x0, x1, y0, Mode)
@@ -159,7 +185,16 @@ SUB Rect(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE, FillMode 
     IF FillMode <> MODE_TRANSPARENT THEN
         ASM
             inc {x0}
+            bne _rect_no_inc
+                inc {x0}+1
+_rect_no_inc
+
+            lda {x1}
+            bne _rect_no_dec
+                dec {x1}+1
+_rect_no_dec
             dec {x1}
+
             inc {y0}
             dec {y1}
         END ASM
@@ -1190,9 +1225,140 @@ _plot_end
     END ASM
 END SUB
 
-SUB VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
+SUB HDrawMC(x0 AS BYTE, x1 AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
+    ' B0 min(x0,x1)
+    ' B1 max(x0,x1)
+    ' B2 (B1>>2) - (B0>>2)
+    ' B3 Mask
+    ' B4 Ink pattern
+    ' B5 Mask & Ink pattern
     ASM
         sta $400
+
+        lda {x0}
+        cmp {x1}
+        bcs _hdrawmc_start_x1
+
+_hdrawmc_start_x0
+        sta {ZP_B0}
+        lda {x1}
+        sta {ZP_B1}
+        jmp _hdrawmc_base
+
+_hdrawmc_start_x1
+        sta {ZP_B1}
+        lda {x1}
+        sta {ZP_B0}
+
+_hdrawmc_base
+        lda #0
+        sta {ZP_W0}+1
+
+        lda {y}
+        and #7
+        sta {ZP_W0}
+
+        eor {y}
+        lsr
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
+        tax
+
+        lda {ZP_B0}
+        and #%11111100
+        asl
+        rol {ZP_W0}+1
+        ora {ZP_W0}
+        clc
+        adc {_bitmap_y_tbl},x
+        sta {ZP_W0}
+        lda {ZP_W0}+1
+        adc {_bitmap_y_tbl}+1,x
+        sta {ZP_W0}+1
+
+_hdrawmc_dx
+        lda {ZP_B0}
+        lsr
+        lsr
+        sta {ZP_B2}
+        lda {ZP_B1}
+        lsr
+        lsr
+        sec
+        sbc {ZP_B2}
+        sta {ZP_B2}
+
+_hdrawmc_ink_pattern
+        ldx {Ink}
+        lda {_mc_pattern},x
+        sta {ZP_B4} ;pattern
+
+_hdrawmc_start_byte
+        OPEN_BANK3
+
+        ldy #0
+        lda {ZP_B0}
+        and #%00000011
+        tax
+        lda {_hdrawmc_start_mask},x
+        sta {ZP_B3} ;mask
+
+        ldx {ZP_B2} ;dx
+        beq _hdrawmc_end_byte
+
+        and {ZP_B4}
+        sta {ZP_B5} ;pattern & mask
+
+        lda {ZP_B3}
+        eor #$ff
+        and ({ZP_W0}),y
+
+        ora {ZP_B5}
+        sta ({ZP_W0}),y
+
+        lda #$ff
+        sta {ZP_B3}
+
+_hdrawmc_loop
+        tya                 ; 2
+        clc                 ; 2
+        adc #8              ; 3
+        bcc *+4             ; 3/4
+            inc {ZP_W0}+1   ; 5
+        tay                 ; 2 -> 12/18
+
+        dex
+        beq _hdrawmc_end_byte
+
+        lda {ZP_B4}
+        sta ({ZP_W0}),y
+
+        jmp _hdrawmc_loop
+
+_hdrawmc_end_byte
+        lda {ZP_B1}
+        and #%00000011
+        tax
+        lda {_hdrawmc_end_mask},x
+        and {ZP_B3} ;mask & endmask
+        sta {ZP_B3}
+
+        and {ZP_B4} ;pattern & mask & endmask
+        sta {ZP_B5}
+
+        lda {ZP_B3}
+        eor #$ff
+        and ({ZP_W0}),y
+
+        ora {ZP_B5}
+        sta ({ZP_W0}),y
+
+        CLOSE_BANK3
+    END ASM
+END SUB
+
+SUB VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
+    ASM
 _vdrawmc_init
         lda {y0}
         cmp {y1}
@@ -1434,8 +1600,8 @@ _hdraw_init
 
 _hdraw_init_end
         lda {y}             ; 4
-        and #7              ; 2 these cycles are needed to calculate the index to y table
-        sta {ZP_B0}         ; 2 not needed if the table were 250 words long
+        and #7              ; 2
+        sta {ZP_B0}         ; 2
 
         eor {y}             ; 4
         lsr                 ; 2
@@ -2410,6 +2576,11 @@ _petscii_to_screencode_end
 END FUNCTION
 
 
+__hdrawmc_start_mask:
+DATA AS BYTE %11111111, %00111111, %00001111, %00000011
+__hdrawmc_end_mask:
+DATA AS BYTE %11000000, %11110000, %11111100, %11111111
+
 __hdraw_start_mask:
 DATA AS BYTE %11111111, %01111111, %00111111, %00011111, %00001111, %00000111, %00000011, %00000001
 __hdraw_end_mask:
@@ -2428,7 +2599,7 @@ __hires_mask1:
 DATA AS BYTE $80, $40, $20, $10, $08, $04, $02, $01
 
 __mc_mask:
-DATA AS BYTE $c0,$30,$0c,$03
+DATA AS BYTE %11000000, %00110000, %00001100, %00000011
 __mc_pattern:
 DATA AS BYTE %00000000, %01010101, %10101010, %11111111
 

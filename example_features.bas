@@ -44,6 +44,41 @@ SUB TestSuiteMC() SHARED STATIC
     CALL DrawMC(0, 0, 159, 199, 1)
     CALL DrawMC(159, 0, 0, 199, 1)
 
+    Y = 105
+    CALL RectMC(10, Y, 30, Y+10, 0, 0)
+    CALL RectMC(40, Y, 60, Y+10, 0, 1)
+    CALL RectMC(70, Y, 90, Y+10, 0, 2)
+    CALL RectMC(100, Y, 120, Y+10, 0, 3)
+    CALL RectMC(130, Y, 150, Y+10, 0, MODE_TRANSPARENT)
+
+    Y = Y + 15
+    CALL RectMC(10, Y, 30, Y+10, 1, 0)
+    CALL RectMC(40, Y, 60, Y+10, 1, 1)
+    CALL RectMC(70, Y, 90, Y+10, 1, 2)
+    CALL RectMC(100, Y, 120, Y+10, 1, 3)
+    CALL RectMC(130, Y, 150, Y+10, 1, MODE_TRANSPARENT)
+
+    Y = Y + 15
+    CALL RectMC(10, Y, 30, Y+10, 2, 0)
+    CALL RectMC(40, Y, 60, Y+10, 2, 1)
+    CALL RectMC(70, Y, 90, Y+10, 2, 2)
+    CALL RectMC(100, Y, 120, Y+10, 2, 3)
+    CALL RectMC(130, Y, 150, Y+10, 2, MODE_TRANSPARENT)
+
+    Y = Y + 15
+    CALL RectMC(10, Y, 30, Y+10, 3, 0)
+    CALL RectMC(40, Y, 60, Y+10, 3, 1)
+    CALL RectMC(70, Y, 90, Y+10, 3, 2)
+    CALL RectMC(100, Y, 120, Y+10, 3, 3)
+    CALL RectMC(130, Y, 150, Y+10, 3, MODE_TRANSPARENT)
+
+    Y = Y + 15
+    CALL RectMC(10, Y, 30, Y+10, MODE_TRANSPARENT, 0)
+    CALL RectMC(40, Y, 60, Y+10, MODE_TRANSPARENT, 1)
+    CALL RectMC(70, Y, 90, Y+10, MODE_TRANSPARENT, 2)
+    CALL RectMC(100, Y, 120, Y+10, MODE_TRANSPARENT, 3)
+    CALL RectMC(130, Y, 150, Y+10, MODE_TRANSPARENT, MODE_TRANSPARENT)
+
     'CALL CopyCharROM(1, $d000)
     FOR Face AS BYTE = 0 TO 4
         FOR Bg AS BYTE = 0 TO 4
@@ -138,7 +173,7 @@ SUB TestSuiteLines() STATIC
     CALL FillBuffer(0)
     CALL FillColors(COLOR_WHITE, COLOR_RED)
 
-    FOR T AS BYTE = 0 TO 2
+    FOR T AS BYTE = 0 TO 3
         CALL Text(30,24,1,0,0,"Draw",ROM_CHARSET_LOWERCASE)
         FOR Y AS BYTE = 0 TO 199
             CALL Draw(0, Y, 319, Y, MODE_FLIP)
@@ -164,18 +199,18 @@ SUB TestSuiteLinesMC() STATIC
     CALL FillBuffer(0)
     CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 
-    FOR T AS BYTE = 0 TO 2
+    FOR T AS BYTE = 0 TO 3
         CALL TextMC(30,24,1,0,0,"DrawMC",ROM_CHARSET_LOWERCASE)
         FOR Y AS BYTE = 0 TO 199
             CALL DrawMC(0, Y, 159, Y, Y AND 3)
         NEXT Y
-        CALL TextMC(30,24,0,1,0,"VDrawMC",ROM_CHARSET_LOWERCASE)
+        CALL TextMC(30,24,1,0,0,"VDrawMC",ROM_CHARSET_LOWERCASE)
         FOR X AS WORD = 0 TO 159
-            CALL VDrawMC(X, 0, 199, Y AND 3)
+            CALL VDrawMC(X, 0, 199, X AND 3)
         NEXT X
-        CALL Text(30,24,1,0,0,"HDraw",ROM_CHARSET_LOWERCASE)
+        CALL TextMC(30,24,1,0,0,"HDrawMC",ROM_CHARSET_LOWERCASE)
         FOR Y = 0 TO 199
-            'CALL HDrawMC(0, 319, Y, Y AND 3)
+            CALL HDrawMC(0, 159, Y, Y AND 3)
         NEXT Y
         CALL TextMC(30,24,1,0,0,"FillBuffer",ROM_CHARSET_LOWERCASE)
         CALL FillBuffer(0)
@@ -197,10 +232,6 @@ LOOP UNTIL a > 0
 
 CALL TestSuiteLines()
 CALL TestSuiteLinesMC()
-
-DO
-  GET a
-LOOP UNTIL a > 0
 
 CALL ResetScreen()
 END
