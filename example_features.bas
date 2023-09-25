@@ -138,7 +138,7 @@ SUB TestSuiteLines() STATIC
     CALL FillBuffer(0)
     CALL FillColors(COLOR_WHITE, COLOR_RED)
 
-    DO
+    FOR T AS BYTE = 0 TO 2
         CALL Text(30,24,1,0,0,"Draw",ROM_CHARSET_LOWERCASE)
         FOR Y AS BYTE = 0 TO 199
             CALL Draw(0, Y, 319, Y, MODE_FLIP)
@@ -153,7 +153,33 @@ SUB TestSuiteLines() STATIC
         NEXT Y
         CALL Text(30,24,1,0,0,"FillBuffer",ROM_CHARSET_LOWERCASE)
         CALL FillBuffer(0)
-    LOOP
+    NEXT T
+END SUB
+
+SUB TestSuiteLinesMC() STATIC
+    CALL SetVideoBank(3)
+    CALL SetBitmapMemory(1)
+    CALL SetScreenMemory(0)
+    CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
+    CALL FillBuffer(0)
+    CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
+
+    FOR T AS BYTE = 0 TO 2
+        CALL TextMC(30,24,1,0,0,"DrawMC",ROM_CHARSET_LOWERCASE)
+        FOR Y AS BYTE = 0 TO 199
+            CALL DrawMC(0, Y, 159, Y, Y AND 3)
+        NEXT Y
+        CALL TextMC(30,24,0,1,0,"VDrawMC",ROM_CHARSET_LOWERCASE)
+        FOR X AS WORD = 0 TO 159
+            CALL VDrawMC(X, 0, 199, Y AND 3)
+        NEXT X
+        CALL Text(30,24,1,0,0,"HDraw",ROM_CHARSET_LOWERCASE)
+        FOR Y = 0 TO 199
+            'CALL HDrawMC(0, 319, Y, Y AND 3)
+        NEXT Y
+        CALL TextMC(30,24,1,0,0,"FillBuffer",ROM_CHARSET_LOWERCASE)
+        CALL FillBuffer(0)
+    NEXT T
 END SUB
 
 CALL TestSuiteMC()
@@ -170,6 +196,7 @@ DO
 LOOP UNTIL a > 0
 
 CALL TestSuiteLines()
+CALL TestSuiteLinesMC()
 
 DO
   GET a

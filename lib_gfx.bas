@@ -128,7 +128,7 @@ DECLARE SUB Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE) S
 DECLARE SUB DrawMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB HDraw(x0 AS WORD, x1 AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
-DECLARE SUB VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
+DECLARE SUB VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB Rect(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE, FillMode AS BYTE) SHARED STATIC
 DECLARE SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
@@ -1082,18 +1082,21 @@ SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
         ZP_I0 = ZP_I0 - ZP_B2
         IF ZP_I0 < 0 THEN ZP_B1 = ZP_B1 - 1: ZP_I0 = ZP_I0 + ZP_B1
 
-        CALL PlotMC(x0+ZP_B1, y0+ZP_B2, Ink)
-        CALL PlotMC(x0+ZP_B1, y0-ZP_B2, Ink)
-        CALL PlotMC(x0-ZP_B1, y0+ZP_B2, Ink)
-        CALL PlotMC(x0-ZP_B1, y0-ZP_B2, Ink)
-        CALL PlotMC(x0+ZP_B2, y0+ZP_B1, Ink)
-        CALL PlotMC(x0+ZP_B2, y0-ZP_B1, Ink)
-        CALL PlotMC(x0-ZP_B2, y0+ZP_B1, Ink)
-        CALL PlotMC(x0-ZP_B2, y0-ZP_B1, Ink)
+        ZP_B0 = SHR(ZP_B1, 1)
+        ZP_B3 = SHR(ZP_B2, 1)
+
+        CALL PlotMC(x0+ZP_B0, y0+ZP_B2, Ink)
+        CALL PlotMC(x0+ZP_B0, y0-ZP_B2, Ink)
+        CALL PlotMC(x0-ZP_B0, y0+ZP_B2, Ink)
+        CALL PlotMC(x0-ZP_B0, y0-ZP_B2, Ink)
+        CALL PlotMC(x0+ZP_B3, y0+ZP_B1, Ink)
+        CALL PlotMC(x0+ZP_B3, y0-ZP_B1, Ink)
+        CALL PlotMC(x0-ZP_B3, y0+ZP_B1, Ink)
+        CALL PlotMC(x0-ZP_B3, y0-ZP_B1, Ink)
     LOOP UNTIL ZP_B1 <= ZP_B2
 
-    CALL PlotMC(x0+Radius, y0, Ink)
-    CALL PlotMC(x0-Radius, y0, Ink)
+    CALL PlotMC(x0+SHR(Radius, 1), y0, Ink)
+    CALL PlotMC(x0-SHR(Radius, 1), y0, Ink)
     CALL PlotMC(x0, y0+Radius, Ink)
     CALL PlotMC(x0, y0-Radius, Ink)
 END SUB
@@ -1187,7 +1190,105 @@ _plot_end
     END ASM
 END SUB
 
-SUB VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
+SUB VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
+    ASM
+        sta $400
+_vdrawmc_init
+        lda {y0}
+        cmp {y1}
+        bcs _vdrawmc_start_y1
+
+_vdrawmc_start_y0
+        sta {ZP_B0}
+        lda {y1}
+        sta {ZP_B1}
+
+        jmp _vdrawmc_base
+
+_vdrawmc_start_y1
+        sta {ZP_B1}
+        lda {y1}
+        sta {ZP_B0}
+
+_vdrawmc_base
+        lda #0
+        sta {ZP_W0}+1
+
+        lda {ZP_B0}         ; 4
+        and #7              ; 2
+        sta {ZP_B5}         ; 2
+
+        eor {ZP_B0}         ; 3
+        lsr                 ; 2
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
+        tax                 ; 2
+
+        lda  {x}
+        and  #$FC
+        asl
+        rol  {ZP_W0}+1
+        ora {ZP_B5}
+        adc  {_bitmap_y_tbl},x
+        sta  {ZP_W0}
+
+        lda  {_bitmap_y_tbl}+1,x
+        adc  {ZP_W0}+1
+        sta  {ZP_W0}+1
+
+        lda {ZP_W0}
+        sec
+        sbc {ZP_B0}
+        sta {ZP_W0}
+        bcs *+4
+            dec {ZP_W0}+1
+
+_vdrawmc_mask
+        lda {x}
+        and #3
+        tax
+        lda {_mc_mask},x
+        eor #$ff
+        sta {ZP_B4}
+        eor #$ff
+
+_vdrawmc_ink
+        ldx {Ink}
+        and {_mc_pattern},x
+        sta {ZP_B5}
+
+_vdrawmc_ram_in
+        OPEN_BANK3
+
+        ldy {ZP_B0}
+_vdrawmc_loop
+        lda  {ZP_B4}
+        and  ({ZP_W0}),y
+        ora  {ZP_B5}
+        sta  ({ZP_W0}),y
+
+        cpy {ZP_B1}
+        beq _vdrawmc_end
+
+        iny
+        tya
+        and #%00000111
+        bne _vdrawmc_loop
+
+        lda {ZP_W0}
+        clc
+        adc #$38
+        sta {ZP_W0}
+        lda {ZP_W0}+1
+        adc #1
+        sta {ZP_W0}+1
+
+        jmp _vdrawmc_loop
+
+_vdrawmc_end
+        CLOSE_BANK3
+
+    END ASM
 END SUB
 
 SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
@@ -1241,8 +1342,8 @@ _vdraw_start_y1
 
 _vdraw_init_end
         lda {ZP_B0}
-        and #7              ; 2 these cycles are needed to calculate the index to y table
-        sta {ZP_B5}         ; 2 not needed if the table were 250 words long
+        and #7              ; 2
+        sta {ZP_B5}         ; 2
 
         eor {ZP_B0}         ; 4
         lsr                 ; 2
@@ -1843,7 +1944,7 @@ _plotmc_mask
 _plotmc_ink
         ldx {Ink}
         and {_mc_pattern},x
-        sta  {ZP_B5}
+        sta {ZP_B5}
 
 _plotmc_ram_in
         OPEN_BANK3
