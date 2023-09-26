@@ -595,7 +595,7 @@ Note: Remember to ensure that the specified region (from x0, y0 to x1, y1) lies 
 The `Plot` subroutine provides a method to draw individual pixels on the screen when operating in `STANDARD_BITMAP_MODE`.
 
 **Parameters:**
-- **x**: The horizontal position of the pixel on the screen. Acceptable values range from 0 to 319. For literal values less than 256, you may need to use the `CWORD(255)` type conversion. For instance: `CALL Plot(CWORD(255), 100, MODE_SET)`.
+- **x**: The horizontal position of the pixel on the screen. Acceptable values range from 0 to 319.
 - **y**: The vertical position of the pixel on the screen. Valid values are between 0 and 199.
 - **Mode**: The operation mode for the pixel plotting. It can be one of the following constants:
   - `MODE_SET`: Sets the pixel to the foreground color.
@@ -644,7 +644,7 @@ CALL PlotMC(80, 50, 2)  ' This will set the multicolor pixel at position (80, 50
 The `Draw` subroutine provides a method to draw a straight line between two points on the screen when operating in `STANDARD_BITMAP_MODE`.
 
 **Parameters:**
-- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if you are using a variable of type Word instead of literal value).
+- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319.
 - **y0, y1**: The vertical starting and ending positions of the line on the screen. Valid values for each range from 0 to 199.
 - **Mode**: The operation mode for drawing the line. It can be one of the following constants:
   - `MODE_SET`: Draws the line using the foreground color.
@@ -653,7 +653,7 @@ The `Draw` subroutine provides a method to draw a straight line between two poin
 
 **Usage:**
 ```basic
-CALL Draw(CWORD(10), 10, CWORD(150), 190, MODE_SET)  ' This will draw a line from point (10, 10) to point (150, 190) using the foreground color.
+CALL Draw(10, 10, 150, 190, MODE_SET)  ' This will draw a line from point (10, 10) to point (150, 190) using the foreground color.
 ```
 
 **Note**: This subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. It's essential to ensure that this mode is active before invoking `Draw`. Using this subroutine in other modes might produce unexpected results. Always ensure that the provided `x0`, `y0`, `x1`, `y1`, and `Mode` values are within the valid ranges to avoid unintended behaviors.
@@ -693,7 +693,7 @@ CALL DrawMC(20, 30, 140, 170, 2)  ' This will draw a line in multicolor mode fro
 The `HDraw()` subroutine is designed to draw horizontal lines efficiently in the `STANDARD_BITMAP_MODE`. It provides a faster way to render horizontal lines compared to the more general-purpose `Draw()` subroutine. Users can specify the starting and ending horizontal coordinates (`x0` and `x1`), the vertical coordinate (`y`), and the drawing mode (`Mode`).
 
 **Parameters:**
-- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if you are using a variable of type Word instead of literal value).
+- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 319.
 - **y**: The vertical position of the line on the screen. Valid values for each range from 0 to 199.
 - **Mode**: The operation mode for drawing the line. It can be one of the following constants:
   - `MODE_SET`: Draws the line using the foreground color.
@@ -702,7 +702,7 @@ The `HDraw()` subroutine is designed to draw horizontal lines efficiently in the
 
 **Usage:**
 ```basic
-CALL HDraw(CWORD(10), CWORD(100), 190, MODE_SET)  ' This will draw a horizontal line from point (10, 190) to point (100, 190) using the foreground color.
+CALL HDraw(10, 100, 190, MODE_SET)  ' This will draw a horizontal line from point (10, 190) to point (100, 190) using the foreground color.
 ```
 
 ### **Usage Notes:**
@@ -746,7 +746,7 @@ CALL HDrawMC(10, 100, 190, 2)  ' This will draw a horizontal line from point (10
 The `VDraw()` subroutine is designed to draw vertical lines efficiently in the `STANDARD_BITMAP_MODE`. It provides a faster way to render vertical lines compared to the more general-purpose `Draw()` subroutine. Users can specify the starting and ending vertical coordinates (`y0` and `y1`), the horizontal coordinate (`x`), and the drawing mode (`Mode`).
 
 **Parameters:**
-- **x**: The horizontal position of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if you are using a variable of type Word instead of literal value).
+- **x**: The horizontal position of the line on the screen. Acceptable values for each range from 0 to 319.
 - **y0, y1**: The vertical starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 199.
 - **Mode**: The operation mode for drawing the line. It can be one of the following constants:
   - `MODE_SET`: Draws the line using the foreground color.
@@ -755,7 +755,7 @@ The `VDraw()` subroutine is designed to draw vertical lines efficiently in the `
 
 **Usage:**
 ```basic
-CALL VDraw(CWORD(10), 100, 190, MODE_SET)  ' This will draw a vertical line from point (10, 100) to point (10, 190) using the foreground color.
+CALL VDraw(10, 100, 190, MODE_SET)  ' This will draw a vertical line from point (10, 100) to point (10, 190) using the foreground color.
 ```
 
 ### **Usage Notes:**
@@ -799,7 +799,7 @@ CALL VDrawMC(10, 100, 190, 3)  ' This will draw a vertical line from point (10, 
 The `Circle` subroutine enables drawing circles in the `STANDARD_BITMAP_MODE` on the screen.
 
 **Parameters:**
-- **x0**: The horizontal position of the circle's center. Valid values range from 0 to 319. For literal values less than 256, you might need to use the `CWORD(255)` type conversion. For instance: `CALL Circle(CWORD(255), 100, 50, MODE_SET)`.
+- **x0**: The horizontal position of the circle's center. Valid values range from 0 to 319.
 - **y0**: The vertical position of the circle's center. Acceptable values range from 0 to 199.
 - **Radius**: Defines the radius of the circle in pixels.
 - **Mode**: The operation mode for drawing the circle. It can be one of the following constants:
@@ -826,7 +826,7 @@ The `CircleMC` subroutine is tailored for drawing circles in multicolor mode on 
 **Parameters:**
 - **x0**: The horizontal position of the circle's center in multicolor mode. Acceptable values range from 0 to 159.
 - **y0**: The vertical position of the circle's center. Valid values range from 0 to 199.
-- **Radius**: Defines the radius of the circle in pixels.
+- **Radius**: Defines the radius of the circle in pixels. Note that library compensates multicolor mode's pixel height/width ratio by drawing in reality an ellipse where x axel is only half of the defined radius.
 - **Ink**: Specifies the color to be used to draw the circle. It can have one of the following values:
   - `0`: Background color (addressed by `$D021`).
   - `1`: Color1, determined by bits #4-7 of the corresponding byte in screen RAM.
@@ -841,10 +841,6 @@ CALL CircleMC(80, 100, 40, 2)  ' This will draw a circle centered at point (80, 
 **Note**: The `CircleMC` subroutine is specifically devised for use in multicolor mode. Before using this subroutine, ensure that your system is configured to this mode. Pixels drawn must be within the screen boundaries; make sure that the combination of center (`x0`, `y0`) and `Radius` keeps the circle entirely inside the screen dimensions to prevent unexpected behaviors. Using this subroutine outside of multicolor mode can yield unpredictable outcomes.
 
 [Back to TOC](#table-of-contents)
-
----
-
-Certainly! Here's the documentation for the `Rect()` subroutine:
 
 ---
 
