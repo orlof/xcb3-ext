@@ -118,10 +118,13 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 - [Draw](#draw)
 - [DrawMC](#drawmc)
 - [HDraw](#hdraw)
+- [HDrawMC](#hdrawmc)
 - [VDraw](#vdraw)
+- [VDrawMC](#vdrawmc)
 - [Circle](#circle)
 - [CircleMC](#circlemc)
 - [Rect](#rect)
+- [RectMC](#rectmc)
 
 #### Text
 - [CopyCharROM](#copycharrom)
@@ -712,15 +715,39 @@ CALL HDraw(CWORD(10), CWORD(100), 190, MODE_SET)  ' This will draw a horizontal 
 [Back to TOC](#table-of-contents)
 
 ---
+
+### HDrawMC
+#### HDrawMC(x0 AS BYTE, x1 AS BYTE, y AS BYTE, Ink AS BYTE)
+
+The `HDrawMC()` subroutine is designed to draw horizontal lines efficiently in the `MULTICOLOR_BITMAP_MODE`. It provides a faster way to render horizontal lines compared to the more general-purpose `DrawMC()` subroutine. Users can specify the starting and ending horizontal coordinates (`x0` and `x1`), the vertical coordinate (`y`), and the drawing color (`Ink`).
+
+**Parameters:**
+- **x0, x1**: The horizontal starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 159.
+- **y**: The vertical position of the line on the screen. Valid values for each range from 0 to 199.
+- **Mode**: The operation mode for drawing the line. It can be a color index 0-3.
+
+**Usage:**
+```basic
+CALL HDrawMC(10, 100, 190, 2)  ' This will draw a horizontal line from point (10, 190) to point (100, 190) using the color index 2.
+```
+
+### **Usage Notes:**
+
+- Ensure that `x0` and `x1` are within the valid horizontal coordinate range of 0 to 159, and `y` is within the range of 0 to 199.
+
+
+[Back to TOC](#table-of-contents)
+
+---
+
 ### VDraw
-#### HDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE)
+#### VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE)
 
 The `VDraw()` subroutine is designed to draw vertical lines efficiently in the `STANDARD_BITMAP_MODE`. It provides a faster way to render vertical lines compared to the more general-purpose `Draw()` subroutine. Users can specify the starting and ending vertical coordinates (`y0` and `y1`), the horizontal coordinate (`x`), and the drawing mode (`Mode`).
 
 **Parameters:**
 - **x**: The horizontal position of the line on the screen. Acceptable values for each range from 0 to 319. For literal values less than 256, consider using the `CWORD(255)` type conversion. For instance: `CALL Draw(CWORD(255), 50, 310, 150, MODE_SET)`. (This explicit type conversion is not needed if you are using a variable of type Word instead of literal value).
 - **y0, y1**: The vertical starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 199.
-- **y**: The vertical position of the line on the screen. Valid values for each range from 0 to 199.
 - **Mode**: The operation mode for drawing the line. It can be one of the following constants:
   - `MODE_SET`: Draws the line using the foreground color.
   - `MODE_CLEAR`: Draws the line using the background color.
@@ -736,6 +763,30 @@ CALL VDraw(CWORD(10), 100, 190, MODE_SET)  ' This will draw a vertical line from
 - Utilize `VDraw()` when you need to draw vertical lines efficiently in the `STANDARD_BITMAP_MODE`. It is a high-performance alternative to the more generic `Draw()` subroutine.
 
 - Ensure that `y0` and `y1` are within the valid vertical coordinate range of 0 to 199, and `x` is within the range of 0 to 319.
+
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### VDrawMC
+#### VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Ink AS BYTE)
+
+The `VDrawMC()` subroutine is designed to draw vertical lines efficiently in the `MULTICOLOR_BITMAP_MODE`. It provides a faster way to render vertical lines compared to the more general-purpose `DrawMC()` subroutine. Users can specify the starting and ending vertical coordinates (`y0` and `y1`), the horizontal coordinate (`x`), and the drawing color index (`Ink`).
+
+**Parameters:**
+- **x**: The horizontal position of the line on the screen. Acceptable values for each range from 0 to 159.
+- **y0, y1**: The vertical starting and ending positions of the line on the screen. Acceptable values for each range from 0 to 199.
+- **Ink**: The color index for drawing the line. It can range from 0 to 3.
+
+**Usage:**
+```basic
+CALL VDrawMC(10, 100, 190, 3)  ' This will draw a vertical line from point (10, 100) to point (10, 190) using color index 3.
+```
+
+### **Usage Notes:**
+
+- Ensure that `y0` and `y1` are within the valid vertical coordinate range of 0 to 199, and `x` is within the range of 0 to 159.
 
 
 [Back to TOC](#table-of-contents)
@@ -826,6 +877,34 @@ The `Rect()` subroutine is used to draw rectangles in the `STANDARD_BITMAP_MODE`
 
 - Use the `Rect()` subroutine when you need to draw rectangles in the `STANDARD_BITMAP_MODE`. You can control the drawing mode and fill mode to achieve various visual effects, including filled or hollow rectangles.
 
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### RectMC
+#### RectMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, FillInk AS BYTE)
+
+The `RectMC()` subroutine is used to draw rectangles in the `MULTICOLOR_BITMAP_MODE`. You can define the position and size of the rectangle using coordinates (`x0`, `y0`, `x1`, `y1`) and choose the drawing color (`Ink`) to rectangle frame and (`FillInk`) to interior sparately.
+
+**Parameters:**
+
+- **Coordinates:** You can specify the position and size of the rectangle using the following parameters:
+  - `x0`: The horizontal coordinate of the top-left corner of the rectangle (0-159).
+  - `y0`: The vertical coordinate of the top-left corner of the rectangle (0-199).
+  - `x1`: The horizontal coordinate of the bottom-right corner of the rectangle (0-159).
+  - `y1`: The vertical coordinate of the bottom-right corner of the rectangle (0-199).
+
+- **Ink:** The `Ink` parameter defines the drawing color for rectangle frame. It can take numerical values from 0 to 3 and constant MODE_TRANSPARENT or MODE_FLIP
+  - `MODE_FLIP`: Flips the current pixel color from background to foreground or vice versa.
+  - `MODE_TRANSPARENT`: Does not draw the edges
+- **FillInk:** The `FillInk` parameter defines how interior of the rectangle is drawn. It can also take numerical values from 0 to 3 and constant MODE_TRANSPARENT or MODE_FLIP:
+  - `MODE_FLIP`: Flips the color of the pixels within the rectangle.
+  - `MODE_TRANSPARENT`: Renders the rectangle as hollow, leaving its interior transparent.
+
+### **Usage Notes:**
+
+- Use the `RectMC()` subroutine when you need to draw rectangles in the `MULTICOLOR_BITMAP_MODE`. You can control the drawing mode and fill mode to achieve various visual effects, including filled or hollow rectangles.
 
 [Back to TOC](#table-of-contents)
 
