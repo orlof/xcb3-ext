@@ -135,8 +135,8 @@ DECLARE SUB VDraw(x AS WORD, y0 AS BYTE, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB VDrawMC(x AS BYTE, y0 AS BYTE, y1 AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB Rect(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE, FillMode AS BYTE) SHARED STATIC
 DECLARE SUB RectMC(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, Fill AS BYTE) SHARED STATIC
-DECLARE SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
-DECLARE SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
+DECLARE SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE, BgMode AS BYTE) SHARED STATIC
+DECLARE SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE, FillInk AS BYTE) SHARED STATIC
 
 DECLARE SUB CopyCharROM(CharSet AS BYTE, DestAddr AS WORD) SHARED STATIC
 DECLARE SUB TextMC(Col AS BYTE, Row AS BYTE, Ink AS BYTE, Bg AS BYTE, Double AS BYTE, Text AS STRING * 40, RomCharSet AS BYTE) SHARED STATIC OVERLOAD
@@ -1104,63 +1104,100 @@ _set_bitmap_memory_end
     CALL _calc_bitmap_table()
 END SUB
 
-SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE) SHARED STATIC
+SUB CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE, FillInk AS BYTE) SHARED STATIC
     ' DISTANCE = ZP_I0
     ' X = ZP_B1,
     ' Y = ZP_B2
-    ZP_B1 = Radius
-    ZP_B2 = 0
-    ZP_I0 = ZP_B1 / 2
+    DIM x AS BYTE
+    DIM y AS BYTE
+    DIM hx AS BYTE
+    DIM hy AS BYTE
+    DIM x_prev AS BYTE
+    x = Radius
+    y = 0
+    ZP_I0 = SHR(Radius, 1)
 
     DO
-        ZP_B2 = ZP_B2 + 1
-        ZP_I0 = ZP_I0 - ZP_B2
-        IF ZP_I0 < 0 THEN ZP_B1 = ZP_B1 - 1: ZP_I0 = ZP_I0 + ZP_B1
+        y = y + 1
+        ZP_I0 = ZP_I0 - y
+        IF ZP_I0 < 0 THEN x = x - 1: ZP_I0 = ZP_I0 + x
 
-        ZP_B0 = SHR(ZP_B1, 1)
-        ZP_B3 = SHR(ZP_B2, 1)
+        hx = SHR(x, 1) 'x
+        hy = SHR(y, 1) 'y
 
-        CALL PlotMC(x0+ZP_B0, y0+ZP_B2, Ink)
-        CALL PlotMC(x0+ZP_B0, y0-ZP_B2, Ink)
-        CALL PlotMC(x0-ZP_B0, y0+ZP_B2, Ink)
-        CALL PlotMC(x0-ZP_B0, y0-ZP_B2, Ink)
-        CALL PlotMC(x0+ZP_B3, y0+ZP_B1, Ink)
-        CALL PlotMC(x0+ZP_B3, y0-ZP_B1, Ink)
-        CALL PlotMC(x0-ZP_B3, y0+ZP_B1, Ink)
-        CALL PlotMC(x0-ZP_B3, y0-ZP_B1, Ink)
-    LOOP UNTIL ZP_B1 <= ZP_B2
+        IF FillInk <> MODE_TRANSPARENT THEN
+            CALL HDrawMC(x0-hx+1, x0+hx-1, y0-y, FillInk)
+            CALL HDrawMC(x0-hx+1, x0+hx-1, y0+y, FillInk)
+            IF x <> x_prev THEN
+                CALL HDrawMC(x0-hy+1, x0+hy-1, y0-x, FillInk)
+                CALL HDrawMC(x0-hy+1, x0+hy-1, y0+x, FillInk)
+            END IF
+            x_prev = x
+        END IF
 
+        IF Ink <> MODE_TRANSPARENT THEN
+            CALL PlotMC(x0+hx, y0+y, Ink)
+            CALL PlotMC(x0+hx, y0-y, Ink)
+            CALL PlotMC(x0-hx, y0+y, Ink)
+            CALL PlotMC(x0-hx, y0-y, Ink)
+            CALL PlotMC(x0+hy, y0+x, Ink)
+            CALL PlotMC(x0+hy, y0-x, Ink)
+            CALL PlotMC(x0-hy, y0+x, Ink)
+            CALL PlotMC(x0-hy, y0-x, Ink)
+        END IF
+    LOOP UNTIL x <= y
+
+    IF FillInk <> MODE_TRANSPARENT THEN
+        CALL HDrawMC(x0-SHR(Radius, 1)+1, x0+SHR(Radius, 1)-1, y0, FillInk)
+    END IF
     CALL PlotMC(x0+SHR(Radius, 1), y0, Ink)
     CALL PlotMC(x0-SHR(Radius, 1), y0, Ink)
     CALL PlotMC(x0, y0+Radius, Ink)
     CALL PlotMC(x0, y0-Radius, Ink)
 END SUB
 
-SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE) SHARED STATIC
+SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE, BgMode AS BYTE) SHARED STATIC
     ' DISTANCE = ZP_I0
     ' ZP_W1 = x
     ' ZP_B0 = y
     ' ZP_I0 = error distance
     '
-    ZP_W1 = Radius
-    ZP_B0 = 0
-    ZP_I0 = ZP_W1 / 2
+    DIM x AS BYTE
+    DIM y AS BYTE
+    DIM x_prev AS BYTE
+
+    x = Radius
+    y = 0
+    ZP_I0 = SHR(Radius, 1)
 
     DO
-        ZP_B0 = ZP_B0 + 1
-        ZP_I0 = ZP_I0 - ZP_B0
-        IF ZP_I0 < 0 THEN ZP_W1 = ZP_W1 - 1: ZP_I0 = ZP_I0 + ZP_W1
+        y = y + 1
+        ZP_I0 = ZP_I0 - y
+        IF ZP_I0 < 0 THEN x = x - 1: ZP_I0 = ZP_I0 + x
 
-        CALL Plot(x0+ZP_W1, y0+ZP_B0, Mode)
-        CALL Plot(x0+ZP_W1, y0-ZP_B0, Mode)
-        CALL Plot(x0-ZP_W1, y0+ZP_B0, Mode)
-        CALL Plot(x0-ZP_W1, y0-ZP_B0, Mode)
-        CALL Plot(x0+ZP_B0, y0+ZP_W1, Mode)
-        CALL Plot(x0+ZP_B0, y0-ZP_W1, Mode)
-        CALL Plot(x0-ZP_B0, y0+ZP_W1, Mode)
-        CALL Plot(x0-ZP_B0, y0-ZP_W1, Mode)
-    LOOP UNTIL ZP_W1 <= ZP_B0
+        IF BgMode <> MODE_TRANSPARENT THEN
+            CALL HDraw(x0-x+1, x0+x-1, y0-y, BgMode)
+            CALL HDraw(x0-x+1, x0+x-1, y0+y, BgMode)
+            IF x <> x_prev AND x > y THEN
+                CALL HDraw(x0-y+1, x0+y-1, y0-x, BgMode)
+                CALL HDraw(x0-y+1, x0+y-1, y0+x, BgMode)
+            END IF
+            x_prev = x
+        END IF
 
+        CALL Plot(x0+x, y0+y, Mode)
+        CALL Plot(x0+x, y0-y, Mode)
+        CALL Plot(x0-x, y0+y, Mode)
+        CALL Plot(x0-x, y0-y, Mode)
+        CALL Plot(x0+y, y0+x, Mode)
+        CALL Plot(x0+y, y0-x, Mode)
+        CALL Plot(x0-y, y0+x, Mode)
+        CALL Plot(x0-y, y0-x, Mode)
+    LOOP UNTIL x <= y
+
+    IF BgMode <> MODE_TRANSPARENT THEN
+        CALL HDraw(x0 - Radius+1, x0+Radius-1, y0, BgMode)
+    END IF
     CALL Plot(x0 + Radius, y0, Mode)
     CALL Plot(x0 - Radius, y0, Mode)
     CALL Plot(x0, y0 + Radius, Mode)
@@ -2078,15 +2115,15 @@ _plotmc_init
         lda #0
         sta {ZP_W0}+1
 
-        lda {y}             ; 4
-        and #7              ; 2 these cycles are needed to calculate the index to y table
-        tay                 ; 2 not needed if the table were 250 words long
+        lda {y}
+        and #7
+        tay
 
-        eor {y}             ; 3
-        lsr                 ; 2
+        eor {y}
+        lsr
         eor {_dbuf_nr}
         eor {_dbuf_on}
-        tax                 ; 2
+        tax
 
 _plotmc_base
         lda  {x}

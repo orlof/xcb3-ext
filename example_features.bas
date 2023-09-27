@@ -18,7 +18,7 @@ SUB TestSuiteMC() SHARED STATIC
     NEXT
 
     FOR R AS BYTE = 5 TO 75 STEP 5
-        CALL CircleMC(80, 100, R, 2)
+        CALL CircleMC(80, 100, R, 1, MODE_TRANSPARENT)
     NEXT
 
     CALL DrawMC(0, 0, 50, 0, 1)
@@ -43,6 +43,12 @@ SUB TestSuiteMC() SHARED STATIC
     CALL DrawMC(159, 199, 159, 149, 1)
     CALL DrawMC(0, 0, 159, 199, 1)
     CALL DrawMC(159, 0, 0, 199, 1)
+
+    CALL CircleMC(40, 50, 10, 1, 0)
+    CALL CircleMC(60, 50, 10, 2, 1)
+    CALL CircleMC(80, 50, 10, 3, 2)
+    CALL CircleMC(100, 50, 10, MODE_FLIP, 3)
+    CALL CircleMC(120, 50, 10, 1, MODE_TRANSPARENT)
 
     Y = 105
     CALL RectMC(10, Y, 30, Y+10, 0, 0)
@@ -105,7 +111,7 @@ SUB TestSuite() SHARED STATIC
     NEXT
 
     FOR R AS BYTE = 5 TO 95 STEP 5
-        CALL Circle(160, 100, R, 1)
+        CALL Circle(160, 100, R, 1, MODE_TRANSPARENT)
     NEXT
 
     CALL Draw(0,0,50,0,1)
@@ -130,6 +136,11 @@ SUB TestSuite() SHARED STATIC
     CALL Draw(319,199,319,149,1)
     CALL Draw(0,0,319,199,1)
     CALL Draw(319,0,0,199,1)
+
+    CALL Circle(100, 50, 20, 1, 0)
+    CALL Circle(140, 50, 20, 1, 1)
+    CALL Circle(180, 50, 20, MODE_FLIP, MODE_FLIP)
+    CALL Circle(220, 50, 20, 1, MODE_TRANSPARENT)
 
     Y = 135
     CALL Rect(125, Y, 135, Y+10, MODE_SET, MODE_SET)

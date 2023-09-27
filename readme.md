@@ -52,7 +52,7 @@ CALL FillColors(COLOR_RED, COLOR_WHITE)
 
 CALL Plot(160, 50, MODE_SET)
 
-CALL Circle(160, 100, 90, MODE_SET)
+CALL Circle(160, 100, 90, MODE_SET, MODE_TRANSPARENT)
 
 CALL Draw(0, 0, 319, 199, MODE_SET)
 CALL Draw(0, 199, 319, 0, MODE_SET)
@@ -794,7 +794,7 @@ CALL VDrawMC(10, 100, 190, 3)  ' This will draw a vertical line from point (10, 
 ---
 
 ### Circle
-#### Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE)
+#### Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE, BgMode AS BYTE)
 
 The `Circle` subroutine enables drawing circles in the `STANDARD_BITMAP_MODE` on the screen.
 
@@ -806,7 +806,12 @@ The `Circle` subroutine enables drawing circles in the `STANDARD_BITMAP_MODE` on
   - `MODE_SET`: Draws the circle using the foreground color.
   - `MODE_CLEAR`: Draws the circle using the background color.
   - `MODE_FLIP`: Inverts the color of the pixels on the circle's circumference, toggling between background and foreground.
-
+  - `MODE_TRANSPARENT`: Does not draw the circumference.
+- **BgMode**: The operation mode for drawing the circle. It can be one of the following constants:
+  - `MODE_SET`: Draws the circle using the foreground color.
+  - `MODE_CLEAR`: Draws the circle using the background color.
+  - `MODE_FLIP`: Inverts the color of the pixels inside the circle, toggling between background and foreground.
+  - `MODE_TRANSPARENT`: Does not draw the insides of the circle.
 **Usage:**
 ```basic
 CALL Circle(150, 100, 40, MODE_SET)  ' This draws a circle centered at point (150, 100) with a radius of 40 pixels using the foreground color.
@@ -819,7 +824,7 @@ CALL Circle(150, 100, 40, MODE_SET)  ' This draws a circle centered at point (15
 ---
 
 ### CircleMC
-#### CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE)
+#### CircleMC(x0 AS BYTE, y0 AS BYTE, Radius AS BYTE, Ink AS BYTE, FillInk AS BYTE)
 
 The `CircleMC` subroutine is tailored for drawing circles in multicolor mode on the screen.
 
@@ -832,6 +837,13 @@ The `CircleMC` subroutine is tailored for drawing circles in multicolor mode on 
   - `1`: Color1, determined by bits #4-7 of the corresponding byte in screen RAM.
   - `2`: Color2, determined by bits #0-3 of the corresponding byte in screen RAM.
   - `3`: Color3, determined by bits #0-3 in the corresponding byte in color RAM range `$D800-$DBFF`.
+  - `MODE_TRANSPARENT`: Does not draw the circles circumference.
+- **FillInk**: Specifies the color to be used to draw the insides of the circle. It can have one of the following values:
+  - `0`: Background color (addressed by `$D021`).
+  - `1`: Color1, determined by bits #4-7 of the corresponding byte in screen RAM.
+  - `2`: Color2, determined by bits #0-3 of the corresponding byte in screen RAM.
+  - `3`: Color3, determined by bits #0-3 in the corresponding byte in color RAM range `$D800-$DBFF`.
+  - `MODE_TRANSPARENT`: Does not draw the insides of the circle.
 
 **Usage:**
 ```basic
