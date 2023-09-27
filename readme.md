@@ -814,7 +814,7 @@ The `Circle` subroutine enables drawing circles in the `STANDARD_BITMAP_MODE` on
   - `MODE_TRANSPARENT`: Does not draw the insides of the circle.
 **Usage:**
 ```basic
-CALL Circle(150, 100, 40, MODE_SET)  ' This draws a circle centered at point (150, 100) with a radius of 40 pixels using the foreground color.
+CALL Circle(150, 100, 40, MODE_SET, MODE_TRANSPARENT)  ' This draws a circle centered at point (150, 100) with a radius of 40 pixels using the foreground color.
 ```
 
 **Note**: The `Circle` subroutine is specifically designed for the `STANDARD_BITMAP_MODE`. Before calling this subroutine, ensure that the correct mode is active. Pixels drawn must be within the screen boundaries; always ensure that the combination of the center (`x0`, `y0`) and `Radius` will result in a circle completely inside the screen dimensions to avoid unexpected behaviors. Using this subroutine outside the `STANDARD_BITMAP_MODE` might produce unpredictable results.
@@ -847,7 +847,7 @@ The `CircleMC` subroutine is tailored for drawing circles in multicolor mode on 
 
 **Usage:**
 ```basic
-CALL CircleMC(80, 100, 40, 2)  ' This will draw a circle centered at point (80, 100) with a radius of 40 pixels using Color2 as defined in screen RAM.
+CALL CircleMC(80, 100, 40, 2, MODE_TRANSPARENT)  ' This will draw a circle centered at point (80, 100) with a radius of 40 pixels using Color2 as defined in screen RAM.
 ```
 
 **Note**: The `CircleMC` subroutine is specifically devised for use in multicolor mode. Before using this subroutine, ensure that your system is configured to this mode. Pixels drawn must be within the screen boundaries; make sure that the combination of center (`x0`, `y0`) and `Radius` keeps the circle entirely inside the screen dimensions to prevent unexpected behaviors. Using this subroutine outside of multicolor mode can yield unpredictable outcomes.
