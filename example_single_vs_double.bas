@@ -77,7 +77,7 @@ CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 
-CALL FillBuffer(0)
+CALL FillBitmap(0)
 CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 
 BORDER COLOR_BLUE
@@ -94,7 +94,7 @@ FOR Counter = 0 TO 96
 NEXT Counter
 
 FOR Counter AS BYTE = 0 TO 255
-    CALL FillBuffer(0)
+    CALL FillBitmap(0)
 
     FOR T = 0 TO LAST_POINT
         CALL Points(T).Move()
@@ -138,7 +138,7 @@ CALL SetScreenMemory(0)
 CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 
 DO
-    CALL FillBuffer(0)
+    CALL FillBitmap(0)
 
     FOR T = 0 TO LAST_POINT
         CALL Points(T).Move()

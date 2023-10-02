@@ -81,7 +81,7 @@ CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
 CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
-CALL FillBuffer(0)
+CALL FillBitmap(0)
 
 FOR T = 0 TO 39
     CALL SetColorInRect(T, 0, T, 24, 1, (T AND %11)+4)
@@ -95,7 +95,7 @@ CALL DoubleBufferOn()
 CALL SetVideoBank(2)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
-CALL FillBuffer(0)
+CALL FillBitmap(0)
 
 FOR T = 0 TO 39
     CALL SetColorInRect(T, 0, T, 24, 1, (T AND %11)+4)
@@ -106,7 +106,7 @@ NEXT T
 CALL ScreenOn()
 
 DO
-    CALL FillBuffer(0)
+    CALL FillBitmap(0)
 
     FOR T = 0 TO LAST_POINT
         CALL Points(T).Move()

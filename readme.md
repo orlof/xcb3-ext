@@ -25,7 +25,7 @@
 
   However, keep in mind that the XC-Basic `Screen` command can be slow and may introduce delays in your program. Therefore, it is not recommended for use in time-critical scenarios, especially when working with double buffering or other performance-sensitive operations.
 
-- **Interrupt Protection and Bank 3:** Every routine that manipulates bitmap or screen memory in the library is protected by disabling interrupts. This protection is necessary to bank out the kernel and I/O for reading these memory locations. While some routines, like `Plot`, disable interrupts for a short duration (around 100 cycles), others, such as `FillBuffer`, may disable them for an extended period (about 33,000 cycles). Consequently, raster interrupts are not compatible with Bank 3. By default, interrupts are disabled even if you are not using Bank 3 ($C000-$FFFF). However, if you do not intend to use Bank 3, you can disable this protection using the following code in your main program:
+- **Interrupt Protection and Bank 3:** Every routine that manipulates bitmap or screen memory in the library is protected by disabling interrupts. This protection is necessary to bank out the kernel and I/O for reading these memory locations. While some routines, like `Plot`, disable interrupts for a short duration (around 100 cycles), others, such as `FillBitmap`, may disable them for an extended period (about 33,000 cycles). Consequently, raster interrupts are not compatible with Bank 3. By default, interrupts are disabled even if you are not using Bank 3 ($C000-$FFFF). However, if you do not intend to use Bank 3, you can disable this protection using the following code in your main program:
 
   ```assembly
   ASM
@@ -47,7 +47,7 @@ CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
 CALL SetGraphicsMode(STANDARD_BITMAP_MODE)
-CALL FillBuffer(0)
+CALL FillBitmap(0)
 CALL FillColors(COLOR_RED, COLOR_WHITE)
 
 CALL Plot(160, 50, MODE_SET)
@@ -77,7 +77,7 @@ CALL Text(9, 2, MODE_SET, MODE_TRANSPARENT, TRUE, "Hello World", ROM_CHARSET_LOW
 - `CALL SetGraphicsMode(STANDARD_BITMAP_MODE)`:
   Activates the standard bitmap mode. In this mode, the screen displays a high-resolution 320x200 pixels bitmap.
 
-- `CALL FillBuffer(0)`:
+- `CALL FillBitmap(0)`:
   This fills the entire bitmap with the value 0 (clearing all pixels).
 
 - `CALL FillColors(COLOR_RED, COLOR_WHITE)`:
@@ -107,7 +107,7 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 #### Color
 - [FillColors](#fillcolors)
 - [FillColorsMC](#fillcolorsmc)
-- [FillBuffer](#fillbuffer)
+- [FillBitmap](#FillBitmap)
 - [FillScreenMemory](#fillscreenmemory)
 - [FillColorMemory](#fillcolormemory)
 - [SetColorInRect](#setcolor)
@@ -441,7 +441,7 @@ The `BufferSwap()` subroutine is used in conjunction with double buffering to ex
 
 - **Usage with Double Buffering:** `BufferSwap()` is typically used in conjunction with double buffering, where one buffer is being drawn to while the other is being displayed. The routine is called after drawing operations are completed in the hidden buffer.
 
-- **Synchronization Responsibility:** It's important to note that `BufferSwap()` does not automatically synchronize or clear the content between the visible and hidden buffers. Users are responsible for managing and ensuring that the content in both buffers is consistent. Typically hidden buffer is cleared with `FillBuffer(0)` after swap.
+- **Synchronization Responsibility:** It's important to note that `BufferSwap()` does not automatically synchronize or clear the content between the visible and hidden buffers. Users are responsible for managing and ensuring that the content in both buffers is consistent. Typically hidden buffer is cleared with `FillBitmap(0)` after swap.
 
 ### **Usage Notes:**
 
@@ -456,8 +456,8 @@ The `BufferSwap()` subroutine is an essential component of double buffering and 
 
 ---
 
-### FillBuffer
-#### FillBuffer(Value AS BYTE)
+### FillBitmap
+#### FillBitmap(Value AS BYTE)
 
 This subroutine provides an efficient way to fill the entire bitmap memory with a specified byte value. This is useful for quickly setting up a blank canvas or a consistent patterned background in both hires and multicolor bitmap modes.
 
@@ -466,7 +466,7 @@ This subroutine provides an efficient way to fill the entire bitmap memory with 
 
 **Usage:**
 ```basic
-FillBuffer(0x00)  ' This will clear the entire bitmap to black (or the respective background color).
+FillBitmap(0x00)  ' This will clear the entire bitmap to black (or the respective background color).
 ```
 
 **Note**: Core loops of this subroutine completes in 33364 clock cycles. It takes about 2 frames to fill the 8k buffer.
@@ -527,7 +527,7 @@ This subroutine offers a straightforward way to populate the entire screen memor
 FillScreenMemory(0x20)  ' This will fill the screen memory with spaces (assuming standard character mode).
 ```
 
-**Note**: This subroutine solely modifies the screen memory. If you intend to adjust the bitmap graphics or color RAM, you must employ other relevant subroutines like `FillBuffer(..)` for bitmap memory and `FillColorMemory(...)` for color RAM. It's essential to coordinate updates across these memories to attain the desired visual representation.
+**Note**: This subroutine solely modifies the screen memory. If you intend to adjust the bitmap graphics or color RAM, you must employ other relevant subroutines like `FillBitmap(..)` for bitmap memory and `FillColorMemory(...)` for color RAM. It's essential to coordinate updates across these memories to attain the desired visual representation.
 
 [Back to TOC](#table-of-contents)
 
@@ -546,7 +546,7 @@ This subroutine provides a method to uniformly set all the values in the color R
 FillColorMemory(0x0F)  ' This will set all color RAM entries to light gray (assuming standard C64 color codes).
 ```
 
-**Note**: This subroutine only modifies the color RAM. If you need to change the bitmap graphics or screen memory, you should use the respective subroutines: `FillBuffer(..)` for bitmap memory and `FillScreenMemory(..)` for screen memory. To achieve the intended visual display, ensure consistent and coordinated updates across these memories. Additionally, always ensure that the provided value is within the valid range of 0 to 15 to prevent unintended behaviors.
+**Note**: This subroutine only modifies the color RAM. If you need to change the bitmap graphics or screen memory, you should use the respective subroutines: `FillBitmap(..)` for bitmap memory and `FillScreenMemory(..)` for screen memory. To achieve the intended visual display, ensure consistent and coordinated updates across these memories. Additionally, always ensure that the provided value is within the valid range of 0 to 15 to prevent unintended behaviors.
 
 [Back to TOC](#table-of-contents)
 
