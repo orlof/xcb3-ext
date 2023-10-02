@@ -113,6 +113,8 @@ Below is the detailed documentation for each subroutine provided by the XCB3-GFX
 - [SetColorInRect](#setcolor)
 
 #### Drawing
+- [GetPixel](#getpixel)
+- [GetPixelMC](#getpixelmc)
 - [Plot](#plot)
 - [PlotMC](#plotmc)
 - [Draw](#draw)
@@ -584,6 +586,70 @@ CALL SetColorInRect(5, 5, 10, 10, 0, COLOR_BLUE)
 ```
 
 Note: Remember to ensure that the specified region (from x0, y0 to x1, y1) lies within the valid screen dimensions and that you choose appropriate values for `Ink` and `ColorId` based on the graphics mode you're operating in.
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### GetPixel
+#### GetPixel AS BYTE(x AS WORD, y AS BYTE)
+
+### **Description:**
+
+The `GetPixel()` subroutine allows you to retrieve the bitmap status information of a specific pixel at the given coordinates (`x`, `y`) in the `STANDARD_BITMAP_MODE`. It returns the pixel state as a BYTE value.
+
+**Parameters:**
+
+- **Coordinates:** You can specify the coordinates of the pixel you want to retrieve using the following parameters:
+  - `x`: The horizontal coordinate of the pixel (0-319).
+  - `y`: The vertical coordinate of the pixel (0-199).
+
+### **Return Value:**
+
+- `GetPixel()` returns the pixel state as a BYTE value. The state can be one of the following:
+  - 1 if the pixel is set to foreground color
+  - 0 if the pixel is set to background color
+
+### **Usage Notes:**
+
+- Utilize the `GetPixel()` subroutine when you need to determine the color of a specific pixel in the `STANDARD_BITMAP_MODE`. It can be useful for various pixel-level operations or conditional logic based on pixel color.
+
+- Ensure that the coordinates (`x`, `y`) are within the valid ranges to retrieve accurate pixel color information.
+
+The `GetPixel()` subroutine provides a convenient way to retrieve the color of a specific pixel in the `STANDARD_BITMAP_MODE`, allowing you to perform operations or make decisions based on the pixel's color.
+
+[Back to TOC](#table-of-contents)
+
+---
+
+### GetPixelMC
+#### GetPixelMC AS BYTE(x AS BYTE, y AS BYTE)
+
+### **Description:**
+
+The `GetPixelMC()` subroutine allows you to retrieve the bitmap status information of a specific pixel at the given coordinates (`x`, `y`) in the `MULTICOLOR_BITMAP_MODE`. It returns the pixel state as a BYTE value.
+
+**Parameters:**
+
+- **Coordinates:** You can specify the coordinates of the pixel you want to retrieve using the following parameters:
+  - `x`: The horizontal coordinate of the pixel (0-159).
+  - `y`: The vertical coordinate of the pixel (0-199).
+
+### **Return Value:**
+
+- `GetPixelMC()` returns the pixel state as a BYTE value. The state is between 0 and 3:
+  - 0 if the pixel is set to background color
+  - 1 if the pixel color if defined in high nible of screen memory
+  - 2 if the pixel color if defined in low nible of screen memory
+  - 3 if the pixel color if defined in low nible of color memory
+
+### **Usage Notes:**
+
+- Utilize the `GetPixel()` subroutine when you need to determine the color of a specific pixel in the `STANDARD_BITMAP_MODE`. It can be useful for various pixel-level operations or conditional logic based on pixel color.
+
+- Ensure that the coordinates (`x`, `y`) are within the valid ranges to retrieve accurate pixel color information.
+
+The `GetPixel()` subroutine provides a convenient way to retrieve the color of a specific pixel in the `STANDARD_BITMAP_MODE`, allowing you to perform operations or make decisions based on the pixel's color.
 
 [Back to TOC](#table-of-contents)
 
