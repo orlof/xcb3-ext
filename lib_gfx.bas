@@ -125,6 +125,8 @@ DECLARE SUB FillColorsMC(Color0 AS BYTE, Color1 AS BYTE, Color2 AS BYTE, Color3 
 DECLARE SUB FillScreenMemory(Value AS BYTE) SHARED STATIC
 DECLARE SUB FillColorMemory(Value AS BYTE) SHARED STATIC
 
+DECLARE FUNCTION GetPixel AS BYTE(x AS WORD, y AS BYTE) SHARED STATIC
+DECLARE FUNCTION GetPixelMC AS BYTE(x AS BYTE, y AS BYTE) SHARED STATIC
 DECLARE SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
 DECLARE SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
 DECLARE SUB Draw(x0 AS WORD, y0 AS BYTE, x1 AS WORD, y1 AS BYTE, Mode AS BYTE) SHARED STATIC
@@ -1220,19 +1222,58 @@ SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE, BgMode AS BYTE)
     CALL Plot(x0, y0 - Radius, Mode)
 END SUB
 
-SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
-    'ABOUT 235 pixels per 1/50 s (average 142 pixels per line)
+FUNCTION GetPixel AS BYTE(x AS WORD, y AS BYTE) SHARED STATIC
     ASM
-_plot_init
-        lda {y}             ; 4
-        and #7              ; 2 these cycles are needed to calculate the index to y table
-        sta {ZP_B5}          ; 2 not needed if the table were 250 words long
+        lda {y}
+        and #7
+        sta {ZP_B5}
 
-        eor {y}             ; 3
-        lsr                 ; 2
+        eor {y}
+        lsr
         eor {_dbuf_nr}
         eor {_dbuf_on}
-        tax                 ; 2
+        tax
+
+        lda  {_bitmap_y_tbl}+1,x
+        adc {x}+1
+        sta {ZP_W0}+1
+        lda {_bitmap_y_tbl},x
+        sta {ZP_W0}
+
+        lda {x}
+        and #7
+        tax
+
+        eor {x}
+        ora {ZP_B5}
+        tay
+
+        OPEN_BANK3
+
+        lda {_hires_mask1},x
+        ldx #$ff
+        and ({ZP_W0}),y
+        bne *+4
+            ldx #$00
+
+        CLOSE_BANK3
+
+        stx {GetPixel}
+    END ASM
+END FUNCTION
+
+SUB Plot(x AS WORD, y AS BYTE, Mode AS BYTE) SHARED STATIC
+    ASM
+_plot_init
+        lda {y}
+        and #7
+        sta {ZP_B5}
+
+        eor {y}
+        lsr
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
+        tax
 
         lda  {_bitmap_y_tbl}+1,x
         adc {x}+1
@@ -2123,6 +2164,55 @@ _draw_ram_out
         CLOSE_BANK3
     END ASM
 END SUB
+
+FUNCTION GetPixelMC(x AS BYTE, y AS BYTE) SHARED STATIC
+    ' BASE = ZP_W0
+    ASM
+        lda #0
+        sta {ZP_W0}+1
+
+        lda {y}
+        and #7
+        tay
+
+        eor {y}
+        lsr
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
+        tax
+
+        lda  {x}
+        and  #$FC
+        asl
+        rol  {ZP_W0}+1
+        adc  {_bitmap_y_tbl},x
+        sta  {ZP_W0}
+
+        lda  {_bitmap_y_tbl}+1,x
+        adc  {ZP_W0}+1
+        sta  {ZP_W0}+1
+
+        lda {x}
+        and #3
+        tax
+
+        OPEN_BANK3
+
+        lda  ({ZP_W0}),y
+
+        rol
+_getpixelmc_loop
+        rol
+        rol
+        dex
+        bpl _getpixelmc_loop
+
+        and #%11
+        sta {GetPixelMC}
+
+        CLOSE_BANK3
+    END ASM
+END FUNCTION
 
 SUB PlotMC(x AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
     ' BASE = ZP_W0
