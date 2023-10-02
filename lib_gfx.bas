@@ -827,6 +827,22 @@ END SUB
 
 SUB SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, ColorId AS BYTE) SHARED STATIC
     ASM
+        lda {x1}
+        cmp {x0}
+        bcs _setcolorinrect_sorty
+        ldx {x0}
+        stx {x1}
+        sta {x0}
+
+_setcolorinrect_sorty
+        lda {y1}
+        cmp {y0}
+        bcs _setcolorinrect_init
+        ldx {y0}
+        stx {y1}
+        sta {y0}
+
+_setcolorinrect_init
         lda {ColorId}
         sta {ZP_B2}
 
@@ -838,6 +854,8 @@ SUB SetColorInRect(x0 AS BYTE, y0 AS BYTE, x1 AS BYTE, y1 AS BYTE, Ink AS BYTE, 
 
         cpy #3
         beq _set_color_mc_3
+
+        OPEN_BANK3
 
         lda {y0}
         asl
@@ -888,8 +906,6 @@ _set_color_init_loops
 _set_color_y_loop
         ldy {x0}
 
-        OPEN_BANK3
-
 _set_color_x_loop
         lda ({ZP_W0}),y
         and {ZP_B3}
@@ -905,9 +921,9 @@ _set_color_x_loop
         lda #40
         adc {ZP_W0}
         sta {ZP_W0}
-        lda {ZP_W0}+1
-        adc #0
-        sta {ZP_W0}+1
+
+        bcc *+4
+            inc {ZP_W0}+1
 
         dex
         bpl _set_color_y_loop

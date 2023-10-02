@@ -59,6 +59,7 @@ _tinyrand8_a1
 _tinyrand8_end
 END ASM
 
+REM 419 vs 287, Speedup vs RNDB(): 45%
 FUNCTION RndQByte AS BYTE() SHARED STATIC
     ASM
         jsr _tinyrand8

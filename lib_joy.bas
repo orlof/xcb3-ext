@@ -15,15 +15,13 @@ CONST JOY_ANY_DIR = %00001111
 CONST JOY_ANY     = %00011111
 
 ' Declare variables to store joystick values
-DIM Value1 AS BYTE
-DIM Value2 AS BYTE
+DIM Value1 AS BYTE, Value2 AS BYTE
+DIM Prev1 AS BYTE, Prev2 AS BYTE
 
 ' Initialize joystick values
-DIM Prev1 AS BYTE
 Value1 = PEEK(JOY1) AND JOY_ANY
 Prev1 = Value1
 
-DIM Prev2 AS BYTE
 Value2 = PEEK(JOY2) AND JOY_ANY
 Prev2 = Value2
 
@@ -147,3 +145,21 @@ FUNCTION Joy2YAxis AS INT() STATIC SHARED
     IF (Value2 AND JOY_DOWN) = 0 THEN RETURN 1
     RETURN 0
 END FUNCTION
+
+FUNCTION JoyWaitClick() STATIC SHARED
+    DO
+        CALL JoyUpdate()
+        IF Joy1FirePressed() THEN
+            DO
+                CALL JoyUpdate()
+            LOOP UNTIL Joy1FireReleased()
+            RETURN 1
+        END IF
+        IF Joy2FirePressed() THEN
+            DO
+                CALL JoyUpdate()
+            LOOP UNTIL Joy2FireReleased()
+            RETURN 2
+        END IF
+    LOOP
+END SUB

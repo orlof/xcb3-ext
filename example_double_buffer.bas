@@ -49,13 +49,8 @@ END TYPE
 REM *************************************
 REM * VARIABLES                         *
 REM *************************************
-DIM x0 AS BYTE
-DIM y0 AS BYTE
-DIM x1 AS BYTE
-DIM y1 AS BYTE
 DIM Key AS BYTE
 DIM LineColor AS BYTE
-DIM Counter AS BYTE
 DIM T AS BYTE
 
 REM *************************************
@@ -75,21 +70,33 @@ BORDER COLOR_BLUE
 
 CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
 
+' SETUP BUFFER 0
 CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
-
 CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 CALL FillBuffer(0)
+
+FOR T = 0 TO 39
+    CALL SetColorInRect(T, 0, T, 24, 1, (T AND %11)+4)
+    CALL SetColorInRect(T, 0, T, 24, 2, (T AND %11)+8)
+    CALL SetColorInRect(T, 0, T, 24, 3, (T AND %11)+12)
+NEXT T
 
 CALL DoubleBufferOn()
 
+' SETUP BUFFER 1
 CALL SetVideoBank(2)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
-
 CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 CALL FillBuffer(0)
+
+FOR T = 0 TO 39
+    CALL SetColorInRect(T, 0, T, 24, 1, (T AND %11)+4)
+    CALL SetColorInRect(T, 0, T, 24, 2, (T AND %11)+8)
+    CALL SetColorInRect(T, 0, T, 24, 3, (T AND %11)+12)
+NEXT T
 
 CALL ScreenOn()
 
@@ -102,13 +109,13 @@ DO
 
     LineColor = 0
     FOR T = 0 TO LAST_POINT
-        x0 = Points(T).x
-        y0 = Points(T).y
-        x1 = Points((T+1) AND 7).x
-        y1 = Points((T+1) AND 7).y
         LineColor = LineColor + 1
         IF LineColor = 4 THEN LineColor = 1
-        CALL DrawMC(x0, y0, x1, y1, LineColor)
+        CALL DrawMC( _
+            Points(T).x, Points(T).y, _
+            Points((T+1) AND 7).x, Points((T+1) AND 7).y, _
+            LineColor _
+        )
     NEXT T
 
     CALL BufferSwap()

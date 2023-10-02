@@ -1,11 +1,23 @@
 INCLUDE "lib_sysinfo.bas"
 
 IF sysinfo_tod50hz() THEN
-    POKE $DC0E, PEEK($DC0E) OR %10000000
-    POKE $DD0E, PEEK($DD0E) OR %10000000
+    ASM
+        lda $dc0e
+        ora #%10000000
+        sta $dc0e
+        lda $dd0e
+        ora #%10000000
+        sta $dd0e
+    END ASM
 ELSE
-    POKE $DC0E, PEEK($DC0E) AND %01111111
-    POKE $DD0E, PEEK($DD0E) AND %01111111
+    ASM
+        lda $dc0e
+        and #%01111111
+        sta $dc0e
+        lda $dd0e
+        and #%01111111
+        sta $dd0e
+    END ASM
 END IF
 
 
@@ -26,10 +38,6 @@ DIM _CIA2_TOD AS TOD @$DD08
 DIM hour_24_to_12(24) AS BYTE @_HOUR_24_TO_12
 
 SUB SetTime(Hour AS BYTE, Minute AS BYTE, Second AS BYTE, Frac AS BYTE) STATIC SHARED
-    IF sysinfo_pal() THEN
-        POKE $DC0E, PEEK($DC0E) OR %10000000
-        POKE $DD0E, PEEK($DC0E) OR %10000000
-    END IF
     ASM
         ;lda $dc0f
         ;and #%01111111
