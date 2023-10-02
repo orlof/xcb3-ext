@@ -7,57 +7,49 @@ DECLARE FUNCTION RndInt AS INT(min AS INT, max AS INT) SHARED STATIC
 DECLARE FUNCTION RndQLong AS LONG() SHARED STATIC
 DECLARE FUNCTION RndLong AS LONG(min AS LONG, max AS LONG) SHARED STATIC
 
-
 DIM Range AS LONG
 DIM Mask AS LONG
 
 ASM
-_init
-    ; select the noise waveform for the SID's voice 3 oscillator and set voice 3's frequency
-    lda #$FF  ; maximum frequency value
-    sta $D40E ; voice 3 frequency low byte
-    sta $D40F ; voice 3 frequency high byte
-    lda #$80  ; noise waveform, gate bit off
-    sta $D412 ; voice 3 control register
-
-    ; sets the seed based on the value in A
-    ; always sets a1 and b1 so that a cycle with maximum period is chosen
-    ; constants 217 and 21263 have been derived by simulation
-    lda $d41b       ; read the current value of the SID random number generator
-    pha
-    and #217
-    clc
-    adc #<21263
-    sta _tinyrand8_a1+1
-    pla
-    and #255-217
-    adc #>21263
-    sta _tinyrand8_b1+1
     jmp _tinyrand8_end
+; AX+ Tinyrand8
+; A fast 8-bit random generator with an internal 16bit state
 
-    ; AX+ Tinyrand8
-    ; A fast 8-bit random generator with an internal 16bit state
+; Algorithm, implementation and evaluation by Wil
+; This version stores the seed as arguments and uses self-modifying code
+; The name AX+ comes from the ASL, XOR and addition operation
 
-    ; Algorithm, implementation and evaluation by Wil
-    ; This version stores the seed as arguments and uses self-modifying code
-    ; The name AX+ comes from the ASL, XOR and addition operation
-
-    ; Size: 15 Bytes (not counting the set_seed function)
-    ; Execution time: 18 (without RTS)
-    ; Period 59748
+; Size: 15 Bytes (not counting the set_seed function)
+; Execution time: 18 (without RTS)
+; Period 59748
 
 _tinyrand8
-_tinyrand8_b1
+_tinyrand8_b1=*+1
     lda #31
     asl
-_tinyrand8_a1
+_tinyrand8_a1=*+1
     eor #53
-    sta _tinyrand8_b1+1
-    adc _tinyrand8_a1+1
-    sta _tinyrand8_a1+1
+    sta _tinyrand8_b1
+    adc _tinyrand8_a1
+    sta _tinyrand8_a1
     rts
+
 _tinyrand8_end
 END ASM
+
+SUB SetSeed(Seed AS BYTE) STATIC SHARED
+    ASM
+        lda {Seed}
+        and #217
+        clc
+        adc #<21263
+        sta _tinyrand8_a1
+        lda {Seed}
+        and #255-217
+        adc #>21263
+        sta _tinyrand8_b1
+    END ASM
+END SUB
 
 REM 419 vs 287, Speedup vs RNDB(): 45%
 FUNCTION RndQByte AS BYTE() SHARED STATIC

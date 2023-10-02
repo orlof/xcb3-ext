@@ -53,6 +53,12 @@ DIM Key AS BYTE
 DIM LineColor AS BYTE
 DIM T AS BYTE
 
+PRINT "press any key to start"
+DO
+    T = RndQByte()
+    GET key
+LOOP UNTIL key > 0
+
 REM *************************************
 REM * INITIALIZE POINTS                 *
 REM *************************************
@@ -67,6 +73,7 @@ REM *************************************
 CALL ScreenOff()
 
 BORDER COLOR_BLUE
+BACKGROUND COLOR_BLACK
 
 CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
 
@@ -74,7 +81,6 @@ CALL SetGraphicsMode(MULTICOLOR_BITMAP_MODE)
 CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
-CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 CALL FillBuffer(0)
 
 FOR T = 0 TO 39
@@ -89,7 +95,6 @@ CALL DoubleBufferOn()
 CALL SetVideoBank(2)
 CALL SetBitmapMemory(1)
 CALL SetScreenMemory(0)
-CALL FillColorsMC(COLOR_BLACK, COLOR_WHITE, COLOR_BLUE, COLOR_RED)
 CALL FillBuffer(0)
 
 FOR T = 0 TO 39
