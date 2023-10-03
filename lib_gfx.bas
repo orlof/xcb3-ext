@@ -1222,6 +1222,26 @@ SUB Circle(x0 AS WORD, y0 AS BYTE, Radius AS BYTE, Mode AS BYTE, BgMode AS BYTE)
     CALL Plot(x0, y0 - Radius, Mode)
 END SUB
 
+FUNCTION GetPixelColor AS BYTE(x as WORD, y AS BYTE) SHARED STATIC
+    ' TODO
+    GetPixelColor = GetPixel(x, y)
+    ASM
+        lda {GetPixelColor}
+        beq _getpixelcolor_0
+        cmp #3
+        beq _getpixelcolor_3
+
+_getpixelcolor_3
+
+
+_getpixelcolor_0
+        lda #$d021
+
+_getpixelcolor_return
+        sta {GetPixelColor}
+    END ASM
+END FUNCTION
+
 FUNCTION GetPixel AS BYTE(x AS WORD, y AS BYTE) SHARED STATIC
     ASM
         lda {y}
@@ -1251,7 +1271,7 @@ FUNCTION GetPixel AS BYTE(x AS WORD, y AS BYTE) SHARED STATIC
         OPEN_BANK3
 
         lda {_hires_mask1},x
-        ldx #$ff
+        ldx #1
         and ({ZP_W0}),y
         bne *+4
             ldx #$00
@@ -2165,7 +2185,7 @@ _draw_ram_out
     END ASM
 END SUB
 
-FUNCTION GetPixelMC(x AS BYTE, y AS BYTE) SHARED STATIC
+FUNCTION GetPixelMC AS BYTE(x AS BYTE, y AS BYTE) SHARED STATIC
     ' BASE = ZP_W0
     ASM
         lda #0
