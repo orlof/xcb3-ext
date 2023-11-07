@@ -979,10 +979,13 @@ SUB ResetScreen() SHARED STATIC
     CALL DoubleBufferOff()
     CALL SetVideoBank(0)
     CALL SetScreenMemory(1)
+    CALL FillScreenMemory(32)
     CALL SetCharacterMemory(2)
     CALL SetGraphicsMode(STANDARD_CHARACTER_MODE)
-    MEMSET $0400, 1000, 32
     CALL FillColorMemory(COLOR_LIGHTBLUE)
+    SCREEN 1
+    BACKGROUND COLOR_BLUE
+    BORDER COLOR_LIGHTBLUE
 END SUB
 
 SUB SetGraphicsMode(Mode AS BYTE) SHARED STATIC
@@ -1224,15 +1227,67 @@ END SUB
 
 FUNCTION GetPixelColor AS BYTE(x as WORD, y AS BYTE) SHARED STATIC
     ' TODO
-    GetPixelColor = GetPixel(x, y)
+    IF (PEEK($d016) AND %00010000) THEN
+        GetPixelColor = GetPixelMC(x, y)
+    ELSE
+        GetPixelColor = GetPixel(x, y) + 1
+    END IF
+
     ASM
+        lda {x}
+        lsr
+        lsr
+        lsr
+        tay
+
         lda {GetPixelColor}
         beq _getpixelcolor_0
         cmp #3
         beq _getpixelcolor_3
 
-_getpixelcolor_3
+        lda {y}
+        lsr
+        eor {_dbuf_nr}
+        eor {_dbuf_on}
+        tax
 
+        lda {_screen_y_tbl}+1,x
+        sta {ZP_W0}+1
+        lda {_screen_y_tbl},x
+        sta {ZP_W0}
+
+        lda {GetPixelColor}
+        cmp #1
+        beq _getpixelcolor_1
+
+_getpixelcolor_2
+        lda ({ZP_W0}),y
+        and #%00001111
+
+        jmp _getpixelcolor_return
+
+_getpixelcolor_2
+        lda ({ZP_W0}),y
+        lsr
+        lsr
+        lsr
+        lsr
+
+        jmp _getpixelcolor_return
+
+_getpixelcolor_3
+        lda {y}
+        lsr
+        lsr
+        lsr
+        tax
+        lda {_color_y_tbl_hi},x
+        sta {ZP_W0}+1
+        lda {_color_y_tbl_lo},x
+        sta {ZP_W0}
+        lda ({ZP_W0}),y
+        and #%00001111
+        jmp _getpixelcolor_return
 
 _getpixelcolor_0
         lda #$d021
@@ -2738,6 +2793,7 @@ _petscii_to_screencode_end
     END ASM
 END FUNCTION
 
+GOTO THE_END
 
 __hdrawmc_start_mask:
 DATA AS BYTE %11111111, %00111111, %00001111, %00000011
@@ -2781,7 +2837,6 @@ DATA AS BYTE $45, $25, $05
 REM **********************
 REM *     ASSEMBLER      *
 REM **********************
-GOTO THE_END
 ASM
 _update_buffer0_clear
         lda {ZP_W0}+1
