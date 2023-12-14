@@ -1229,7 +1229,7 @@ END SUB
 FUNCTION GetPixelColor AS BYTE(x as WORD, y AS BYTE) SHARED STATIC
     ' TODO
     IF (PEEK($d016) AND %00010000) THEN
-        GetPixelColor = GetPixelMC(x, y)
+        GetPixelColor = GetPixelMC(CBYTE(x), y)
     ELSE
         GetPixelColor = GetPixel(x, y) + 1
     END IF
