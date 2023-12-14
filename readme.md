@@ -193,6 +193,9 @@ This subroutine sets the desired graphics mode for display operations on the Com
   - **EXTENDED_BACKGROUND_COLOR_MODE**:
     - **Description**: This mode extends the standard character mode by offering additional background colors. While the foreground remains singular per character, there are now four possible background colors to choose from.
 
+  - **INVALID_MODE**:
+    - **Description**: ScreenOn and ScreenOff routines switch the DEN-bit ($d011 bit #4 Display ENable-bit) that is updated only once per frame. To turn screen off in mid-frame you can use illegal graphics mode. Technically INVALID_MODE sets the bitmap mode and the extended color mode on simultaneously. This is not a valid graphics mode in VIC and it will draw the whole background area black.
+
 **Usage:**
 ```basic
 SetGraphicsMode(STANDARD_BITMAP_MODE)  ' This will set the graphics mode to STANDARD_BITMAP_MODE
