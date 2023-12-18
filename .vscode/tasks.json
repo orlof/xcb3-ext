@@ -9,9 +9,8 @@
             "osx": {
                 "command": "./bin/macOS/xcbasic3",
                 "args": [
-                    "-p=False",
+                    "-p=True",
                     "-k=True",
-                    "-s symbols.sym",
                     "${file}",
                     "${fileDirname}/${fileBasenameNoExtension}.prg"
                 ]
