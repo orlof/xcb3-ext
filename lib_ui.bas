@@ -36,6 +36,12 @@ CONST HORIZONTAL_LINE       = 67
 CONST VERTICAL_LINE         = 93
 CONST EMPTY_SPACE           = 32
 
+CONST KEY_UP                = 145
+CONST KEY_DOWN              = 17
+CONST KEY_LEFT              = 157
+CONST KEY_RIGHT             = 29
+CONST KEY_FIRE              = 13
+
 ' THE JOYSTICK TO USE: JOY1 OR JOY2
 Joystick                    = JOY2
 
@@ -436,16 +442,18 @@ TYPE UiPanel
     '       EVENT_RIGHT
     '       EVENT_FIRE
     SUB WaitEvent(AllowRepeat AS BYTE) STATIC
+        DIM Key AS BYTE
         IF NOT AllowRepeat THEN CALL JoyWaitIdle(Joystick)
 
         DO
             CALL _Sleep(1)
             CALL JoyUpdate()
+            GET Key
             IF JoySame(Joystick) AND (JoyUp(Joystick) OR JoyDown(Joystick)) THEN
                 CALL _Sleep(UiDelay)
                 CALL JoyUpdate()
             END IF
-            IF JoyUp(Joystick) THEN
+            IF JoyUp(Joystick) OR Key=KEY_UP THEN
                 IF THIS.Selected < 255 THEN
                     CALL THIS._SetRowMode(THIS.Selected, FALSE)
                     DO
@@ -461,7 +469,7 @@ TYPE UiPanel
                     CALL THIS._SetRowMode(THIS.Selected, TRUE)
                 END IF
             END IF
-            IF JoyDown(Joystick) THEN
+            IF JoyDown(Joystick) OR Key=KEY_DOWN THEN
                 IF THIS.Selected < 255 THEN
                     CALL THIS._SetRowMode(THIS.Selected, FALSE)
                     DO
@@ -477,20 +485,20 @@ TYPE UiPanel
                     CALL THIS._SetRowMode(THIS.Selected, TRUE)
                 END IF
             END IF
-            IF JoyLeft(Joystick) THEN
+            IF JoyLeft(Joystick) OR Key=KEY_LEFT THEN
                 IF (THIS.Events AND EVENT_LEFT_FLAG) THEN
                     'THIS.Selected = 255
                     THIS.Event = EVENT_LEFT
                     EXIT SUB
                 END IF
             END IF
-            IF JoyRight(Joystick) THEN
+            IF JoyRight(Joystick) OR Key=KEY_RIGHT THEN
                 IF (THIS.Events AND EVENT_RIGHT_FLAG) THEN
                     THIS.Event = EVENT_RIGHT
                     EXIT SUB
                 END IF
             END IF
-            IF JoyFire(Joystick) THEN
+            IF JoyFire(Joystick) OR Key=KEY_FIRE THEN
                 IF (THIS.Events AND EVENT_FIRE_FLAG) THEN
                     THIS.Event = EVENT_FIRE
                     EXIT SUB

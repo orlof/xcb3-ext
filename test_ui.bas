@@ -8,7 +8,7 @@ DECLARE SUB MenuPanelHandler() STATIC
 DECLARE SUB CheckBoxPanelHandler() STATIC
 DECLARE SUB RadioButtonPanelHandler() STATIC
 DECLARE SUB DistributorPanelHandler() STATIC
-DECLARE SUB InfoPanelHandler(Title AS STRING*18) STATIC
+DECLARE SUB InfoPanelHandler(Msg AS STRING*18) STATIC
 
 CALL UiLattice(0, 0, 40, 25, 81, 81+128, 10, 13)
 
@@ -92,7 +92,7 @@ SUB CheckBoxPanelHandler() STATIC
                 END IF
             CASE EVENT_LEFT
                 CALL Panel.SetFocus(FALSE)
-                CALL InfoPanelHandler("selected " + STR$(Selected(0)) + STR$(Selected(1)) + STR$(Selected(2)))
+                CALL InfoPanelHandler(STR$(Selected(0)) + " " + STR$(Selected(1)) + " " + STR$(Selected(2)))
                 CALL Panel.Dispose()
                 EXIT SUB
         END SELECT
@@ -184,14 +184,12 @@ SUB DistributorPanelHandler() STATIC
     LOOP
 END SUB
 
-SUB InfoPanelHandler(Title AS STRING*18) STATIC
+SUB InfoPanelHandler(Msg AS STRING*18) STATIC
     DIM Panel AS UiPanel
-    CALL Panel.Init(Title, RndByte(0, 19), RndByte(0, 19), 20, 5, TRUE)
+    CALL Panel.Init("info", RndByte(0, 19), RndByte(0, 19), 20, 5, TRUE)
     CALL Panel.SetEvents(FALSE, FALSE, FALSE, FALSE, TRUE)
 
-    CALL Panel.Left(0, "important", 7, FALSE)
-    CALL Panel.Left(1, "information", 7, FALSE)
-    CALL Panel.Left(2, Title, 7, FALSE)
+    CALL Panel.Center(1, Msg, 7, FALSE)
 
     CALL Panel.WaitEvent(FALSE)
 
