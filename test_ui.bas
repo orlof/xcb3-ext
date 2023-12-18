@@ -23,21 +23,20 @@ CALL RootPanel.Left(2, "radiobutton", 7, TRUE)
 CALL RootPanel.Left(3, "distributor", 7, TRUE)
 CALL RootPanel.left(5, "exit", 2, TRUE)
 
-RootPanelHandler:
-    DO
-        CALL RootPanel.WaitEvent(FALSE)
-        CALL RootPanel.SetFocus(FALSE)
+DO
+    CALL RootPanel.WaitEvent(FALSE)
+    CALL RootPanel.SetFocus(FALSE)
 
-        IF RootPanel.Selected = 0 THEN CALL MenuPanelHandler()
-        IF RootPanel.Selected = 1 THEN CALL CheckBoxPanelHandler()
-        IF RootPanel.Selected = 2 THEN CALL RadioButtonPanelHandler()
-        IF RootPanel.Selected = 3 THEN CALL DistributorPanelHandler()
-        IF RootPanel.Selected = 5 THEN EXIT DO
-        CALL RootPanel.SetFocus(TRUE)
-    LOOP
+    IF RootPanel.Selected = 0 THEN CALL MenuPanelHandler()
+    IF RootPanel.Selected = 1 THEN CALL CheckBoxPanelHandler()
+    IF RootPanel.Selected = 2 THEN CALL RadioButtonPanelHandler()
+    IF RootPanel.Selected = 3 THEN CALL DistributorPanelHandler()
+    IF RootPanel.Selected = 5 THEN EXIT DO
+    CALL RootPanel.SetFocus(TRUE)
+LOOP
 
-    CALL RootPanel.Dispose()
-    END
+CALL RootPanel.Dispose()
+END
 
 SUB MenuPanelHandler() STATIC
     DIM Panel AS UiPanel
@@ -52,17 +51,15 @@ SUB MenuPanelHandler() STATIC
     DO
         CALL Panel.WaitEvent(FALSE)
 
-        IF Panel.Event = EVENT_FIRE THEN
-            CALL Panel.SetFocus(FALSE)
-            IF Panel.Selected = 0 THEN CALL InfoPanelHandler("info 1")
-            IF Panel.Selected = 1 THEN CALL InfoPanelHandler("info 2")
-            IF Panel.Selected = 2 THEN CALL InfoPanelHandler("info 3")
-            CALL Panel.SetFocus(TRUE)
-        END IF
-        IF Panel.Event = EVENT_LEFT THEN
-            CALL Panel.Dispose()
-            EXIT SUB
-        END IF
+        SELECT CASE Panel.Event
+            CASE EVENT_FIRE
+                CALL Panel.SetFocus(FALSE)
+                CALL InfoPanelHandler("info " + STR$(Panel.Selected + 1))
+                CALL Panel.SetFocus(TRUE)
+            CASE EVENT_LEFT
+                CALL Panel.Dispose()
+                EXIT SUB
+        END SELECT
     LOOP
 END SUB
 
@@ -84,21 +81,21 @@ SUB CheckBoxPanelHandler() STATIC
     DO
         CALL Panel.WaitEvent(FALSE)
 
-        IF Panel.Event = EVENT_FIRE THEN
-            IF Selected(Panel.Selected) = 0 THEN
-                CALL Panel.Left(Panel.Selected, CHR$(113), 7, TRUE)
-                Selected(Panel.Selected) = 1
-            ELSE
-                CALL Panel.Left(Panel.Selected, CHR$(119), 7, TRUE)
-                Selected(Panel.Selected) = 0
-            END IF
-        END IF
-        IF Panel.Event = EVENT_LEFT THEN
-            CALL Panel.SetFocus(FALSE)
-            CALL InfoPanelHandler("selected " + STR$(Selected(0)) + STR$(Selected(1)) + STR$(Selected(2)))
-            CALL Panel.Dispose()
-            EXIT SUB
-        END IF
+        SELECT CASE Panel.Event
+            CASE EVENT_FIRE
+                IF Selected(Panel.Selected) THEN
+                    CALL Panel.Left(Panel.Selected, CHR$(119), 7, TRUE)
+                    Selected(Panel.Selected) = FALSE
+                ELSE
+                    CALL Panel.Left(Panel.Selected, CHR$(113), 7, TRUE)
+                    Selected(Panel.Selected) = TRUE
+                END IF
+            CASE EVENT_LEFT
+                CALL Panel.SetFocus(FALSE)
+                CALL InfoPanelHandler("selected " + STR$(Selected(0)) + STR$(Selected(1)) + STR$(Selected(2)))
+                CALL Panel.Dispose()
+                EXIT SUB
+        END SELECT
     LOOP
 END SUB
 
@@ -118,17 +115,17 @@ SUB RadioButtonPanelHandler() STATIC
     DO
         CALL Panel.WaitEvent(FALSE)
 
-        IF Panel.Event = EVENT_FIRE THEN
-            CALL Panel.Left(Selected, CHR$(119), 7, TRUE)
-            Selected = Panel.Selected
-            CALL Panel.Left(Selected, CHR$(113), 7, TRUE)
-        END IF
-        IF Panel.Event = EVENT_LEFT THEN
-            CALL Panel.SetFocus(FALSE)
-            CALL InfoPanelHandler("selected " + STR$(Selected))
-            CALL Panel.Dispose()
-            EXIT SUB
-        END IF
+        SELECT CASE Panel.Event
+            CASE EVENT_FIRE
+                CALL Panel.Left(Selected, CHR$(119), 7, TRUE)
+                Selected = Panel.Selected
+                CALL Panel.Left(Selected, CHR$(113), 7, TRUE)
+            CASE EVENT_LEFT
+                CALL Panel.SetFocus(FALSE)
+                CALL InfoPanelHandler("selected " + STR$(Selected))
+                CALL Panel.Dispose()
+                EXIT SUB
+        END SELECT
     LOOP
 END SUB
 
@@ -153,39 +150,37 @@ SUB DistributorPanelHandler() STATIC
         CALL Panel.Right(3, " " + STR$(IntPoints), 7, TRUE)
         CALL Panel.WaitEvent(TRUE)
 
-        IF Panel.Event = EVENT_RIGHT THEN
-            IF Panel.Selected = 2 THEN
-                IF PointsLeft > 0 THEN
-                    PointsLeft = PointsLeft - 1
-                    StrPoints = StrPoints + 1
+        SELECT CASE Panel.Event
+            CASE EVENT_RIGHT
+                IF Panel.Selected = 2 THEN
+                    IF PointsLeft > 0 THEN
+                        PointsLeft = PointsLeft - 1
+                        StrPoints = StrPoints + 1
+                    END IF
                 END IF
-            END IF
-            IF Panel.Selected = 3 THEN
-                IF PointsLeft > 0 THEN
-                    PointsLeft = PointsLeft - 1
-                    IntPoints = IntPoints + 1
+                IF Panel.Selected = 3 THEN
+                    IF PointsLeft > 0 THEN
+                        PointsLeft = PointsLeft - 1
+                        IntPoints = IntPoints + 1
+                    END IF
                 END IF
-            END IF
-        END IF
-        IF Panel.Event = EVENT_LEFT THEN
-            IF Panel.Selected = 2 THEN
-                IF StrPoints > 0 THEN
-                    PointsLeft = PointsLeft + 1
-                    StrPoints = StrPoints - 1
+            CASE EVENT_LEFT
+                IF Panel.Selected = 2 THEN
+                    IF StrPoints > 0 THEN
+                        PointsLeft = PointsLeft + 1
+                        StrPoints = StrPoints - 1
+                    END IF
                 END IF
-            END IF
-            IF Panel.Selected = 3 THEN
-                IF IntPoints > 0 THEN
-                    PointsLeft = PointsLeft + 1
-                    IntPoints = IntPoints - 1
+                IF Panel.Selected = 3 THEN
+                    IF IntPoints > 0 THEN
+                        PointsLeft = PointsLeft + 1
+                        IntPoints = IntPoints - 1
+                    END IF
                 END IF
-            END IF
-        END IF
-
-        IF Panel.Event = EVENT_FIRE THEN
-            CALL Panel.Dispose()
-            EXIT SUB
-        END IF
+            CASE EVENT_FIRE
+                CALL Panel.Dispose()
+                EXIT SUB
+        END SELECT
     LOOP
 END SUB
 
@@ -198,13 +193,8 @@ SUB InfoPanelHandler(Title AS STRING*18) STATIC
     CALL Panel.Left(1, "information", 7, FALSE)
     CALL Panel.Left(2, Title, 7, FALSE)
 
-    DO
-        CALL Panel.WaitEvent(FALSE)
+    CALL Panel.WaitEvent(FALSE)
 
-        IF Panel.Event = EVENT_FIRE THEN
-            CALL Panel.Dispose()
-            EXIT SUB
-        END IF
-    LOOP
+    CALL Panel.Dispose()
 END SUB
 
