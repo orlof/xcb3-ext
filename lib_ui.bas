@@ -1,5 +1,11 @@
 INCLUDE "lib_joy.bas"
 
+DIM SHARED Joystick AS BYTE
+DIM SHARED UiDelay AS BYTE
+DIM SHARED BorderFocusColor AS BYTE
+DIM SHARED BorderNoFocusColor AS BYTE
+DIM SHARED BackgroundColor AS BYTE
+
 REM *********************************
 REM        PUBLIC INTERFACE
 REM *********************************
@@ -26,20 +32,21 @@ REM THESE ARE NOT TYPICALLY NEEDED
 REM PUBLIC PROPERTIES OF UiPanel
 'DECLARE PROPERTY UiPanel.Selected AS BYTE
 'DECLARE PROPERTY UiPanel.Event AS BYTE
-'    EVENT_UP
-'    EVENT_DOWN
-'    EVENT_LEFT
-'    EVENT_RIGHT
-'    EVENT_FIRE
-
-CONST UI_CACHE_SIZE = 1024              'CONFIGURE THIS TO YOUR NEEDS
-
 SHARED CONST EVENT_UP       = $80
 SHARED CONST EVENT_DOWN     = $81
 SHARED CONST EVENT_LEFT     = $82
 SHARED CONST EVENT_RIGHT    = $83
 SHARED CONST EVENT_FIRE     = $84
 
+REM *********************************
+REM     CONFIGURATION PARAMETERS
+REM *********************************
+
+' THE SIZE OF THE SCREEN CACHE. THIS IS USED TO SAVE THE SCREEN BEHIND PANELS
+' REQUIRED SIZE IS THE SUM OF SIMULTANEOUSLY OPEN PANELS: 2 * WIDTH * HEIGHT
+CONST UI_CACHE_SIZE         = 1024
+
+' THE SCREEN CODES FOR THE PANEL DECORATIONS
 CONST TOP_LEFT_CORNER       = 85
 CONST TOP_RIGHT_CORNER      = 73
 CONST BOTTOM_LEFT_CORNER    = 74
@@ -48,17 +55,16 @@ CONST HORIZONTAL_LINE       = 67
 CONST VERTICAL_LINE         = 93
 CONST EMPTY_SPACE           = 32
 
-DIM SHARED Joystick AS BYTE
-DIM SHARED UiDelay AS BYTE
-DIM SHARED BorderFocusColor AS BYTE
-DIM SHARED BorderNoFocusColor AS BYTE
-DIM SHARED BackgroundColor AS BYTE
+' THE JOYSTICK TO USE: JOY1 OR JOY2
+Joystick                    = JOY2
 
-Joystick            = JOY2              'CONFIGURE THIS TO YOUR NEEDS
-UiDelay             = 10                'CONFIGURE THIS TO YOUR NEEDS
-BorderFocusColor    = $0c               'CONFIGURE THIS TO YOUR NEEDS
-BorderNoFocusColor  = $0b               'CONFIGURE THIS TO YOUR NEEDS
-BackgroundColor     = $0f               'CONFIGURE THIS TO YOUR NEEDS
+' THE DELAY BETWEEN JOYSTICK REPETITIONS
+UiDelay                     = 10
+
+' COLOR CODES
+BorderFocusColor            = $0c
+BorderNoFocusColor          = $0b
+BackgroundColor             = $0f
 
 REM *********************************
 REM     END OF PUBLIC INTERFACE
