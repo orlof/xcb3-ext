@@ -4,16 +4,16 @@ INCLUDE "lib_ui.bas"
 CONST FALSE                 = 0
 CONST TRUE                  = 255
 
-DECLARE SUB ShowInfoPanel(Title AS STRING*18) STATIC
 DECLARE SUB MenuPanelHandler() STATIC
 DECLARE SUB CheckBoxPanelHandler() STATIC
 DECLARE SUB RadioButtonPanelHandler() STATIC
 DECLARE SUB DistributorPanelHandler() STATIC
+DECLARE SUB InfoPanelHandler(Title AS STRING*18) STATIC
 
 CALL UiLattice(0, 0, 40, 25, 81, 81+128, 10, 13)
 
 DIM RootPanel AS UiPanel
-CALL RootPanel.Init("choose test", 5, 5, 15, 15, TRUE)
+CALL RootPanel.Init("choose demo", 5, 5, 15, 15, TRUE)
 CALL RootPanel.SetEvents(FALSE, FALSE, FALSE, TRUE, TRUE)
 
 RootPanel.Selected = 0
@@ -54,9 +54,9 @@ SUB MenuPanelHandler() STATIC
 
         IF Panel.Event = EVENT_FIRE THEN
             CALL Panel.SetFocus(FALSE)
-            IF Panel.Selected = 0 THEN CALL ShowInfoPanel("info 1")
-            IF Panel.Selected = 1 THEN CALL ShowInfoPanel("info 2")
-            IF Panel.Selected = 2 THEN CALL ShowInfoPanel("info 3")
+            IF Panel.Selected = 0 THEN CALL InfoPanelHandler("info 1")
+            IF Panel.Selected = 1 THEN CALL InfoPanelHandler("info 2")
+            IF Panel.Selected = 2 THEN CALL InfoPanelHandler("info 3")
             CALL Panel.SetFocus(TRUE)
         END IF
         IF Panel.Event = EVENT_LEFT THEN
@@ -95,7 +95,7 @@ SUB CheckBoxPanelHandler() STATIC
         END IF
         IF Panel.Event = EVENT_LEFT THEN
             CALL Panel.SetFocus(FALSE)
-            CALL ShowInfoPanel("selected " + STR$(Selected(0)) + STR$(Selected(1)) + STR$(Selected(2)))
+            CALL InfoPanelHandler("selected " + STR$(Selected(0)) + STR$(Selected(1)) + STR$(Selected(2)))
             CALL Panel.Dispose()
             EXIT SUB
         END IF
@@ -125,7 +125,7 @@ SUB RadioButtonPanelHandler() STATIC
         END IF
         IF Panel.Event = EVENT_LEFT THEN
             CALL Panel.SetFocus(FALSE)
-            CALL ShowInfoPanel("selected " + STR$(Selected))
+            CALL InfoPanelHandler("selected " + STR$(Selected))
             CALL Panel.Dispose()
             EXIT SUB
         END IF
@@ -189,7 +189,7 @@ SUB DistributorPanelHandler() STATIC
     LOOP
 END SUB
 
-SUB ShowInfoPanel(Title AS STRING*18) STATIC
+SUB InfoPanelHandler(Title AS STRING*18) STATIC
     DIM Panel AS UiPanel
     CALL Panel.Init(Title, RndByte(0, 19), RndByte(0, 19), 20, 5, TRUE)
     CALL Panel.SetEvents(FALSE, FALSE, FALSE, FALSE, TRUE)
