@@ -7,8 +7,10 @@ Welcome to Orlof's XC-Basic3 Libraries repository! Originally created for the xc
   - The original graphics library designed for bitmap manipulation.
 - [Character Mode UI Library](https://github.com/orlof/xcb3-gfx/wiki/Character-Mode-UI-Library) ([lib_ui.bas](lib_ui.bas))
   - A library facilitating the creation of character mode user interfaces.
-- High Performance Random Number Generator Library (lib_rnd.bas)
+- High Performance Random Number Generator Library ([lib_rnd.bas](lib_rnd.bas))
   - Enhance your projects with a high-performance random number generator.
+- Joystick Library ([lib_joy.bas](lib_joy.bas))
+  - Simple interface for reading the joystick inputs.
 
 ## Future Additions
 Hopefully new libraries derived from the routines employed in my game development endeavors.
@@ -19,15 +21,10 @@ The main directory hosts all the library files ("lib_*.bas"), while the examples
 ## Documentation
 Find detailed documentation for each library in the [Wiki](https://github.com/orlof/xcb3-gfx/wiki). Explore and unleash the potential of these libraries in your projects.
 
-## Get Started
-Clone the repository, explore the libraries, and have fun integrating them into your XC-Basic3 projects!
-
 ## Contribution
-
 We welcome contributions to the XCB3-GFX library. Please read the contribution guidelines before submitting a pull request.
 
 ## License
-
 This project is licensed under the BSD 2-Clause License License. See `LICENSE` for details.
 
 ---
