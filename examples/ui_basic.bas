@@ -14,7 +14,7 @@ CALL UiLattice(0, 0, 40, 25, 81, 81+128, 10, 13)
 
 DIM RootPanel AS UiPanel
 CALL RootPanel.Init("choose demo", 5, 5, 15, 15, TRUE)
-CALL RootPanel.SetEvents(FALSE, FALSE, FALSE, TRUE, TRUE)
+CALL RootPanel.SetEvents(EVENT_RIGHT OR EVENT_FIRE)
 
 RootPanel.Selected = 0
 CALL RootPanel.Left(0, "menu", 7, TRUE)
@@ -41,7 +41,7 @@ END
 SUB MenuPanelHandler() STATIC
     DIM Panel AS UiPanel
     CALL Panel.Init("choose info", 10, 10, 15, 10, TRUE)
-    CALL Panel.SetEvents(FALSE, FALSE, TRUE, TRUE, TRUE)
+    CALL Panel.SetEvents(EVENT_LEFT OR EVENT_RIGHT OR EVENT_FIRE)
 
     Panel.Selected = 0
     CALL Panel.Left(0, "info 1", 7, TRUE)
@@ -71,7 +71,7 @@ SUB CheckBoxPanelHandler() STATIC
     Selected(2) = 0
 
     CALL Panel.Init("choose pet", 10, 5, 14, 5, TRUE)
-    CALL Panel.SetEvents(FALSE, FALSE, TRUE, FALSE, TRUE)
+    CALL Panel.SetEvents(EVENT_LEFT OR EVENT_FIRE)
 
     Panel.Selected = 0
     CALL Panel.Left(0, CHR$(119) + " a dog", 7, TRUE)
@@ -105,7 +105,7 @@ SUB RadioButtonPanelHandler() STATIC
     Selected = 0
 
     CALL Panel.Init("choose vehicle", 10, 5, 14, 5, TRUE)
-    CALL Panel.SetEvents(FALSE, FALSE, TRUE, FALSE, TRUE)
+    CALL Panel.SetEvents(EVENT_LEFT OR EVENT_FIRE)
 
     Panel.Selected = 0
     CALL Panel.Left(0, CHR$(119) + " ferrari", 7, TRUE)
@@ -137,7 +137,7 @@ SUB DistributorPanelHandler() STATIC
     IntPoints = 0
 
     CALL Panel.Init("distribute points", 10, 5, 20, 6, TRUE)
-    CALL Panel.SetEvents(FALSE, FALSE, TRUE, TRUE, TRUE)
+    CALL Panel.SetEvents(EVENT_LEFT OR EVENT_RIGHT OR EVENT_FIRE)
 
     Panel.Selected = 2
     CALL Panel.Left(0, "free", 7, FALSE)
@@ -187,7 +187,7 @@ END SUB
 SUB InfoPanelHandler(Msg AS STRING*18) STATIC
     DIM Panel AS UiPanel
     CALL Panel.Init("info", RndByte(0, 19), RndByte(0, 19), 20, 5, TRUE)
-    CALL Panel.SetEvents(FALSE, FALSE, FALSE, FALSE, TRUE)
+    CALL Panel.SetEvents(EVENT_FIRE)
 
     CALL Panel.Center(1, Msg, 7, FALSE)
 

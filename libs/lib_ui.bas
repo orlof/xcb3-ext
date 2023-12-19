@@ -47,20 +47,14 @@ REM *********************************
 REM     END OF CONFIGURATION
 REM *********************************
 
-SHARED CONST EVENT_UP       = $80
-SHARED CONST EVENT_DOWN     = $81
-SHARED CONST EVENT_LEFT     = $82
-SHARED CONST EVENT_RIGHT    = $83
-SHARED CONST EVENT_FIRE     = $84
+SHARED CONST EVENT_UP       = $01
+SHARED CONST EVENT_DOWN     = $02
+SHARED CONST EVENT_LEFT     = $04
+SHARED CONST EVENT_RIGHT    = $08
+SHARED CONST EVENT_FIRE     = $10
 
 CONST FALSE                 = 0
 CONST TRUE                  = 255
-
-CONST EVENT_UP_FLAG         = $01
-CONST EVENT_DOWN_FLAG       = $02
-CONST EVENT_LEFT_FLAG       = $04
-CONST EVENT_RIGHT_FLAG      = $08
-CONST EVENT_FIRE_FLAG       = $10
 
 DECLARE SUB UiLattice(X AS BYTE, Y AS BYTE, Width AS BYTE, Height AS BYTE, SC0 AS BYTE, SC1 AS BYTE, C0 AS BYTE, C1 AS BYTE) SHARED STATIC
 DECLARE FUNCTION UiPetsciiToScreenCode AS BYTE(Petscii AS BYTE) SHARED STATIC
@@ -214,37 +208,22 @@ TYPE UiPanel
     ' PUBLIC
     ' SPECIFIES THE EVENTS THAT CAN TRIGGER IN WaitEvent()
     '   Up
-    '       IF TRUE, EVENT_UP IS TRIGGERED WHEN USER NAVIGATES UP FROM TOP ROW
-    '       IF FALSE, EVENT_UP IS NOT TRIGGERED AND FOCUS WRAPS FROM TOP TO BOTTOM
+    '       IF 1, EVENT_UP IS TRIGGERED WHEN USER NAVIGATES UP FROM TOP ROW
+    '       IF 0, EVENT_UP IS NOT TRIGGERED AND FOCUS WRAPS FROM TOP TO BOTTOM
     '   Down
-    '       IF TRUE, EVENT_DOWN IS TRIGGERED WHEN USER NAVIGATES DOWN FROM BOTTOM ROW
-    '       IF FALSE, EVENT_DOWN IS NOT TRIGGERED AND FOCUS WRAPS FROM BOTTOM TO TOP
+    '       IF 1, EVENT_DOWN IS TRIGGERED WHEN USER NAVIGATES DOWN FROM BOTTOM ROW
+    '       IF 0, EVENT_DOWN IS NOT TRIGGERED AND FOCUS WRAPS FROM BOTTOM TO TOP
     '   Left
-    '       IF TRUE, EVENT_LEFT IS TRIGGERED WHEN USER PRESSES LEFT
-    '       IF FALSE, LEFT PRESS IS IGNORED
+    '       IF 1, EVENT_LEFT IS TRIGGERED WHEN USER PRESSES LEFT
+    '       IF 0, LEFT PRESS IS IGNORED
     '   Right
-    '       IF TRUE, EVENT_RIGHT IS TRIGGERED WHEN USER PRESSES RIGHT
-    '       IF FALSE, RIGHT PRESS IS IGNORED
+    '       IF 1, EVENT_RIGHT IS TRIGGERED WHEN USER PRESSES RIGHT
+    '       IF 0, RIGHT PRESS IS IGNORED
     '   Fire
-    '       IF TRUE, EVENT_FIRE IS TRIGGERED WHEN USER PRESSES FIRE
-    '       IF FALSE, FIRE PRESS IS IGNORED
-    SUB SetEvents(Up AS BYTE, Down AS BYTE, Left AS BYTE, Right AS BYTE, Fire AS BYTE) STATIC
-        THIS.Events = 0
-        IF Up THEN
-            THIS.Events = THIS.Events OR EVENT_UP_FLAG
-        END IF
-        IF Down THEN
-            THIS.Events = THIS.Events OR EVENT_DOWN_FLAG
-        END IF
-        IF Left THEN
-            THIS.Events = THIS.Events OR EVENT_LEFT_FLAG
-        END IF
-        IF Right THEN
-            THIS.Events = THIS.Events OR EVENT_RIGHT_FLAG
-        END IF
-        IF Fire THEN
-            THIS.Events = THIS.Events OR EVENT_FIRE_FLAG
-        END IF
+    '       IF 1, EVENT_FIRE IS TRIGGERED WHEN USER PRESSES FIRE
+    '       IF 0, FIRE PRESS IS IGNORED
+    SUB SetEvents(Events AS BYTE) STATIC
+        THIS.Events = Events
     END SUB
 
     ' INTERNAL (PUBLIC)
@@ -311,7 +290,7 @@ TYPE UiPanel
         THIS.Height = Height
 
         THIS.Selected = 255
-        THIS.Events = EVENT_FIRE_FLAG
+        THIS.Events = EVENT_FIRE
         THIS.FocusRows = 0
 
         THIS.SaveBg = SaveBg
@@ -452,7 +431,7 @@ TYPE UiPanel
                     DO
                         THIS.Selected = THIS.Selected - 1
                         IF THIS.Selected = 255 THEN
-                            IF (THIS.Events AND EVENT_UP_FLAG) THEN
+                            IF (THIS.Events AND EVENT_UP) THEN
                                 THIS.Event = EVENT_UP
                                 EXIT SUB
                             END IF
@@ -468,7 +447,7 @@ TYPE UiPanel
                     DO
                         THIS.Selected = THIS.Selected + 1
                         IF THIS.Selected = (THIS.Height - 2) THEN
-                            IF (THIS.Events AND EVENT_DOWN_FLAG) THEN
+                            IF (THIS.Events AND EVENT_DOWN) THEN
                                 THIS.Event = EVENT_DOWN
                                 EXIT SUB
                             END IF
@@ -479,20 +458,20 @@ TYPE UiPanel
                 END IF
             END IF
             IF JoyLeft(Joystick) OR Key=KEY_LEFT THEN
-                IF (THIS.Events AND EVENT_LEFT_FLAG) THEN
+                IF (THIS.Events AND EVENT_LEFT) THEN
                     'THIS.Selected = 255
                     THIS.Event = EVENT_LEFT
                     EXIT SUB
                 END IF
             END IF
             IF JoyRight(Joystick) OR Key=KEY_RIGHT THEN
-                IF (THIS.Events AND EVENT_RIGHT_FLAG) THEN
+                IF (THIS.Events AND EVENT_RIGHT) THEN
                     THIS.Event = EVENT_RIGHT
                     EXIT SUB
                 END IF
             END IF
             IF JoyFire(Joystick) OR Key=KEY_FIRE THEN
-                IF (THIS.Events AND EVENT_FIRE_FLAG) THEN
+                IF (THIS.Events AND EVENT_FIRE) THEN
                     THIS.Event = EVENT_FIRE
                     EXIT SUB
                 END IF
