@@ -1,8 +1,8 @@
 REM *************************************
 REM * INCLUDES                          *
 REM *************************************
-INCLUDE "lib_gfx.bas"
-INCLUDE "lib_random.bas"
+INCLUDE "../libs/lib_gfx.bas"
+INCLUDE "../libs/lib_rnd.bas"
 
 REM *************************************
 REM * CONSTANTS                         *

@@ -1,5 +1,5 @@
-INCLUDE "lib_random.bas"
-INCLUDE "lib_ui.bas"
+INCLUDE "../libs/lib_rnd.bas"
+INCLUDE "../libs/lib_ui.bas"
 
 CONST FALSE                 = 0
 CONST TRUE                  = 255

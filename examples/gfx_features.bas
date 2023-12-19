@@ -1,4 +1,4 @@
-INCLUDE "lib_gfx.bas"
+INCLUDE "../libs/lib_gfx.bas"
 
 REM **********************
 REM *        MAIN        *

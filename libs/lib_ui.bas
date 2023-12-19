@@ -1,4 +1,4 @@
-INCLUDE "lib_joy.bas"
+INCLUDE "../libs/lib_joy.bas"
 
 DIM SHARED Joystick AS BYTE
 DIM SHARED UiDelay AS BYTE
@@ -335,7 +335,7 @@ TYPE UiPanel
             END IF
         NEXT Col
     END SUB
-    
+
     ' INTERNAL
     SUB _TextAt(X AS BYTE, Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC
         DIM SC AS BYTE

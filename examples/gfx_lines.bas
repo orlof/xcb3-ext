@@ -1,4 +1,4 @@
-INCLUDE "lib_gfx.bas"
+INCLUDE "../libs/lib_gfx.bas"
 
 CALL SetVideoBank(3)
 CALL SetBitmapMemory(1)
