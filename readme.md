@@ -1,4 +1,4 @@
-# Orlof's XC-Basic3 Libraries for C64 Repository
+# Orlof's XC-Basic3 Libraries for C64
 
 Welcome to Orlof's XC-Basic3 Libraries repository! Originally created for the xcb-gfx bitmap graphics library, this repository has expanded its scope to encompass a variety of useful libraries for XC-Basic3.
 
@@ -12,18 +12,15 @@ Welcome to Orlof's XC-Basic3 Libraries repository! Originally created for the xc
 - Joystick Library ([lib_joy.bas](libs/lib_joy.bas))
   - Simple interface for reading the joystick inputs.
 
-## Future Additions
-Hopefully new libraries derived from the routines employed in my game development endeavors.
-
 ## Repository Organization
 - libs/ directory hosts all the library files ("lib_*.bas")
 - examples/ subdirectory provides illustrative code for each library
 
 ## Documentation
-Find detailed documentation for each library in the [Wiki](https://github.com/orlof/xcb3-gfx/wiki). Explore and unleash the potential of these libraries in your projects.
+Find detailed documentation for each library in the [Wiki](https://github.com/orlof/xcb3-gfx/wiki).
 
 ## Contribution
-We welcome contributions to the XCB3-GFX library. Please read the contribution guidelines before submitting a pull request.
+I welcome contributions to the XCB3-EXT libraries. Feel free to reach out!
 
 ## License
 This project is licensed under the BSD 2-Clause License License. See `LICENSE` for details.
