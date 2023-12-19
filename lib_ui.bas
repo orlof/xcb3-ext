@@ -57,7 +57,6 @@ REM *********************************
 REM     END OF PUBLIC INTERFACE
 REM *********************************
 
-DECLARE SUB _SetCharModeAt(X AS BYTE, Y AS BYTE, Mode AS BYTE) STATIC
 DECLARE SUB _Sleep(NrFrames AS BYTE) STATIC
 DECLARE FUNCTION _GetScreenPtr AS WORD(X AS BYTE, Y AS BYTE) STATIC
 DECLARE FUNCTION _GetColorPtr AS WORD(X AS BYTE, Y AS BYTE) STATIC
@@ -149,18 +148,6 @@ FUNCTION _GetColorPtr AS WORD(X AS BYTE, Y AS BYTE) STATIC
         sta {_GetColorPtr}+1
     END ASM
 END FUNCTION
-
-' INTERNAL
-' SETS THE CHARACTER MODE (REVERSE OR NORMAL) AT THE GIVEN COORDINATES
-SUB _SetCharModeAt(X AS BYTE, Y AS BYTE, Mode AS BYTE) STATIC
-    DIM Ptr AS WORD
-    Ptr = _GetScreenPtr(X, Y)
-    IF Mode THEN
-        POKE Ptr, PEEK(Ptr) OR 128
-    ELSE
-        POKE Ptr, PEEK(Ptr) AND %01111111
-    END IF
-END SUB
 
 ' INTERNAL
 ' SLEEPS FOR THE GIVEN NUMBER OF FRAMES
@@ -424,7 +411,13 @@ TYPE UiPanel
         DIM Row AS BYTE
         Row = THIS.Y + Y + 1
         FOR Col AS BYTE = THIS.X + 1 TO THIS.X + THIS.Width - 2
-            CALL _SetCharModeAt(Col, Row, Set)
+            DIM Ptr AS WORD
+            Ptr = _GetScreenPtr(Col, Row)
+            IF Set THEN
+                POKE Ptr, PEEK(Ptr) OR 128
+            ELSE
+                POKE Ptr, PEEK(Ptr) AND %01111111
+            END IF
         NEXT Col
     END SUB
 
