@@ -4,28 +4,13 @@ DIM SHARED Joystick AS BYTE
 DIM SHARED UiDelay AS BYTE
 DIM SHARED BorderFocusColor AS BYTE
 DIM SHARED BorderNoFocusColor AS BYTE
-DIM SHARED BackgroundColor AS BYTE
-
-REM *********************************
-REM        PUBLIC INTERFACE
-REM *********************************
-
-DECLARE SUB UiLattice(X AS BYTE, Y AS BYTE, Width AS BYTE, Height AS BYTE, SC0 AS BYTE, SC1 AS BYTE, C0 AS BYTE, C1 AS BYTE) SHARED STATIC
-DECLARE FUNCTION UiPetsciiToScreenCode AS BYTE(Petscii AS BYTE) SHARED STATIC
-
-SHARED CONST EVENT_UP       = $80
-SHARED CONST EVENT_DOWN     = $81
-SHARED CONST EVENT_LEFT     = $82
-SHARED CONST EVENT_RIGHT    = $83
-SHARED CONST EVENT_FIRE     = $84
+DIM SHARED ClientAreaColor AS BYTE
 
 REM *********************************
 REM     CONFIGURATION PARAMETERS
 REM *********************************
 
-' THE SIZE OF THE SCREEN CACHE.
-' THIS IS USED TO SAVE THE SCREEN BEHIND PANELS
-' REQUIRED SIZE IS THE SUM OF SIMULTANEOUSLY OPEN PANELS: 2 * WIDTH * HEIGHT
+' SUM OF SIMULTANEOUSLY OPEN PANELS: 2 * WIDTH * HEIGHT
 ' CAN BE 0, IF ALL PANELS ARE INITIALIZED WITH SaveBg=FALSE
 CONST UI_CACHE_SIZE         = 1024
 
@@ -38,6 +23,8 @@ CONST HORIZONTAL_LINE       = 67
 CONST VERTICAL_LINE         = 93
 CONST EMPTY_SPACE           = 32
 
+CONST DISPOSE_COLOR         = 14
+
 ' PETSCII CODES FOR KEYBOARD NAVIGATION
 CONST KEY_UP                = 145
 CONST KEY_DOWN              = 17
@@ -48,21 +35,23 @@ CONST KEY_FIRE              = 13
 ' THE JOYSTICK TO USE: JOY1 OR JOY2
 Joystick                    = JOY2
 
-' THE DELAY BETWEEN JOYSTICK REPETITIONS
+' THE DELAY BETWEEN JOYSTICK REPETITIONS (IN FRAMES)
 UiDelay                     = 10
 
 ' COLOR CODES
 BorderFocusColor            = $0c
 BorderNoFocusColor          = $0b
-BackgroundColor             = $0f
+ClientAreaColor             = $0f
 
 REM *********************************
-REM     END OF PUBLIC INTERFACE
+REM     END OF CONFIGURATION
 REM *********************************
 
-DECLARE SUB _Sleep(NrFrames AS BYTE) STATIC
-DECLARE FUNCTION _GetScreenPtr AS WORD(X AS BYTE, Y AS BYTE) STATIC
-DECLARE FUNCTION _GetColorPtr AS WORD(X AS BYTE, Y AS BYTE) STATIC
+SHARED CONST EVENT_UP       = $80
+SHARED CONST EVENT_DOWN     = $81
+SHARED CONST EVENT_LEFT     = $82
+SHARED CONST EVENT_RIGHT    = $83
+SHARED CONST EVENT_FIRE     = $84
 
 CONST FALSE                 = 0
 CONST TRUE                  = 255
@@ -72,6 +61,12 @@ CONST EVENT_DOWN_FLAG       = $02
 CONST EVENT_LEFT_FLAG       = $04
 CONST EVENT_RIGHT_FLAG      = $08
 CONST EVENT_FIRE_FLAG       = $10
+
+DECLARE SUB UiLattice(X AS BYTE, Y AS BYTE, Width AS BYTE, Height AS BYTE, SC0 AS BYTE, SC1 AS BYTE, C0 AS BYTE, C1 AS BYTE) SHARED STATIC
+DECLARE FUNCTION UiPetsciiToScreenCode AS BYTE(Petscii AS BYTE) SHARED STATIC
+DECLARE SUB _Sleep(NrFrames AS BYTE) STATIC
+DECLARE FUNCTION _GetScreenPtr AS WORD(X AS BYTE, Y AS BYTE) STATIC
+DECLARE FUNCTION _GetColorPtr AS WORD(X AS BYTE, Y AS BYTE) STATIC
 
 DIM ScreenCache(UI_CACHE_SIZE) AS BYTE
 DIM ScreenCacheSize AS WORD
@@ -203,15 +198,17 @@ TYPE UiPanel
     ' IF PANEL IS INITIALIZED WITH SaveBg=TRUE, THE SCREEN BEHIND THE PANEL CAN BE RESTORED
     ' OTHERWISE DOES NOTHING
     SUB Dispose() STATIC
-        IF THIS.SaveBg THEN
-            FOR CY AS INT = THIS.Y + THIS.Height - 1 TO THIS.Y STEP -1
-                FOR CX AS INT = THIS.X + THIS.Width - 1 TO THIS.X STEP -1
+        FOR CY AS INT = THIS.Y + THIS.Height - 1 TO THIS.Y STEP -1
+            FOR CX AS INT = THIS.X + THIS.Width - 1 TO THIS.X STEP -1
+                IF THIS.SaveBg THEN
                     ScreenCacheSize = ScreenCacheSize - 2
                     POKE _GetScreenPtr(CBYTE(CX), CBYTE(CY)), ScreenCache(ScreenCacheSize)
                     POKE _GetColorPtr(CBYTE(CX), CBYTE(CY)), ScreenCache(ScreenCacheSize+1)
-                NEXT CX
-            NEXT CY
-        END IF
+                ELSE
+                    CHARAT CBYTE(CX), CBYTE(CY), EMPTY_SPACE, DISPOSE_COLOR
+                END IF
+            NEXT CX
+        NEXT CY
     END SUB
 
     ' PUBLIC
@@ -281,7 +278,7 @@ TYPE UiPanel
             CHARAT LastCol, Row, VERTICAL_LINE, BorderColor
             IF ClearBg THEN
                 FOR Col = THIS.X+1 TO LastCol - 1
-                    CHARAT Col, Row, EMPTY_SPACE, BackgroundColor
+                    CHARAT Col, Row, EMPTY_SPACE, ClientAreaColor
                 NEXT Col
             END IF
         NEXT Row

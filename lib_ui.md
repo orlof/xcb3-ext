@@ -34,6 +34,8 @@ Configure the following parameters in the lib_ui.bas file:
     CONST VERTICAL_LINE         = 93
     CONST EMPTY_SPACE           = 32
 
+    CONST DISPOSE_COLOR         = 14
+
     ' PETSCII CODES FOR KEYBOARD NAVIGATION
     CONST KEY_UP                = 145
     CONST KEY_DOWN              = 17
@@ -50,7 +52,7 @@ Configure the following parameters in the lib_ui.bas file:
     ' COLOR CODES
     BorderFocusColor            = $0c
     BorderNoFocusColor          = $0b
-    BackgroundColor             = $0f
+    ClientAreaColor             = $0f
 ```
 Adjust the values as needed for your specific project requirements.
 
