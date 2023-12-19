@@ -322,15 +322,30 @@ TYPE UiPanel
     END SUB
 
     ' INTERNAL
+    SUB _SetRowMode(Y AS BYTE, Set AS BYTE) STATIC
+        DIM Row AS BYTE
+        Row = THIS.Y + Y + 1
+        FOR Col AS BYTE = THIS.X + 1 TO THIS.X + THIS.Width - 2
+            DIM Ptr AS WORD
+            Ptr = _GetScreenPtr(Col, Row)
+            IF Set THEN
+                POKE Ptr, PEEK(Ptr) OR 128
+            ELSE
+                POKE Ptr, PEEK(Ptr) AND %01111111
+            END IF
+        NEXT Col
+    END SUB
+    
+    ' INTERNAL
     SUB _TextAt(X AS BYTE, Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC
         DIM SC AS BYTE
         FOR Pos AS BYTE = 0 TO LEN(Text) - 1
             SC = UiPetsciiToScreenCode(PEEK(@Text+Pos+1))
-            IF Y = THIS.Selected THEN SC = SC OR 128
             CHARAT THIS.X + X + Pos + 1, THIS.Y + Y + 1, SC, TextColor
         NEXT Pos
 
         IF Focusable THEN
+            IF Y = THIS.Selected THEN CALL THIS._SetRowMode(Y, TRUE)
             THIS.FocusRows = (THIS.FocusRows OR SHL(CLONG(1), Y))
         ELSE
             THIS.FocusRows = (THIS.FocusRows AND SHL($7ffffe, Y))
@@ -404,21 +419,6 @@ TYPE UiPanel
     '       IF FALSE, THE TEXT IS NON SELECTABLE LABEL
     SUB Center(X AS BYTE, Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
         CALL THIS._TextAt(X - (LEN(Text) / 2), Y, Text, TextColor, Focusable)
-    END SUB
-
-    ' INTERNAL
-    SUB _SetRowMode(Y AS BYTE, Set AS BYTE) STATIC
-        DIM Row AS BYTE
-        Row = THIS.Y + Y + 1
-        FOR Col AS BYTE = THIS.X + 1 TO THIS.X + THIS.Width - 2
-            DIM Ptr AS WORD
-            Ptr = _GetScreenPtr(Col, Row)
-            IF Set THEN
-                POKE Ptr, PEEK(Ptr) OR 128
-            ELSE
-                POKE Ptr, PEEK(Ptr) AND %01111111
-            END IF
-        NEXT Col
     END SUB
 
     ' PUBLIC
