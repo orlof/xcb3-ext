@@ -57,14 +57,8 @@ FUNCTION JoyFire AS BYTE(JoyNr AS BYTE) STATIC SHARED
 END FUNCTION
 
 FUNCTION JoySame AS BYTE(JoyNr AS BYTE) STATIC SHARED
-    RETURN (Value(JoyNr) = Prev(JoyNr)) AND ((Value(JoyNr) AND JOY_ANY) < 31)
+    RETURN (Value(JoyNr) = Prev(JoyNr)) AND (Value(JoyNr) < JOY_ANY)
 END FUNCTION
-
-SUB JoyWaitIdle(JoyNr AS BYTE) STATIC SHARED
-    DO
-        CALL JoyUpdate()
-    LOOP WHILE Value(JoyNr) < 31
-END SUB
 
 ' Check if fire button state has changed
 FUNCTION JoyFirePressed AS BYTE(JoyNr AS BYTE) STATIC SHARED
@@ -74,16 +68,6 @@ END FUNCTION
 FUNCTION JoyFireReleased AS BYTE(JoyNr AS BYTE) STATIC SHARED
     RETURN ((Prev(JoyNr) AND JOY_FIRE) = 0) AND ((Value(JoyNr) AND JOY_FIRE) > 0)
 END FUNCTION
-
-' Subroutine to wait for joystick button click (down+up)
-SUB JoyWaitClick(JoyNr AS BYTE) STATIC SHARED
-    DO
-        CALL JoyUpdate()
-    LOOP UNTIL JoyFirePressed(JoyNr)
-    DO
-        CALL JoyUpdate()
-    LOOP UNTIL JoyFireReleased(JoyNr)
-END SUB
 
 ' Convenience funtions that can be used to change coordinates
 FUNCTION JoyXAxis AS INT(JoyNr AS BYTE) STATIC SHARED
@@ -97,3 +81,19 @@ FUNCTION JoyYAxis AS INT(JoyNr AS BYTE) STATIC SHARED
     IF (Value(JoyNr) AND JOY_DOWN) = 0 THEN RETURN 1
     RETURN 0
 END FUNCTION
+
+SUB JoyWaitIdle(JoyNr AS BYTE) STATIC SHARED
+    DO
+        CALL JoyUpdate()
+    LOOP WHILE Value(JoyNr) < JOY_ANY
+END SUB
+
+' Subroutine to wait for joystick button click (down+up)
+SUB JoyWaitClick(JoyNr AS BYTE) STATIC SHARED
+    DO
+        CALL JoyUpdate()
+    LOOP UNTIL JoyFirePressed(JoyNr)
+    DO
+        CALL JoyUpdate()
+    LOOP UNTIL JoyFireReleased(JoyNr)
+END SUB
