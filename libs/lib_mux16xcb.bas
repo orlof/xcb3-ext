@@ -1,7 +1,7 @@
-SYSTEM INTERRUPT OFF        'THIS IS MANDATORY
 
-CONST BOTTOM_MARGIN = 21
-CONST ADVANCE = 9           'USE INTERRUPT IF NEXT SPRITE REUSE IS MORE THAN n LINES BELOW
+'*******************************************************************************
+' PUBLIC INTERFACE FOR SPRITE MULTIPLEXER
+'*******************************************************************************
 
 'USE THIS FROM MAIN PROGRAM TO COMMIT CHANGES IN PUBLIC SPRITE REGISTERS
 DECLARE SUB SprUpdate() STATIC SHARED
@@ -12,7 +12,15 @@ DIM SHARED SprX(16) AS BYTE
 DIM SHARED SprCol(16) AS BYTE
 DIM SHARED SprShape(16) AS BYTE
 
-'INTERNAL SPRITE DATA
+'*******************************************************************************
+' PUBLIC INTERFACE END
+'*******************************************************************************
+
+'Constants
+CONST BOTTOM_MARGIN = 21
+CONST ADVANCE = 9           'Call ZoneN directly if next sprite bottom is less than n lines below current scanline
+
+'Internal data
 DIM _SprNr0 AS BYTE FAST
 DIM _SprNr1 AS BYTE FAST
 
@@ -24,7 +32,9 @@ DIM _SprShape(16) AS BYTE
 DIM _SprScanLine AS WORD
 DIM _SprUpdate AS BYTE
 
-'INITIALIZE SPRITE MULTIPLEXER
+'Initialize sprite multiplexer
+SYSTEM INTERRUPT OFF        'This is mandatory
+
 FOR _SprNr0 = 0 TO 15
     IF _SprNr0 < 8 THEN SPRITE _SprNr0 ON
     _SprIdx(_SprNr0) = _SprNr0
@@ -35,59 +45,64 @@ ON RASTER 256 GOSUB Zone0
 RASTER INTERRUPT ON
 CALL SprUpdate()
 
+'This GOTO is needed so that main program's INCLUDE does not execute interrupt handlers
 GOTO THE_END
 
-'RASTER INTERRUPT ROUTINE THAT REUSES ONE HW SPRITE
+'Raster interrupt-handler that assigns software sprite to hardware sprite
 ZoneN:
     _SprNr1 = _SprNr0 + 8
     BORDER _SprCol(_SprNr0)
 
-    'BACK TO SORTING INTERRUPT IF ALL SPRITES ALREADY PROCESSED
+    'Back to interrupt-Zone0 if rest of the software sprites are in y=255
     IF _SprY(_SprNr1) = 255 THEN GOTO ZoneNDone
 
-    'WAIT FOR SCANLINE TO REUSE SPRITE (NEEDED IF TRIGGERED BY DIRECT GOTO INSTEAD OF INTERRUPT)
+    'Wait for scanline to reach below current sprite before re-using it
+    '(needed if ZoneN was called in advance with direct GOTO instead of interrupt)
     _SprScanLine = CWORD(_SprY(_SprNr0)) + BOTTOM_MARGIN
     DO WHILE SCAN() < _SprScanLine
     LOOP
 
-    'REUSE HW SPRITE
+    'Reuse harware sprite for next software sprite
     SPRITE _SprNr0 AT SHL(CWORD(_SprX(_SprNr1)),1), _SprY(_SprNr1) SHAPE _SprShape(_SprNr1) COLOR _SprCol(_SprNr1)
 
-    'BACK TO SORTING IF LAST REUSED SPRITE
+    'Back to interrupt-Zone0 if all harware sprites are re-used
     IF _SprNr0 = 7 THEN GOTO ZoneNDone
 
-    'ADVANCE TO NEXT SPRITE REUSE
+    'Prepare for next hardware sprite re-use
     _SprNr0 = _SprNr0 + 1
 
-    'CHECK IF NEXT SPRITE REUSE IS SO CLOSE THAT IT NEEDS TO BE DONE IMMEDIATELY
+    'Check if next sprite re-use is so close that it needs to be called immediately
     _SprScanLine = _SprY(_SprNr0) + BOTTOM_MARGIN
     IF SCAN() + ADVANCE >= _SprScanLine THEN GOTO ZoneN
 
-    'IF THERE IS TIME, SCHEDULE INTERRUPT TO HANDLE NEXT SPRITE REUSE
+    'If there is time, schedule interrupt to trigger the next sprite re-use
     ON RASTER _SprScanLine GOSUB ZoneN
 
     BORDER 0
     RETURN
 
 ZoneNDone:
-    'IF WE ARE ALREADY LATE FROM SORTING INTERRUPT, GO THERE DIRECTLY
+    'If we are already late from sorting interrupt, go there directly
     IF SCAN() > 250 THEN GOTO Zone0
 
-    'IF THERE IS TIME, SCHEDULE SORTING INTERRUPT
+    'If there is time, schedule interrupt to trigger Zone0
     ON RASTER 256 GOSUB Zone0
 
     BORDER 0
     RETURN
 
-'THIS IS THE ONCE PER FRAME SORTING INTERRUPT THAT ALSO COPIES PUBLIC REGISTERS TO INTERNAL SPRITE DATA
+'This is the once per frame interrupt that
+' - sorts the software sprites by y-coordinate
+' - copies public registers to internal sprite data in sorted order
+' - assigns software sprites 0-7 to hardware sprites
 Zone0:
     BORDER 2
 
-    'IF MAIN PROGRAM WANTS TO COMMIT THE CHANGES IN PUBLIC SPRITE REGISTERS, DO IT NOW
+    'If main program wants to commit the changes to sprite registers, do it now
     IF _SprUpdate THEN
         _SprUpdate = FALSE
 
-        'THIS IS THE SORTING ALGORITHM
+        'This is the sorting algorithm
         FOR _SprNr0 = 0 TO 14
             IF SprY(_SprIdx(_SprNr0)) > SprY(_SprIdx(_SprNr0 + 1)) THEN
                 _SprNr1 = _SprNr0
@@ -100,7 +115,7 @@ Zone0:
             END IF
         NEXT _SprNr0
 
-        'COPY PUBLIC SPRITE REGISTERS TO INTERNAL SPRITE DATA IN SORTED ORDER
+        'Copy sprite data in sorted order from public registers to internal registers
         FOR _SprNr0 = 0 TO 15
             _SprNr1 = _SprIdx(_SprNr0)
             _SprY(_SprNr0) = SprY(_SprNr1)
@@ -110,21 +125,21 @@ Zone0:
         NEXT _SprNr0
     END IF
 
-    'ASSIGN 8 HW SPRITES TO 8 FIRST SPRITES IN INTERNAL SPRITE DATA
+    'Assign software sprites 0-7 to hardware sprites
     FOR _SprNr0 = 0 TO 7
         SPRITE _SprNr0 AT SHL(CWORD(_SprX(_SprNr0)),1), _SprY(_SprNr0) SHAPE _SprShape(_SprNr0) COLOR _SprCol(_SprNr0)
     NEXT _SprNr0
 
-    'INITIALIZE SPRITE REUSE COUNTER
+    'Initialize sprite reuse counter
     _SprNr0 = 0
 
-    'CHECK IF NEXT SPRITE REUSE IS SO CLOSE THAT IT NEEDS TO BE DONE IMMEDIATELY
+    'Check if first hardware sprite reuse is so close that it needs to be done immediately
     _SprScanLine = _SprY(0) + BOTTOM_MARGIN
     IF SCAN() < 256 THEN
         IF (SCAN() + ADVANCE) >= _SprScanLine THEN GOTO ZoneN
     END IF
 
-    'IF THERE IS TIME, SCHEDULE INTERRUPT TO HANDLE FIRST SPRITE REUSE
+    'If there is time, schedule interrupt to handle first hardware sprite reuse
     ON RASTER _SprScanLine GOSUB ZoneN
 
     BORDER 0
@@ -134,6 +149,6 @@ THE_END:
 
 SUB SprUpdate() STATIC SHARED
     _SprUpdate = TRUE
-    DO WHILE _SprUpdate     'WAIT FOR INTERRUPT TO PROCESS PUBLIC SPRITE REGISTERS
+    DO WHILE _SprUpdate     'Wait for Zone0-interrupt-handler to process sprite changes
     LOOP
 END SUB
