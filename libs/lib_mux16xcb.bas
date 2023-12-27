@@ -40,7 +40,7 @@ GOTO THE_END
 'RASTER INTERRUPT ROUTINE THAT REUSES ONE HW SPRITE
 ZoneN:
     _SprNr1 = _SprNr0 + 8
-    BORDER _SprNr1
+    BORDER _SprCol(_SprNr0)
 
     'BACK TO SORTING INTERRUPT IF ALL SPRITES ALREADY PROCESSED
     IF _SprY(_SprNr1) = 255 THEN GOTO ZoneNDone
@@ -88,7 +88,7 @@ Zone0:
         _SprUpdate = FALSE
 
         'THIS IS THE SORTING ALGORITHM
-        FOR _SprNr0 = 0 TO 14 'TODO 14
+        FOR _SprNr0 = 0 TO 14
             IF SprY(_SprIdx(_SprNr0)) > SprY(_SprIdx(_SprNr0 + 1)) THEN
                 _SprNr1 = _SprNr0
 
@@ -101,7 +101,7 @@ Zone0:
         NEXT _SprNr0
 
         'COPY PUBLIC SPRITE REGISTERS TO INTERNAL SPRITE DATA IN SORTED ORDER
-        FOR _SprNr0 = 0 TO 15 'TODO 15
+        FOR _SprNr0 = 0 TO 15
             _SprNr1 = _SprIdx(_SprNr0)
             _SprY(_SprNr0) = SprY(_SprNr1)
             _SprX(_SprNr0) = SprX(_SprNr1)

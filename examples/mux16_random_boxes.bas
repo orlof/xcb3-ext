@@ -10,8 +10,10 @@ DIM i AS BYTE FAST
 DIM Dx(16) AS BYTE
 DIM Dy(16) AS BYTE
 
+'Sprite shape
 MEMSET 16256, 63, 255
 
+'Initial values
 FOR i = 0 TO 15
     SprX(i) = RndByte(24, 159)
     SprY(i) = RndByte(50, 229)
@@ -21,6 +23,7 @@ FOR i = 0 TO 15
     Dy(i) = (2 * RndByte(0, 1)) - 1
 NEXT i
 
+'Main loop
 DO
     CALL SprUpdate()
     FOR i = 0 TO 15
