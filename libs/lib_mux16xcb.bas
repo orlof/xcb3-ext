@@ -106,6 +106,7 @@ Zone0:
     'If main program wants to commit the changes to sprite registers, do it now
     IF _SprUpdate THEN
         _SprUpdate = FALSE
+        BACKGROUND 6
 
         'This is the sorting algorithm
         FOR _SprNr0 = 0 TO 14
@@ -153,6 +154,7 @@ Zone0:
 THE_END:
 
 SUB SprUpdate() STATIC SHARED
+    BACKGROUND 3
     _SprUpdate = TRUE
     DO WHILE _SprUpdate     'Wait for Zone0-interrupt-handler to process sprite changes
     LOOP
