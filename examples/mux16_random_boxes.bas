@@ -1,10 +1,8 @@
-'OPTION FASTINTERRUPT
-
-SHARED CONST TRUE = 255
-SHARED CONST FALSE = 0
-
 INCLUDE "../libs/lib_mux16xcb.bas"
 INCLUDE "../libs/lib_rnd.bas"
+
+CONST TRUE = 255
+CONST FALSE = 0
 
 DIM i AS BYTE FAST
 DIM Dx(16) AS BYTE
@@ -31,14 +29,14 @@ DO
             Dx(i) = 1
         ELSE
             IF SprX(i) = 160 THEN
-                Dx(i) = -1
+                Dx(i) = CBYTE(-1)
             END IF
         END IF
         IF SprY(i) = 50 THEN
             Dy(i) = 1
         ELSE
             IF SprY(i) = 229 THEN
-                Dy(i) = -1
+                Dy(i) = CBYTE(-1)
             END IF
         END IF
         SprX(i) = SprX(i) + Dx(i)

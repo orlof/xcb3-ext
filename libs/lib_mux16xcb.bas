@@ -17,8 +17,13 @@ DIM SHARED SprShape(16) AS BYTE
 '*******************************************************************************
 
 'Constants
+CONST TRUE = 255
+CONST FALSE = 0
 CONST BOTTOM_MARGIN = 21
-CONST ADVANCE = 9           'Call ZoneN directly if next sprite bottom is less than n lines below current scanline
+CONST ADVANCE = 9           'Call ZoneN directly if next sprite bottom is less than n lines
+                            'below current scanline. Bigger number wastes more cycles waiting
+                            'for the scanline in busy-loop, but smaller number risks missing
+                            'the next sprite with interrupt.
 
 'Internal data
 DIM _SprNr0 AS BYTE FAST
