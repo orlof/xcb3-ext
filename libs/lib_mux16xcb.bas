@@ -57,6 +57,7 @@ GOTO THE_END
 ZoneN:
     _SprNr1 = _SprNr0 + 8
     BORDER _SprCol(_SprNr0)
+    IF SCAN() > 249 THEN GOTO Zone0
 
     'Back to interrupt-Zone0 if rest of the software sprites are in y=255
     IF _SprY(_SprNr1) = 255 THEN GOTO ZoneNDone
@@ -77,7 +78,7 @@ ZoneN:
     _SprNr0 = _SprNr0 + 1
 
     'Check if next sprite re-use is so close that it needs to be called immediately
-    _SprScanLine = _SprY(_SprNr0) + BOTTOM_MARGIN
+    _SprScanLine = CWORD(_SprY(_SprNr0)) + BOTTOM_MARGIN
     IF SCAN() + ADVANCE >= _SprScanLine THEN GOTO ZoneN
 
     'If there is time, schedule interrupt to trigger the next sprite re-use
@@ -140,7 +141,7 @@ Zone0:
     _SprNr0 = 0
 
     'Check if first hardware sprite reuse is so close that it needs to be done immediately
-    _SprScanLine = _SprY(0) + BOTTOM_MARGIN
+    _SprScanLine = CWORD(_SprY(0)) + BOTTOM_MARGIN
     IF SCAN() < 256 THEN
         IF (SCAN() + ADVANCE) >= _SprScanLine THEN GOTO ZoneN
     END IF
@@ -154,7 +155,7 @@ Zone0:
 THE_END:
 
 SUB SprUpdate() STATIC SHARED
-    BACKGROUND 3
+    'BACKGROUND 3
     _SprUpdate = TRUE
     DO WHILE _SprUpdate     'Wait for Zone0-interrupt-handler to process sprite changes
     LOOP
