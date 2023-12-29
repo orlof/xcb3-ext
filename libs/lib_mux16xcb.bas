@@ -17,10 +17,10 @@ DIM SHARED SprShape(16) AS BYTE
 '*******************************************************************************
 
 'Constants
-CONST TRUE = 255
-CONST FALSE = 0
-CONST BOTTOM_MARGIN = 21
-CONST ADVANCE = 9           'Call ZoneN directly if next sprite bottom is less than n lines
+CONST TRUE      = 255
+CONST FALSE     = 0
+CONST HEIGHT    = 21
+CONST LEAD      = 9         'Call ZoneN directly if next sprite bottom is less than n lines
                             'below current scanline. Bigger number wastes more cycles waiting
                             'for the scanline in busy-loop, but smaller number risks missing
                             'the next sprite with interrupt.
@@ -57,14 +57,15 @@ GOTO THE_END
 ZoneN:
     _SprNr1 = _SprNr0 + 8
     BORDER _SprCol(_SprNr0)
-    IF SCAN() > 249 THEN GOTO Zone0
+    'Skip this and go directly to Zone0 if we are already late
+    IF SCAN() >= 250 THEN GOTO Zone0
 
-    'Back to interrupt-Zone0 if rest of the software sprites are in y=255
-    IF _SprY(_SprNr1) = 255 THEN GOTO ZoneNDone
+    'if rest of the software sprites are in y=255 go to Zone0
+    IF _SprY(_SprNr1) >= 250 THEN GOTO ZoneNDone
 
     'Wait for scanline to reach below current sprite before re-using it
     '(needed if ZoneN was called in advance with direct GOTO instead of interrupt)
-    _SprScanLine = CWORD(_SprY(_SprNr0)) + BOTTOM_MARGIN
+    _SprScanLine = CWORD(_SprY(_SprNr0)) + HEIGHT
     DO WHILE SCAN() < _SprScanLine
     LOOP
 
@@ -78,8 +79,8 @@ ZoneN:
     _SprNr0 = _SprNr0 + 1
 
     'Check if next sprite re-use is so close that it needs to be called immediately
-    _SprScanLine = CWORD(_SprY(_SprNr0)) + BOTTOM_MARGIN
-    IF SCAN() + ADVANCE >= _SprScanLine THEN GOTO ZoneN
+    _SprScanLine = CWORD(_SprY(_SprNr0)) + HEIGHT
+    IF SCAN() + LEAD >= _SprScanLine THEN GOTO ZoneN
 
     'If there is time, schedule interrupt to trigger the next sprite re-use
     ON RASTER _SprScanLine GOSUB ZoneN
@@ -141,9 +142,9 @@ Zone0:
     _SprNr0 = 0
 
     'Check if first hardware sprite reuse is so close that it needs to be done immediately
-    _SprScanLine = CWORD(_SprY(0)) + BOTTOM_MARGIN
+    _SprScanLine = CWORD(_SprY(0)) + HEIGHT
     IF SCAN() < 256 THEN
-        IF (SCAN() + ADVANCE) >= _SprScanLine THEN GOTO ZoneN
+        IF (SCAN() + LEAD) >= _SprScanLine THEN GOTO ZoneN
     END IF
 
     'If there is time, schedule interrupt to handle first hardware sprite reuse
