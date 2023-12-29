@@ -1,4 +1,4 @@
-INCLUDE "../libs/lib_mux16xcb.bas"
+INCLUDE "../libs/lib_mux16mix.bas"
 INCLUDE "../libs/lib_joy.bas"
 
 DIM i AS BYTE FAST
@@ -12,7 +12,7 @@ MEMSET 16256, 63, 255
 y = 50
 FOR i = 0 TO 15
     SprX(i) = 12 + (10 * i)
-    SprCol(i) = 8 + (i MOD 8)
+    SprColor(i) = 8 + (i MOD 8)
     SprShape(i) = 254
 NEXT i
 
@@ -23,7 +23,7 @@ DO
     y = y + JoyYAxis(JOY2)
     TEXTAT 0,0, "y: "+STR$(y)+ "  "
     FOR SprNr AS BYTE = 0 TO 15
-        SprY(SprNr) = y + SHL(SprNr,3)
+        SprY(SprNr) = y + SHL(SprNr, 2)
     NEXT SprNr
 LOOP
 

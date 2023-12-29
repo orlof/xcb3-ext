@@ -1,4 +1,4 @@
-INCLUDE "../libs/lib_mux16xcb.bas"
+INCLUDE "../libs/lib_mux16mix.bas"
 INCLUDE "../libs/lib_rnd.bas"
 
 CONST TRUE = 255
@@ -15,7 +15,7 @@ MEMSET 16256, 63, 255
 FOR i = 0 TO 15
     SprX(i) = RndByte(24, 159)
     SprY(i) = RndByte(50, 229)
-    SprCol(i) = 8 + (i MOD 8)
+    SprColor(i) = 8 + (i MOD 8)
     SprShape(i) = 254
     Dx(i) = (2 * RndByte(0, 1)) - 1
     Dy(i) = (2 * RndByte(0, 1)) - 1

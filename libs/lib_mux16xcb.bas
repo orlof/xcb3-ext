@@ -9,7 +9,7 @@ DECLARE SUB SprUpdate() STATIC SHARED
 'THESE ARE PUBLIC SPRITE REGISTERS THAT CAN BE CHANGED IN MAIN PROGRAM
 DIM SHARED SprY(16) AS BYTE
 DIM SHARED SprX(16) AS BYTE
-DIM SHARED SprCol(16) AS BYTE
+DIM SHARED SprColor(16) AS BYTE
 DIM SHARED SprShape(16) AS BYTE
 
 '*******************************************************************************
@@ -32,7 +32,7 @@ DIM _SprNr1 AS BYTE FAST
 DIM _SprIdx(16) AS BYTE FAST
 DIM _SprY(16) AS BYTE
 DIM _SprX(16) AS BYTE
-DIM _SprCol(16) AS BYTE
+DIM _SprColor(16) AS BYTE
 DIM _SprShape(16) AS BYTE
 DIM _SprScanLine AS WORD
 DIM _SprUpdate AS BYTE
@@ -56,12 +56,12 @@ GOTO THE_END
 'Raster interrupt-handler that assigns software sprite to hardware sprite
 ZoneN:
     _SprNr1 = _SprNr0 + 8
-    BORDER _SprCol(_SprNr0)
+    BORDER _SprColor(_SprNr0)
     'Skip this and go directly to Zone0 if we are already late
-    IF SCAN() >= 250 THEN GOTO Zone0
+    IF SCAN() > 249 THEN GOTO Zone0
 
-    'if rest of the software sprites are in y=255 go to Zone0
-    IF _SprY(_SprNr1) >= 250 THEN GOTO ZoneNDone
+    'if rest of the software sprites are behind border, go to Zone0
+    IF _SprY(_SprNr1) > 249 THEN GOTO ZoneNDone
 
     'Wait for scanline to reach below current sprite before re-using it
     '(needed if ZoneN was called in advance with direct GOTO instead of interrupt)
@@ -70,7 +70,7 @@ ZoneN:
     LOOP
 
     'Reuse harware sprite for next software sprite
-    SPRITE _SprNr0 AT SHL(CWORD(_SprX(_SprNr1)),1), _SprY(_SprNr1) SHAPE _SprShape(_SprNr1) COLOR _SprCol(_SprNr1)
+    SPRITE _SprNr0 SHAPE _SprShape(_SprNr1) COLOR _SprColor(_SprNr1) AT SHL(CWORD(_SprX(_SprNr1)),1), _SprY(_SprNr1)
 
     'Back to interrupt-Zone0 if all harware sprites are re-used
     IF _SprNr0 = 7 THEN GOTO ZoneNDone
@@ -90,7 +90,7 @@ ZoneN:
 
 ZoneNDone:
     'If we are already late from sorting interrupt, go there directly
-    IF SCAN() > 250 THEN GOTO Zone0
+    IF SCAN() > 249 THEN GOTO Zone0
 
     'If there is time, schedule interrupt to trigger Zone0
     ON RASTER 256 GOSUB Zone0
@@ -128,14 +128,14 @@ Zone0:
             _SprNr1 = _SprIdx(_SprNr0)
             _SprY(_SprNr0) = SprY(_SprNr1)
             _SprX(_SprNr0) = SprX(_SprNr1)
-            _SprCol(_SprNr0) = SprCol(_SprNr1)
+            _SprColor(_SprNr0) = SprColor(_SprNr1)
             _SprShape(_SprNr0) = SprShape(_SprNr1)
         NEXT _SprNr0
     END IF
 
     'Assign software sprites 0-7 to hardware sprites
     FOR _SprNr0 = 0 TO 7
-        SPRITE _SprNr0 AT SHL(CWORD(_SprX(_SprNr0)),1), _SprY(_SprNr0) SHAPE _SprShape(_SprNr0) COLOR _SprCol(_SprNr0)
+        SPRITE _SprNr0 AT SHL(CWORD(_SprX(_SprNr0)),1), _SprY(_SprNr0) SHAPE _SprShape(_SprNr0) COLOR _SprColor(_SprNr0)
     NEXT _SprNr0
 
     'Initialize sprite reuse counter
