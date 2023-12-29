@@ -1,4 +1,4 @@
-INCLUDE "../libs/lib_mux16mix.bas"
+INCLUDE "../libs/lib_mux16xcb.bas"
 INCLUDE "../libs/lib_joy.bas"
 
 DIM i AS BYTE FAST
