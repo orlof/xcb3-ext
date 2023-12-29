@@ -76,7 +76,7 @@ spr_init_loop
     sta $d015
 END ASM
 
-ON RASTER 256 GOSUB Zone0
+ON RASTER 250 GOSUB Zone0
 RASTER INTERRUPT ON
 CALL SprUpdate()
 
@@ -288,7 +288,7 @@ ZoneNDirect
 ZoneNDone
         ;IF SCAN() > 249 THEN GOTO Zone0
         lda $d012
-        cmp #250
+        cmp #245
         bcs Zone0Direct
 
         ;BORDER 0
@@ -297,7 +297,7 @@ ZoneNDone
     END ASM
 
     'If there is time, schedule interrupt to trigger Zone0
-    ON RASTER 256 GOSUB Zone0
+    ON RASTER 250 GOSUB Zone0
 
     RETURN
 
@@ -312,16 +312,26 @@ Zone0Direct
         lda #2
         sta $d020
 
+        bit $d011
+        bmi Zone0Access
+
+        lda #249
+Zone0AccessLoop
+        cmp $d012
+        bcs Zone0AccessLoop
+
+Zone0Access
         lda {_SprUpdate}
         beq *+5
             jsr Zone0Update
         inc $d020
 
-        ldy #7
+        ldy #0
 Zone0CopyLoop
         jsr copy_sw2hw
-        dey
-        bpl Zone0CopyLoop
+        iny
+        cpy #8
+        bcc Zone0CopyLoop
 
         lda #0
         sta {_SprNr0}
@@ -360,7 +370,7 @@ Zone0Interrupt
 
     IF _SprScanLine = 255 THEN
         'If there is time, schedule interrupt to trigger Zone0
-        ON RASTER 256 GOSUB Zone0
+        ON RASTER 250 GOSUB Zone0
     ELSE
         'If there is time, schedule interrupt to trigger the next sprite re-use
         ON RASTER _SprScanLine GOSUB ZoneN
