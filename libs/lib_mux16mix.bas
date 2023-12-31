@@ -144,6 +144,10 @@ copy_sw2hw
         lda {_SprY},y
         sta $d001,x                     ;for X & Y coordinate
 
+        ;cmp #29
+        ;bcs *+3
+        ;    rts
+
         lda {_SprX},y
         asl
         sta $d000,x
@@ -288,7 +292,7 @@ ZoneNDirect
 ZoneNDone
         ;IF SCAN() > 249 THEN GOTO Zone0
         lda $d012
-        cmp #245
+        cmp #244
         bcs Zone0Direct
 
         ;BORDER 0
