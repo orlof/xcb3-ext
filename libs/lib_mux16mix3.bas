@@ -132,7 +132,6 @@ Zone0
         beq *+5
             jsr Zone0Update
 
-        sta $400
         ;---------------------------------
         ;Zone0_Assign
         ;---------------------------------
@@ -288,7 +287,38 @@ ZoneN
         cmp $d012
         bcs *-3
 
-        jsr reuse_sprite
+        ldy physicalsprtbl2,x           ;Physical sprite number x 2
+        lda {_SprNext},x
+        tax
+
+        lda {_SprY},x
+        sta $d001,y                     ;for X & Y coordinate
+
+        lda {_SprX},x
+        asl
+        sta $d000,y
+
+        bcc ZoneN_XMsbLo           ;if carry is clear, then msb of X is 0
+
+        lda $d010
+        ora ortbl,y
+        sta $d010
+        bcs ZoneN_XMsbHi
+
+ZoneN_XMsbLo
+        lda $d010
+        and andtbl,y
+        sta $d010
+
+ZoneN_XMsbHi
+        tya
+        lsr
+        tay
+
+        lda {_SprShape},x
+        sta SPRITE_FP,y                     ;for color & frame
+        lda {_SprColor},x
+        sta $d027,y
 
         inc {_SprReUseNr}
 
@@ -329,7 +359,8 @@ ZoneN_ScheduleNextZoneN
         ;bit $d011
         ;    bmi ScheduleNextZoneN_Interrupt
         cmp $d012
-        bcc ZoneN
+        bcs * + 5
+            jmp ZoneN
 
 ZoneN_ScheduleNextZoneN_Interrupt
         clc
@@ -462,45 +493,6 @@ Zone0Update_PlanExit
         sta {_SprNext},x
 
         rts
-;------------------------------------------------------------
-reuse_sprite
-;------------------------------------------------------------
-; x: re-used sprite number
-        ldy physicalsprtbl2,x           ;Physical sprite number x 2
-        lda {_SprNext},x
-        tax
-
-        lda {_SprY},x
-        sta $d001,y                     ;for X & Y coordinate
-
-        lda {_SprX},x
-        asl
-        sta $d000,y
-
-        bcc reuse_sprite_lowmsb           ;if carry is clear, then msb of X is 0
-
-        lda $d010
-        ora ortbl,y
-        sta $d010
-        bcs reuse_sprite_msbok
-
-reuse_sprite_lowmsb
-        lda $d010
-        and andtbl,y
-        sta $d010
-
-reuse_sprite_msbok
-        tya
-        lsr
-        tay
-
-        lda {_SprShape},x
-        sta SPRITE_FP,y                     ;for color & frame
-        lda {_SprColor},x
-        sta $d027,y
-
-        rts
-
 
 END ASM
 
