@@ -129,216 +129,60 @@ Zone0
         sta $d00f
 
         lda {_SprUpdate}
-        beq *+5
-            jsr Zone0Update
+        bne *+5
+            jmp Zone0_NoUpdate
 
-        ldx #0
-        stx {_SprReUseNr}
-
-        ;---------------------------------
-        ;Zone0_ScheduleNext
-        ;---------------------------------
-        lda {_SprNext}
-        beq Zone0_ScheduleNextZone0_Interrupt
-
-        ;---------------------------------
-Zone0_ScheduleNextZoneN
-        ;---------------------------------
-        lda #<ZoneN
-        sta NextInterrupt
-        lda #>ZoneN
-        sta NextInterrupt+1
-
-        lda {_SprY}
-        clc
-        adc #SPRITE_HEIGHT - SETUP_LEAD
-
-        bit $d011
-            bmi Zone0_ScheduleNextZoneN_Interrupt
-        cmp $d012
-            bcc ZoneN
-
-Zone0_ScheduleNextZoneN_Interrupt
-        clc
-        adc #SETUP_LEAD - TRIGGER_LEAD
-        sta $d012
-
-        jmp Zone0_ScheduleNextZoneEnd
-
-        ;---------------------------------
-Zone0_ScheduleNextZone0_Interrupt
-        ;---------------------------------
-        lda #250 - TRIGGER_LEAD
-        sta $d012
-
-        lda #<Zone0
-        sta NextInterrupt
-        lda #>Zone0
-        sta NextInterrupt+1
-
-        ;jmp ScheduleNextZoneEnd
-
-Zone0_ScheduleNextZoneEnd
-        lda #0
-        sta $d020
-
-        rts
-
-;------------------------------------------------------------
-ZoneN
-;------------------------------------------------------------
-        ldx {_SprReUseNr}
-        lda {_SprColor},x
-        sta $d020
-
-        lda {_SprY},x
-        clc
-        adc #SPRITE_HEIGHT
-        cmp $d012
-        bcs *-3
-
-        ldy physicalsprtbl2,x           ;Physical sprite number x 2
-        lda {_SprNext},x
-        tax
-
-        lda {_SprY},x
-        sta $d001,y                     ;for X & Y coordinate
-
-        lda {_SprX},x
-        asl
-        sta $d000,y
-
-        bcc ZoneN_XMsbLo           ;if carry is clear, then msb of X is 0
-
-        lda $d010
-        ora ortbl,y
-        sta $d010
-        bcs ZoneN_XMsbHi
-
-ZoneN_XMsbLo
-        lda $d010
-        and andtbl,y
-        sta $d010
-
-ZoneN_XMsbHi
-        tya
-        lsr
-        tay
-
-        lda {_SprShape},x
-        sta SPRITE_FP,y                     ;for color & frame
-        lda {_SprColor},x
-        sta $d027,y
-
-        inc {_SprReUseNr}
-
-        ;---------------------------------
-        ;ZoneN_ScheduleNextZone
-        ;---------------------------------
-        ldx {_SprReUseNr}
-
-        lda {_SprNext},x
-        bne ZoneN_ScheduleNextZoneN
-
-ZoneN_ScheduleNextZone0
-        bit $d011
-        bpl * + 5
-            jmp Zone0
-
-        lda #250 - SETUP_LEAD
-        cmp $d012
-        bcs * + 5
-            jmp Zone0
-
-ZoneN_ScheduleNextZone0_Interrupt
-        lda #250 - TRIGGER_LEAD
-        sta $d012
-
-        lda #<Zone0
-        sta NextInterrupt
-        lda #>Zone0
-        sta NextInterrupt+1
-
-        jmp ZoneN_ScheduleNextZoneEnd
-
-ZoneN_ScheduleNextZoneN
-        lda {_SprY},x
-        clc
-        adc #SPRITE_HEIGHT - SETUP_LEAD
-
-        ;bit $d011
-        ;    bmi ScheduleNextZoneN_Interrupt
-        cmp $d012
-        bcs * + 5
-            jmp ZoneN
-
-ZoneN_ScheduleNextZoneN_Interrupt
-        clc
-        adc #SETUP_LEAD - TRIGGER_LEAD
-        sta $d012
-
-        ;jmp ScheduleNextZoneEnd
-
-ZoneN_ScheduleNextZoneEnd
-        lda #0
-        sta $d020
-
-        rts
-
-;------------------------------------------------------------
-Zone0Update
-;------------------------------------------------------------
         ;_SprUpdate = FALSE
         lda #0
         sta {_SprUpdate}
 
         ;---------------------------------
-        ;Zone0Update_Sort
+        ;Zone0_Update_Sort
         ;---------------------------------
         ldx #0
-Zone0Update_SortLoop
+Zone0_Update_SortLoop
         ldy {_SprIdx}+1,x             ;Sorting code. Algorithm
         lda {SprY},y                    ;ripped from Dragon Breed :-)
         ldy {_SprIdx},x
         cmp {SprY},y
-        bcs Zone0Update_SortSkip
-        stx Zone0Update_SortReload+1
-Zone0Update_SortSwap
+        bcs Zone0_Update_SortSkip
+        stx Zone0_Update_SortReload+1
+Zone0_Update_SortSwap
         lda {_SprIdx}+1,x
         sta {_SprIdx},x
         sty {_SprIdx}+1,x
         cpx #$00
-        beq Zone0Update_SortReload
+        beq Zone0_Update_SortReload
         dex
         ldy {_SprIdx}+1,x
         lda {SprY},y
         ldy {_SprIdx},x
         cmp {SprY},y
-        bcc Zone0Update_SortSwap
-Zone0Update_SortReload
+        bcc Zone0_Update_SortSwap
+Zone0_Update_SortReload
         ldx #$00
-Zone0Update_SortSkip
+Zone0_Update_SortSkip
         inx
         cpx #MAXSPR-1
-        bcc Zone0Update_SortLoop
+        bcc Zone0_Update_SortLoop
 
         ;---------------------------------
-        ;Zone0Update_Copy
+        ;Zone0_Update_Copy
         ;---------------------------------
         ldx #0
-        stx Zone0Update_DstIdx
-Zone0Update_CopyLoop
+        stx Zone0_Update_DstIdx
+Zone0_Update_CopyLoop
         ldy {_SprIdx},x
         lda {SprY},y
 
         cmp #30                 ;2
-        bcc Zone0Update_SkipSrc ;2
+        bcc Zone0_Update_SkipSrc ;2
         cmp #250                ;2
-        bcs Zone0Update_SkipSrc ;2 = 8
+        bcs Zone0_Update_SkipSrc ;2 = 8
 
-        stx Zone0Update_SrcIdx
+        stx Zone0_Update_SrcIdx
 
-Zone0Update_DstIdx = * + 1             ;number of sprites on screen
+Zone0_Update_DstIdx = * + 1             ;number of sprites on screen
         ldx #$b5
 
         sta {_SprY},x
@@ -350,29 +194,28 @@ Zone0Update_DstIdx = * + 1             ;number of sprites on screen
         sta {_SprColor},x
 
         inx
-        stx Zone0Update_DstIdx
+        stx Zone0_Update_DstIdx
 
-Zone0Update_SrcIdx = * + 1
+Zone0_Update_SrcIdx = * + 1
         ldx #$b5
-Zone0Update_SkipSrc
+Zone0_Update_SkipSrc
         inx
         cpx #MAXSPR
-        bne Zone0Update_CopyLoop
+        bne Zone0_Update_CopyLoop
 
         ;---------------------------------
-        ;Zone0Update_Disable
+        ;Zone0_Update_Disable
         ;---------------------------------
         lda #255
-        ldx Zone0Update_DstIdx
-Zone0Update_DisableLoop
+        ldx Zone0_Update_DstIdx
+Zone0_Update_DisableLoop
         cpx #MAXSPR
-        beq Zone0Update_DisableLoopExit
+        beq Zone0_Update_DisableLoopExit
 
         sta {_SprY},x
         inx
-        jmp Zone0Update_DisableLoop
-Zone0Update_DisableLoopExit
-
+        jmp Zone0_Update_DisableLoop
+Zone0_Update_DisableLoopExit
 
         ;---------------------------------
         ;Zone0_Assign
@@ -464,38 +307,187 @@ Zone0Update_DisableLoopExit
         lda {_SprColor}+7
         sta $d027+7
 
-
         ;---------------------------------
-        ;Zone0Update_Plan
+        ;Zone0_Update_Plan
         ;---------------------------------
         ldx #0
         ldy #8
-Zone0Update_PlanLoop
-        cpy Zone0Update_DstIdx
-        bcs Zone0Update_PlanExit
+Zone0_Update_PlanLoop
+        cpy Zone0_Update_DstIdx
+        bcs Zone0_Update_PlanExit
 
         lda {_SprY},x
         clc
         adc #MIN_SEPARATION
-        bcs Zone0Update_PlanExit
+        bcs Zone0_Update_PlanExit
 
         cmp {_SprY},y
-        bcs Zone0Update_PlanSkip
+        bcs Zone0_Update_PlanSkip
 
         tya
         sta {_SprNext},x
 
         inx
-Zone0Update_PlanSkip
+Zone0_Update_PlanSkip
         iny
-        bne Zone0Update_PlanLoop
+        bne Zone0_Update_PlanLoop
 
-Zone0Update_PlanExit
+Zone0_Update_PlanExit
         lda #0
         sta {_SprNext},x
 
+Zone0_NoUpdate
+        ldx #0
+        stx {_SprReUseNr}
+
+        ;---------------------------------
+        ;Zone0_ScheduleNext
+        ;---------------------------------
+        lda {_SprNext}
+        beq Zone0_ScheduleNextZone0_Interrupt
+
+        ;---------------------------------
+Zone0_ScheduleNextZoneN
+        ;---------------------------------
+        lda #<ZoneN
+        sta NextInterrupt
+        lda #>ZoneN
+        sta NextInterrupt+1
+
+        lda {_SprY}
+        clc
+        adc #SPRITE_HEIGHT - SETUP_LEAD
+
+        bit $d011
+            bmi Zone0_ScheduleNextZoneN_Interrupt
+        cmp $d012
+            bcc ZoneN
+
+Zone0_ScheduleNextZoneN_Interrupt
+        clc
+        adc #SETUP_LEAD - TRIGGER_LEAD
+        sta $d012
+
+        jmp Zone0_ScheduleNextZoneEnd
+
+        ;---------------------------------
+Zone0_ScheduleNextZone0_Interrupt
+        ;---------------------------------
+        lda #250 - TRIGGER_LEAD
+        sta $d012
+
+        lda #<Zone0
+        sta NextInterrupt
+        lda #>Zone0
+        sta NextInterrupt+1
+
+        ;jmp ScheduleNextZoneEnd
+
+Zone0_ScheduleNextZoneEnd
+        lda #0
+        sta $d020
+
         rts
 
+;------------------------------------------------------------
+ZoneN
+;------------------------------------------------------------
+        ldx {_SprReUseNr}
+        lda {_SprColor},x
+        sta $d020
+
+        lda {_SprY},x
+        clc
+        adc #SPRITE_HEIGHT
+        cmp $d012
+        bcs *-3
+
+        ;---------------------------------
+        ;ZoneN_Show
+        ;---------------------------------
+        ldy physicalsprtbl2,x           ;Physical sprite number x 2
+        lda {_SprNext},x
+        tax
+
+        lda {_SprY},x
+        sta $d001,y                     ;for X & Y coordinate
+
+        lda {_SprX},x
+        asl
+        sta $d000,y
+
+        bcc ZoneN_XMsbLo           ;if carry is clear, then msb of X is 0
+
+        lda $d010
+        ora ortbl,y
+        sta $d010
+        bcs ZoneN_XMsbHi
+
+ZoneN_XMsbLo
+        lda $d010
+        and andtbl,y
+        sta $d010
+
+ZoneN_XMsbHi
+        tya
+        lsr
+        tay
+
+        lda {_SprShape},x
+        sta SPRITE_FP,y                     ;for color & frame
+        lda {_SprColor},x
+        sta $d027,y
+
+        inc {_SprReUseNr}
+
+        ;---------------------------------
+        ;ZoneN_ScheduleNextZone
+        ;---------------------------------
+        ldx {_SprReUseNr}
+
+        lda {_SprNext},x
+        bne ZoneN_ScheduleNextZoneN
+
+ZoneN_ScheduleNextZone0
+        bit $d011
+        bpl * + 5
+            jmp Zone0
+
+        lda #250 - SETUP_LEAD
+        cmp $d012
+        bcs * + 5
+            jmp Zone0
+
+ZoneN_ScheduleNextZone0_Interrupt
+        lda #250 - TRIGGER_LEAD
+        sta $d012
+
+        lda #<Zone0
+        sta NextInterrupt
+        lda #>Zone0
+        sta NextInterrupt+1
+
+        jmp ZoneN_ScheduleNextZoneEnd
+
+ZoneN_ScheduleNextZoneN
+        lda {_SprY},x
+        clc
+        adc #SPRITE_HEIGHT - SETUP_LEAD
+
+        cmp $d012
+        bcs * + 5
+            jmp ZoneN
+
+ZoneN_ScheduleNextZoneN_Interrupt
+        clc
+        adc #SETUP_LEAD - TRIGGER_LEAD
+        sta $d012
+
+ZoneN_ScheduleNextZoneEnd
+        lda #0
+        sta $d020
+
+        rts
 END ASM
 
 SKIP_ASM:
