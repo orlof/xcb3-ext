@@ -7,7 +7,7 @@
 DECLARE SUB SprUpdate() STATIC SHARED
 
 'THESE ARE PUBLIC SPRITE REGISTERS THAT CAN BE CHANGED IN MAIN PROGRAM
-DIM SHARED SprY(16) AS BYTE
+DIM SHARED SprY(16) AS BYTE FAST
 DIM SHARED SprX(16) AS BYTE
 DIM SHARED SprColor(16) AS BYTE
 DIM SHARED SprShape(16) AS BYTE
@@ -35,7 +35,7 @@ DIM _SprY(16) AS BYTE
 DIM _SprX(16) AS BYTE
 DIM _SprColor(16) AS BYTE
 DIM _SprShape(16) AS BYTE
-DIM _SprScanLine AS WORD
+'DIM _SprScanLine AS WORD
 DIM _SprUpdate AS BYTE
 
 'Initialize sprite multiplexer
@@ -76,15 +76,18 @@ spr_init_loop
     sta $d015
 END ASM
 
-ON RASTER 250 GOSUB Zone0
+ON RASTER 250 GOSUB InterruptSelector
 RASTER INTERRUPT ON
 CALL SprUpdate()
 
 'This GOTO is needed so that main program's INCLUDE does not execute interrupt handlers
 GOTO THE_END
 
-
+InterruptSelector:
 ASM
+InterruptSelectorDirect
+        jmp Zone0Direct
+
 Zone0Update
         ;_SprUpdate = FALSE
         lda #0
@@ -275,18 +278,26 @@ ZoneNDirect
         bcc ZoneNDirect
         clc
         adc #LEAD
-        sta {_SprScanLine}
-        lda #0
-        sta {_SprScanLine}+1
+        sta $d012
+        ;sta {_SprScanLine}
+        ;lda #0
+        ;sta {_SprScanLine}+1
+
+        lda #<ZoneNDirect
+        sta InterruptSelectorDirect+1
+        lda #>ZoneNDirect
+        sta InterruptSelectorDirect+2
 
         ldx #0
         stx $d020
+
+        rts
     END ASM
 
     'If there is time, schedule interrupt to trigger the next sprite re-use
-    ON RASTER _SprScanLine GOSUB ZoneN
+    'ON RASTER _SprScanLine GOSUB ZoneN
 
-    RETURN
+    'RETURN
 
     ASM
 ZoneNDone
@@ -298,12 +309,24 @@ ZoneNDone
         ;BORDER 0
         lda #0
         sta $d020
+
+        lda #250
+        sta $d012
+
+        lda #<Zone0Direct
+        sta InterruptSelectorDirect+1
+        lda #>Zone0Direct
+        sta InterruptSelectorDirect+2
+
+        rts
     END ASM
 
-    'If there is time, schedule interrupt to trigger Zone0
-    ON RASTER 250 GOSUB Zone0
+    END
 
-    RETURN
+    'If there is time, schedule interrupt to trigger Zone0
+    'ON RASTER 250 GOSUB Zone0
+
+    'RETURN
 
 'This is the once per frame interrupt that
 ' - sorts the software sprites by y-coordinate
@@ -316,19 +339,22 @@ Zone0Direct
         lda #2
         sta $d020
 
-        bit $d011
-        bmi Zone0Access
+        lda #255
+        sta $d001
+        sta $d003
+        sta $d005
+        sta $d007
+        sta $d009
+        sta $d00b
+        sta $d00d
+        sta $d00f
 
-        lda #249
-Zone0AccessLoop
-        cmp $d012
-        bcs Zone0AccessLoop
-
-Zone0Access
         lda {_SprUpdate}
         beq *+5
             jsr Zone0Update
-        inc $d020
+        ;inc $d020
+
+
 
         ldy #0
 Zone0CopyLoop
@@ -359,27 +385,42 @@ Zone0CopyLoop
 
         clc
         adc #LEAD
-
-        .byte $2c
-Zone0Repeat
-            lda #255
 Zone0Interrupt
-        sta {_SprScanLine}
-        lda #0
-        sta {_SprScanLine}+1
+        sta $d012
 
+        lda #<ZoneNDirect
+        sta InterruptSelectorDirect+1
+        lda #>ZoneNDirect
+        sta InterruptSelectorDirect+2
+
+        jmp Zone0End
+
+Zone0Repeat
+        lda #250
+        sta $d012
+
+        lda #<Zone0Direct
+        sta InterruptSelectorDirect+1
+        lda #>Zone0Direct
+        sta InterruptSelectorDirect+2
+
+Zone0End
         lda #0
         sta $d020
+
+        rts
     END ASM
 
-    IF _SprScanLine = 255 THEN
+    END
+
+    'IF _SprScanLine = 255 THEN
         'If there is time, schedule interrupt to trigger Zone0
-        ON RASTER 250 GOSUB Zone0
-    ELSE
+    '    ON RASTER 250 GOSUB Zone0
+    'ELSE
         'If there is time, schedule interrupt to trigger the next sprite re-use
-        ON RASTER _SprScanLine GOSUB ZoneN
-    END IF
-    RETURN
+    '    ON RASTER _SprScanLine GOSUB ZoneN
+    'END IF
+    'RETURN
 
 THE_END:
 
