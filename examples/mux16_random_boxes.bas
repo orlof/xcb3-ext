@@ -1,6 +1,6 @@
 OPTION FASTINTERRUPT
 
-INCLUDE "../libs/lib_mux16mix.bas"
+INCLUDE "../libs/lib_mux16mix3.bas"
 INCLUDE "../libs/lib_rnd.bas"
 
 CONST TRUE = 255

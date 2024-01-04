@@ -18,6 +18,7 @@ CONST TRUE      = 255
 CONST FALSE     = 0
 
 'Internal data
+DIM _SprUpdate AS BYTE
 DIM _SprReUseNr AS BYTE FAST
 
 DIM _SprIdx(16) AS BYTE FAST
@@ -27,30 +28,12 @@ DIM _SprY(17) AS BYTE
 DIM _SprX(16) AS BYTE
 DIM _SprColor(16) AS BYTE
 DIM _SprShape(16) AS BYTE
-'DIM _SprScanLine AS WORD
-DIM _SprUpdate AS BYTE
 
 'Initialize sprite multiplexer
 SYSTEM INTERRUPT OFF        'This is mandatory
 
 'INITIALIZE MUX
 ASM
-    ;-----------------------------
-    ;init frame pointers
-    lda $dd00
-    and #%00000011
-    tax
-
-    lda $d018
-    and #$f0
-    lsr
-    lsr
-
-    ora #3
-    ora bank,x
-    sta reuse_sprite_sprf
-    sta copy_sw2hw_sprf
-
     ;-----------------------------
     ;init fast variables
     lda #0
@@ -91,11 +74,13 @@ NextInterrupt = * + 1
 ;------------------------------------------------------------
 ;CONSTANTS
 ;------------------------------------------------------------
-HEIGHT          = 21
-SETUP_LEAD      = 5
-TRIGGER_LEAD    = 2
+SPRITE_FP       = $07f8
+SPRITE_HEIGHT   = 21
+SETUP_LEAD      = 4
+TRIGGER_LEAD    = 1
 MAXSPR          = 16
-MIN_SEPARATION  = HEIGHT + 5
+MIN_SEPARATION  = SPRITE_HEIGHT + 5
+
 ;------------------------------------------------------------
 ;DATA
 ;------------------------------------------------------------
@@ -147,71 +132,14 @@ Zone0
         beq *+5
             jsr Zone0Update
 
-        ;todo? reverse loop, start from Zone0Plan_DstIdx
-        ldx #0
-Zone0CopyLoop
-            ldy physicalsprtbl2,x           ;Physical sprite number x 2
-            jsr use_sprite
-            inx
-            cpx #8
-        bcc Zone0CopyLoop
-
-        ldx #0
-        stx {_SprReUseNr}
-
-        jmp ScheduleNextZone
-;------------------------------------------------------------
-ZoneN
-;------------------------------------------------------------
-        ldx {_SprReUseNr}
-        lda {_SprColor},x
-        sta $d020
-
-        lda {_SprY},x
-        clc
-        adc #HEIGHT
-        cmp $d012
-        bcs *-3
-
-        sta $400
-
-        jsr reuse_sprite
-
-        inc {_SprReUseNr}
-        jmp ScheduleNextZone
+        jmp show_sprites
 ;------------------------------------------------------------
 ScheduleNextZone
 ;------------------------------------------------------------
         ldx {_SprReUseNr}
 
         lda {_SprNext},x
-        beq ScheduleNextZone0
-
-ScheduleNextZoneN
-        lda {_SprY},x
-        clc
-        adc #HEIGHT - SETUP_LEAD
-
-        ;todo: are we absolutely sure that we are in >256 because
-        ;this is the spr=0 and we are early - could it also be that
-        ;we are late?
-        bit $d011
-            bmi ScheduleNextZoneN_Interrupt
-        cmp $d012
-            bcs ScheduleNextZoneN_Interrupt
-                jmp ZoneN
-
-ScheduleNextZoneN_Interrupt
-        clc
-        adc #SETUP_LEAD - TRIGGER_LEAD
-        sta $d012
-
-        lda #<ZoneN
-        sta NextInterrupt
-        lda #>ZoneN
-        sta NextInterrupt+1
-
-        jmp ScheduleNextZoneEnd
+        bne ScheduleNextZoneN
 
 ScheduleNextZone0
         lda #250 - SETUP_LEAD
@@ -219,8 +147,7 @@ ScheduleNextZone0
         bit $d011
         bmi ScheduleNextZone0_Interrupt
             cmp $d012
-            bcs ScheduleNextZone0_Interrupt
-                jmp Zone0
+            bcc Zone0
 
 ScheduleNextZone0_Interrupt
         clc
@@ -232,11 +159,55 @@ ScheduleNextZone0_Interrupt
         lda #>Zone0
         sta NextInterrupt+1
 
+        jmp ScheduleNextZoneEnd
+
+ScheduleNextZoneN
+        lda {_SprY},x
+        clc
+        adc #SPRITE_HEIGHT - SETUP_LEAD
+
+        ;todo: are we absolutely sure that we are in >256 because
+        ;this is the spr=0 and we are early - could it also be that
+        ;we are late?
+        bit $d011
+            bmi ScheduleNextZoneN_Interrupt
+        cmp $d012
+            bcc ZoneN
+
+ScheduleNextZoneN_Interrupt
+        clc
+        adc #SETUP_LEAD - TRIGGER_LEAD
+        sta $d012
+
+        lda #<ZoneN
+        sta NextInterrupt
+        lda #>ZoneN
+        sta NextInterrupt+1
+
+        ;jmp ScheduleNextZoneEnd
+
 ScheduleNextZoneEnd
         lda #0
         sta $d020
 
         rts
+;------------------------------------------------------------
+ZoneN
+;------------------------------------------------------------
+        ldx {_SprReUseNr}
+        lda {_SprColor},x
+        sta $d020
+
+        lda {_SprY},x
+        clc
+        adc #SPRITE_HEIGHT
+        cmp $d012
+        bcs *-3
+
+        jsr reuse_sprite
+
+        inc {_SprReUseNr}
+        jmp ScheduleNextZone
 ;------------------------------------------------------------
 Zone0Update
 ;------------------------------------------------------------
@@ -244,6 +215,9 @@ Zone0Update
         lda #0
         sta {_SprUpdate}
 
+        ;---------------------------------
+        ;Zone0Update_Sort
+        ;---------------------------------
         ldx #0
 Zone0Update_SortLoop
         ldy {_SprIdx}+1,x             ;Sorting code. Algorithm
@@ -270,17 +244,20 @@ Zone0Update_SortSkip
         inx
         cpx #MAXSPR-1
         bcc Zone0Update_SortLoop
-;---------------------------------
+
+        ;---------------------------------
+        ;Zone0Update_Copy
+        ;---------------------------------
         ldx #0
         stx Zone0Update_DstIdx
 Zone0Update_CopyLoop
         ldy {_SprIdx},x
         lda {SprY},y
 
-        cmp #30
-        bcc Zone0Update_SkipSrc
-        cmp #250
-        bcs Zone0Update_SkipSrc
+        cmp #30                 ;2
+        bcc Zone0Update_SkipSrc ;2
+        cmp #250                ;2
+        bcs Zone0Update_SkipSrc ;2 = 8
 
         stx Zone0Update_SrcIdx
 
@@ -305,46 +282,46 @@ Zone0Update_SkipSrc
         cpx #MAXSPR
         bne Zone0Update_CopyLoop
 
-
+        ;---------------------------------
+        ;Zone0Update_Disable
+        ;---------------------------------
         lda #255
         ldx Zone0Update_DstIdx
-
-Zone0Update_ClearLoop
+Zone0Update_DisableLoop
         cpx #MAXSPR
-        beq Zone0Update_ClearLoopExit
+        beq Zone0Update_DisableLoopExit
 
         sta {_SprY},x
         inx
-        jmp Zone0Update_ClearLoop
-Zone0Update_ClearLoopExit
+        jmp Zone0Update_DisableLoop
+Zone0Update_DisableLoopExit
 
-        ;rts
-;------------------------------------------------------------
-Zone0Plan
-;------------------------------------------------------------
+        ;---------------------------------
+        ;Zone0Update_Plan
+        ;---------------------------------
         ldx #0
         ldy #8
-Zone0Plan_Loop
+Zone0Update_PlanLoop
         cpy Zone0Update_DstIdx
-        bcs Zone0Plan_Exit
+        bcs Zone0Update_PlanExit
 
         lda {_SprY},x
         clc
         adc #MIN_SEPARATION
-        bcs Zone0Plan_Exit
+        bcs Zone0Update_PlanExit
 
         cmp {_SprY},y
-        bcs Zone0Plan_Skip
+        bcs Zone0Update_PlanSkip
 
         tya
         sta {_SprNext},x
 
         inx
-Zone0Plan_Skip
+Zone0Update_PlanSkip
         iny
-        bne Zone0Plan_Loop
+        bne Zone0Update_PlanLoop
 
-Zone0Plan_Exit
+Zone0Update_PlanExit
         lda #0
         sta {_SprNext},x
 
@@ -357,9 +334,6 @@ reuse_sprite
         lda {_SprNext},x
         tax
 
-;------------------------------------------------------------
-use_sprite
-;------------------------------------------------------------
         lda {_SprY},x
         sta $d001,y                     ;for X & Y coordinate
 
@@ -385,46 +359,106 @@ reuse_sprite_msbok
         tay
 
         lda {_SprShape},x
-reuse_sprite_sprf = * + 2
-        sta $07f8,y                     ;for color & frame
+        sta SPRITE_FP,y                     ;for color & frame
         lda {_SprColor},x
         sta $d027,y
 
         rts
-;------------------------------------------------------------
-copy_sw2hw
-;------------------------------------------------------------
-        ldy physicalsprtbl2,x           ;Physical sprite number x 2
 
-        lda {_SprY},x
-        sta $d001,y                     ;for X & Y coordinate
+;------------------------------------------------------------
+show_sprites
+;------------------------------------------------------------
+        lda {_SprY}+0
+        sta $d001
+        lda {_SprY}+1
+        sta $d003
+        lda {_SprY}+2
+        sta $d005
+        lda {_SprY}+3
+        sta $d007
+        lda {_SprY}+4
+        sta $d009
+        lda {_SprY}+5
+        sta $d00b
+        lda {_SprY}+6
+        sta $d00d
+        lda {_SprY}+7
+        sta $d00f
 
-        lda {_SprX},x
+        lda {_SprX}+0
         asl
-        sta $d000,y
+        ror {_SprReUseNr}
+        sta $d000
+        lda {_SprX}+1
+        asl
+        ror {_SprReUseNr}
+        sta $d002
+        lda {_SprX}+2
+        asl
+        ror {_SprReUseNr}
+        sta $d004
+        lda {_SprX}+3
+        asl
+        ror {_SprReUseNr}
+        sta $d006
+        lda {_SprX}+4
+        asl
+        ror {_SprReUseNr}
+        sta $d008
+        lda {_SprX}+5
+        asl
+        ror {_SprReUseNr}
+        sta $d00a
+        lda {_SprX}+6
+        asl
+        ror {_SprReUseNr}
+        sta $d00c
+        lda {_SprX}+7
+        asl
+        ror {_SprReUseNr}
+        sta $d00e
 
-        bcc copy_sw2hw_lowmsb           ;if carry is clear, then msb of X is 0
-
-        lda $d010
-        ora ortbl,y
+        lda {_SprReUseNr}
         sta $d010
-        bcs copy_sw2hw_msbok
 
-copy_sw2hw_lowmsb
-        lda $d010
-        and andtbl,y
-        sta $d010
+        lda {_SprShape}+0
+        sta SPRITE_FP+0
+        lda {_SprShape}+1
+        sta SPRITE_FP+1
+        lda {_SprShape}+2
+        sta SPRITE_FP+2
+        lda {_SprShape}+3
+        sta SPRITE_FP+3
+        lda {_SprShape}+4
+        sta SPRITE_FP+4
+        lda {_SprShape}+5
+        sta SPRITE_FP+5
+        lda {_SprShape}+6
+        sta SPRITE_FP+6
+        lda {_SprShape}+7
+        sta SPRITE_FP+7
 
-copy_sw2hw_msbok
-        ldy physicalsprtbl1,x           ;Physical sprite number x 1
+        lda {_SprColor}+0
+        sta $d027+0
+        lda {_SprColor}+1
+        sta $d027+1
+        lda {_SprColor}+2
+        sta $d027+2
+        lda {_SprColor}+3
+        sta $d027+3
+        lda {_SprColor}+4
+        sta $d027+4
+        lda {_SprColor}+5
+        sta $d027+5
+        lda {_SprColor}+6
+        sta $d027+6
+        lda {_SprColor}+7
+        sta $d027+7
 
-        lda {_SprShape},x
-copy_sw2hw_sprf = * + 2
-        sta $07f8,y                     ;for color & frame
-        lda {_SprColor},x
-        sta $d027,y
+        ldx #0
+        stx {_SprReUseNr}
 
-        rts
+        jmp ScheduleNextZone
 END ASM
 
 SKIP_ASM:

@@ -25,7 +25,7 @@ DO
     y = y + JoyYAxis(JOY2)
     TEXTAT 0,0, "y: "+STR$(y)+ "  "
     FOR SprNr AS BYTE = 0 TO 15
-        SprY(SprNr) = y + SHL(SprNr, 2)
+        SprY(SprNr) = y + SHL(SprNr, 1)
     NEXT SprNr
 LOOP
 
