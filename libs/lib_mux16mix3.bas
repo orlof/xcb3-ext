@@ -132,96 +132,6 @@ Zone0
         beq *+5
             jsr Zone0Update
 
-        ;---------------------------------
-        ;Zone0_Assign
-        ;---------------------------------
-        lda {_SprY}+0
-        sta $d001
-        lda {_SprY}+1
-        sta $d003
-        lda {_SprY}+2
-        sta $d005
-        lda {_SprY}+3
-        sta $d007
-        lda {_SprY}+4
-        sta $d009
-        lda {_SprY}+5
-        sta $d00b
-        lda {_SprY}+6
-        sta $d00d
-        lda {_SprY}+7
-        sta $d00f
-
-        lda {_SprX}+0
-        asl
-        ror {_SprReUseNr}
-        sta $d000
-        lda {_SprX}+1
-        asl
-        ror {_SprReUseNr}
-        sta $d002
-        lda {_SprX}+2
-        asl
-        ror {_SprReUseNr}
-        sta $d004
-        lda {_SprX}+3
-        asl
-        ror {_SprReUseNr}
-        sta $d006
-        lda {_SprX}+4
-        asl
-        ror {_SprReUseNr}
-        sta $d008
-        lda {_SprX}+5
-        asl
-        ror {_SprReUseNr}
-        sta $d00a
-        lda {_SprX}+6
-        asl
-        ror {_SprReUseNr}
-        sta $d00c
-        lda {_SprX}+7
-        asl
-        ror {_SprReUseNr}
-        sta $d00e
-
-        lda {_SprReUseNr}
-        sta $d010
-
-        lda {_SprShape}+0
-        sta SPRITE_FP+0
-        lda {_SprShape}+1
-        sta SPRITE_FP+1
-        lda {_SprShape}+2
-        sta SPRITE_FP+2
-        lda {_SprShape}+3
-        sta SPRITE_FP+3
-        lda {_SprShape}+4
-        sta SPRITE_FP+4
-        lda {_SprShape}+5
-        sta SPRITE_FP+5
-        lda {_SprShape}+6
-        sta SPRITE_FP+6
-        lda {_SprShape}+7
-        sta SPRITE_FP+7
-
-        lda {_SprColor}+0
-        sta $d027+0
-        lda {_SprColor}+1
-        sta $d027+1
-        lda {_SprColor}+2
-        sta $d027+2
-        lda {_SprColor}+3
-        sta $d027+3
-        lda {_SprColor}+4
-        sta $d027+4
-        lda {_SprColor}+5
-        sta $d027+5
-        lda {_SprColor}+6
-        sta $d027+6
-        lda {_SprColor}+7
-        sta $d027+7
-
         ldx #0
         stx {_SprReUseNr}
 
@@ -462,6 +372,98 @@ Zone0Update_DisableLoop
         inx
         jmp Zone0Update_DisableLoop
 Zone0Update_DisableLoopExit
+
+
+        ;---------------------------------
+        ;Zone0_Assign
+        ;---------------------------------
+        lda {_SprY}+0
+        sta $d001
+        lda {_SprY}+1
+        sta $d003
+        lda {_SprY}+2
+        sta $d005
+        lda {_SprY}+3
+        sta $d007
+        lda {_SprY}+4
+        sta $d009
+        lda {_SprY}+5
+        sta $d00b
+        lda {_SprY}+6
+        sta $d00d
+        lda {_SprY}+7
+        sta $d00f
+
+        lda {_SprX}+0
+        asl
+        ror {_SprReUseNr}
+        sta $d000
+        lda {_SprX}+1
+        asl
+        ror {_SprReUseNr}
+        sta $d002
+        lda {_SprX}+2
+        asl
+        ror {_SprReUseNr}
+        sta $d004
+        lda {_SprX}+3
+        asl
+        ror {_SprReUseNr}
+        sta $d006
+        lda {_SprX}+4
+        asl
+        ror {_SprReUseNr}
+        sta $d008
+        lda {_SprX}+5
+        asl
+        ror {_SprReUseNr}
+        sta $d00a
+        lda {_SprX}+6
+        asl
+        ror {_SprReUseNr}
+        sta $d00c
+        lda {_SprX}+7
+        asl
+        ror {_SprReUseNr}
+        sta $d00e
+
+        lda {_SprReUseNr}
+        sta $d010
+
+        lda {_SprShape}+0
+        sta SPRITE_FP+0
+        lda {_SprShape}+1
+        sta SPRITE_FP+1
+        lda {_SprShape}+2
+        sta SPRITE_FP+2
+        lda {_SprShape}+3
+        sta SPRITE_FP+3
+        lda {_SprShape}+4
+        sta SPRITE_FP+4
+        lda {_SprShape}+5
+        sta SPRITE_FP+5
+        lda {_SprShape}+6
+        sta SPRITE_FP+6
+        lda {_SprShape}+7
+        sta SPRITE_FP+7
+
+        lda {_SprColor}+0
+        sta $d027+0
+        lda {_SprColor}+1
+        sta $d027+1
+        lda {_SprColor}+2
+        sta $d027+2
+        lda {_SprColor}+3
+        sta $d027+3
+        lda {_SprColor}+4
+        sta $d027+4
+        lda {_SprColor}+5
+        sta $d027+5
+        lda {_SprColor}+6
+        sta $d027+6
+        lda {_SprColor}+7
+        sta $d027+7
+
 
         ;---------------------------------
         ;Zone0Update_Plan
