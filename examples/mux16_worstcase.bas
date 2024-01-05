@@ -1,6 +1,6 @@
 OPTION FASTINTERRUPT
 
-INCLUDE "../libs/lib_mux16mix3.bas"
+INCLUDE "../libs/lib_mux16asm.bas"
 INCLUDE "../libs/lib_joy.bas"
 
 DIM i AS BYTE FAST

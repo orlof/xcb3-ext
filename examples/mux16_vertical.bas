@@ -1,6 +1,8 @@
-OPTION FASTINTERRUPT
+'Use only with the "lib_mux16asm.bas" library
+'OPTION FASTINTERRUPT
 
-INCLUDE "../libs/lib_mux16mix3.bas"
+'INCLUDE "../libs/lib_mux16asm.bas"
+INCLUDE "../libs/lib_mux16xcb.bas"
 INCLUDE "../libs/lib_joy.bas"
 
 DIM i AS BYTE FAST
@@ -25,7 +27,7 @@ DO
     y = y + JoyYAxis(JOY2)
     TEXTAT 0,0, "y: "+STR$(y)+ "  "
     FOR SprNr AS BYTE = 0 TO 15
-        SprY(SprNr) = y + SHL(SprNr, 2)
+        SprY(SprNr) = y + SHL(SprNr, 3)
     NEXT SprNr
 LOOP
 

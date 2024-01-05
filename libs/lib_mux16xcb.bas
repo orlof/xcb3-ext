@@ -70,7 +70,7 @@ ZoneN:
     LOOP
 
     'Reuse harware sprite for next software sprite
-    SPRITE _SprNr0 SHAPE _SprShape(_SprNr1) COLOR _SprColor(_SprNr1) AT SHL(CWORD(_SprX(_SprNr1)),1), _SprY(_SprNr1)
+    SPRITE _SprNr0 AT SHL(CWORD(_SprX(_SprNr1)), 1), _SprY(_SprNr1) SHAPE _SprShape(_SprNr1) COLOR _SprColor(_SprNr1)
 
     'Back to interrupt-Zone0 if all harware sprites are re-used
     IF _SprNr0 = 7 THEN GOTO ZoneNDone
@@ -80,7 +80,7 @@ ZoneN:
 
     'Check if next sprite re-use is so close that it needs to be called immediately
     _SprScanLine = CWORD(_SprY(_SprNr0)) + HEIGHT
-    IF SCAN() + LEAD >= _SprScanLine THEN GOTO ZoneN
+    IF (SCAN() + LEAD) >= _SprScanLine THEN GOTO ZoneN
 
     'If there is time, schedule interrupt to trigger the next sprite re-use
     ON RASTER _SprScanLine GOSUB ZoneN
@@ -135,7 +135,7 @@ Zone0:
 
     'Assign software sprites 0-7 to hardware sprites
     FOR _SprNr0 = 0 TO 7
-        SPRITE _SprNr0 AT SHL(CWORD(_SprX(_SprNr0)),1), _SprY(_SprNr0) SHAPE _SprShape(_SprNr0) COLOR _SprColor(_SprNr0)
+        SPRITE _SprNr0 AT SHL(CWORD(_SprX(_SprNr0)), 1), _SprY(_SprNr0) SHAPE _SprShape(_SprNr0) COLOR _SprColor(_SprNr0)
     NEXT _SprNr0
 
     'Initialize sprite reuse counter
@@ -143,7 +143,7 @@ Zone0:
 
     'Check if first hardware sprite reuse is so close that it needs to be done immediately
     _SprScanLine = CWORD(_SprY(0)) + HEIGHT
-    IF SCAN() < 256 THEN
+    IF SCAN() < 250 THEN
         IF (SCAN() + LEAD) >= _SprScanLine THEN GOTO ZoneN
     END IF
 

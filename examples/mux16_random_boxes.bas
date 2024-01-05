@@ -1,6 +1,8 @@
-OPTION FASTINTERRUPT
+'Use only with the "lib_mux16asm.bas" library
+'OPTION FASTINTERRUPT
 
-INCLUDE "../libs/lib_mux16mix3.bas"
+'INCLUDE "../libs/lib_mux16asm.bas"
+INCLUDE "../libs/lib_mux16xcb.bas"
 INCLUDE "../libs/lib_rnd.bas"
 
 CONST TRUE = 255
@@ -17,7 +19,7 @@ MEMSET 16256, 63, 255
 FOR i = 0 TO 15
     SprX(i) = RndByte(24, 159)
     SprY(i) = RndByte(50, 229)
-    SprColor(i) = 8 + (i MOD 8)
+    SprColor(i) = 8 + (i AND 7)
     SprShape(i) = 254
     Dx(i) = (2 * RndByte(0, 1)) - 1
     Dy(i) = (2 * RndByte(0, 1)) - 1
@@ -27,18 +29,20 @@ NEXT i
 DO
     CALL SprUpdate()
     FOR i = 0 TO 15
+        DIM Tmp AS BYTE
+        Tmp = SprX(i)
         IF SprX(i) = 12 THEN
             Dx(i) = 1
         ELSE
             IF SprX(i) = 160 THEN
-                Dx(i) = CBYTE(-1)
+                Dx(i) = 255
             END IF
         END IF
-        IF SprY(i) = 50 THEN
+        IF SprY(i) = 51 THEN
             Dy(i) = 1
         ELSE
             IF SprY(i) = 229 THEN
-                Dy(i) = CBYTE(-1)
+                Dy(i) = 255
             END IF
         END IF
         SprX(i) = SprX(i) + Dx(i)
