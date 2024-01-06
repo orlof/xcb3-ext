@@ -26,12 +26,18 @@ NEXT i
 
 
 DO
-    CALL SprUpdate()
     CALL JoyUpdate()
     y = y + JoyYAxis(JOY2)
     TEXTAT 0,0, "y: "+STR$(y)+ "  "
+
     FOR SprNr AS BYTE = 0 TO NUM_SPRITES-1
         SprY(SprNr) = y + SHL(SprNr, 2)
     NEXT SprNr
+    CALL SprUpdate()
+
+    FOR SprNr AS BYTE = 0 TO NUM_SPRITES-1
+        SprY(SprNr) = y - SHL(SprNr, 2)
+    NEXT SprNr
+    CALL SprUpdate()
 LOOP
 
