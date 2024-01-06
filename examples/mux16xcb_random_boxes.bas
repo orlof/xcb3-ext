@@ -1,8 +1,4 @@
-'Use only with the "lib_mux16asm.bas" library
-OPTION FASTINTERRUPT
-
-INCLUDE "../libs/lib_mux16asm.bas"
-'INCLUDE "../libs/lib_mux16xcb.bas"
+INCLUDE "../libs/lib_mux16xcb.bas"
 INCLUDE "../libs/lib_rnd.bas"
 
 CONST TRUE = 255

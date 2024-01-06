@@ -1,4 +1,3 @@
-'Use only with the "lib_mux16asm.bas" library
 OPTION FASTINTERRUPT
 
 'Number of sprites 16 or 24

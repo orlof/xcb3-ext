@@ -2,7 +2,7 @@
 ' PUBLIC INTERFACE FOR SPRITE MULTIPLEXER
 '*******************************************************************************
 
-CONST NUM_SPRITES = 32
+'CONST NUM_SPRITES = 24
 
 'USE THIS FROM MAIN PROGRAM TO COMMIT CHANGES IN PUBLIC SPRITE REGISTERS
 DECLARE SUB SprUpdate() STATIC SHARED
@@ -21,7 +21,7 @@ CONST FALSE     = 0
 
 'Internal data
 DIM _SprUpdate AS BYTE
-DIM _SprReUseNr AS BYTE FAST
+DIM _SprTmp0 AS BYTE FAST
 
 DIM _SprIdx(NUM_SPRITES) AS BYTE FAST
 DIM _SprNext(NUM_SPRITES) AS BYTE
@@ -80,7 +80,7 @@ SPRITE_FP       = $07f8
 SPRITE_HEIGHT   = 21
 SETUP_LEAD      = 4
 TRIGGER_LEAD    = 1
-MAXSPR          = 32
+;MAXSPR          = 24
 MIN_SEPARATION  = SPRITE_HEIGHT + 5
 
 ;------------------------------------------------------------
@@ -120,9 +120,10 @@ ortbl:          dc.b 1
 ;------------------------------------------------------------
 Zone0
 ;------------------------------------------------------------
-        ;BORDER 2
-        lda #2
-        sta $d020
+        IFCONST LIB_MUX24ASM_DEBUG
+            lda #2
+            sta $d020
+        ENDIF
 
         lda #255
         sta $d001
@@ -184,7 +185,7 @@ Zone0_Update_CopyLoop
         cmp #30
         bcc Zone0_Update_SkipSrc
         cmp #250
-        bcs Zone0_Update_Disable
+        bcs Zone0_Update_SkipSrc
 
         stx Zone0_Update_SrcIdx
 
@@ -224,6 +225,36 @@ Zone0_Update_DisableLoop
 Zone0_Update_DisableLoopExit
 
         ;---------------------------------
+        ;Zone0_Update_Plan
+        ;---------------------------------
+        ldx #0
+        ldy #8
+Zone0_Update_PlanLoop
+        cpy Zone0_Update_DstIdx
+        bcs Zone0_Update_PlanExit
+
+        lda {_SprY},x
+        clc
+        adc #MIN_SEPARATION
+        bcs Zone0_Update_PlanExit
+
+        cmp {_SprY},y
+        bcs Zone0_Update_PlanSkip
+
+        tya
+        sta {_SprNext},x
+
+        inx
+Zone0_Update_PlanSkip
+        iny
+        bne Zone0_Update_PlanLoop
+
+Zone0_Update_PlanExit
+        lda #0
+        sta {_SprNext},x
+
+Zone0_NoUpdate
+        ;---------------------------------
         ;Zone0_Assign
         ;---------------------------------
         lda {_SprY}+0
@@ -245,38 +276,38 @@ Zone0_Update_DisableLoopExit
 
         lda {_SprX}+0
         asl
-        ror {_SprReUseNr}
+        ror {_SprTmp0}
         sta $d000
         lda {_SprX}+1
         asl
-        ror {_SprReUseNr}
+        ror {_SprTmp0}
         sta $d002
         lda {_SprX}+2
         asl
-        ror {_SprReUseNr}
+        ror {_SprTmp0}
         sta $d004
         lda {_SprX}+3
         asl
-        ror {_SprReUseNr}
+        ror {_SprTmp0}
         sta $d006
         lda {_SprX}+4
         asl
-        ror {_SprReUseNr}
+        ror {_SprTmp0}
         sta $d008
         lda {_SprX}+5
         asl
-        ror {_SprReUseNr}
+        ror {_SprTmp0}
         sta $d00a
         lda {_SprX}+6
         asl
-        ror {_SprReUseNr}
+        ror {_SprTmp0}
         sta $d00c
         lda {_SprX}+7
         asl
-        ror {_SprReUseNr}
+        ror {_SprTmp0}
         sta $d00e
 
-        lda {_SprReUseNr}
+        lda {_SprTmp0}
         sta $d010
 
         lda {_SprShape}+0
@@ -313,39 +344,8 @@ Zone0_Update_DisableLoopExit
         lda {_SprColor}+7
         sta $d027+7
 
-        ;---------------------------------
-        ;Zone0_Update_Plan
-        ;---------------------------------
         ldx #0
-        ldy #8
-Zone0_Update_PlanLoop
-        cpy Zone0_Update_DstIdx
-        bcs Zone0_Update_PlanExit
-
-        lda {_SprY},x
-        clc
-        adc #MIN_SEPARATION
-        bcs Zone0_Update_PlanExit
-
-        cmp {_SprY},y
-        bcs Zone0_Update_PlanSkip
-
-        tya
-        sta {_SprNext},x
-
-        inx
-Zone0_Update_PlanSkip
-        iny
-        bne Zone0_Update_PlanLoop
-
-Zone0_Update_PlanExit
-        lda #0
-        sta {_SprNext},x
-
-Zone0_NoUpdate
-        ldx #0
-        stx {_SprReUseNr}
-
+        stx {_SprTmp0}
         ;---------------------------------
         ;Zone0_ScheduleNext
         ;---------------------------------
@@ -390,17 +390,22 @@ Zone0_ScheduleNextZone0_Interrupt
         ;jmp ScheduleNextZoneEnd
 
 Zone0_ScheduleNextZoneEnd
-        lda #0
-        sta $d020
+        IFCONST LIB_MUX24ASM_DEBUG
+            lda #0
+            sta $d020
+        ENDIF
 
         rts
 
 ;------------------------------------------------------------
 ZoneN
 ;------------------------------------------------------------
-        ldx {_SprReUseNr}
-        lda {_SprColor},x
-        sta $d020
+        ldx {_SprTmp0}
+
+        IFCONST LIB_MUX24ASM_DEBUG
+            lda {_SprColor},x
+            sta $d020
+        ENDIF
 
         lda {_SprY},x
         clc
@@ -444,12 +449,12 @@ ZoneN_XMsbHi
         lda {_SprColor},x
         sta $d027,y
 
-        inc {_SprReUseNr}
-
         ;---------------------------------
         ;ZoneN_ScheduleNextZone
         ;---------------------------------
-        ldx {_SprReUseNr}
+        ldx {_SprTmp0}
+        inx
+        stx {_SprTmp0}
 
         lda {_SprNext},x
         bne ZoneN_ScheduleNextZoneN
@@ -490,8 +495,10 @@ ZoneN_ScheduleNextZoneN_Interrupt
         sta $d012
 
 ZoneN_ScheduleNextZoneEnd
-        lda #0
-        sta $d020
+        IFCONST LIB_MUX24ASM_DEBUG
+            lda #0
+            sta $d020
+        ENDIF
 
         rts
 END ASM
@@ -499,8 +506,21 @@ END ASM
 SKIP_ASM:
 
 SUB SprUpdate() STATIC SHARED
-    'BACKGROUND 3
+    ASM
+        IFCONST LIB_MUX24ASM_DEBUG
+            lda #5
+            sta $d021
+        ENDIF
+    END ASM
+
     _SprUpdate = TRUE
     DO WHILE _SprUpdate     'Wait for Zone0-interrupt-handler to process sprite changes
     LOOP
+
+    ASM
+        IFCONST LIB_MUX24ASM_DEBUG
+            lda #6
+            sta $d021
+        ENDIF
+    END ASM
 END SUB
