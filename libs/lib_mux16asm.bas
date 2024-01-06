@@ -2,14 +2,16 @@
 ' PUBLIC INTERFACE FOR SPRITE MULTIPLEXER
 '*******************************************************************************
 
+CONST NUM_SPRITES = 32
+
 'USE THIS FROM MAIN PROGRAM TO COMMIT CHANGES IN PUBLIC SPRITE REGISTERS
 DECLARE SUB SprUpdate() STATIC SHARED
 
 'THESE ARE PUBLIC SPRITE REGISTERS THAT CAN BE CHANGED IN MAIN PROGRAM
-DIM SHARED SprY(16) AS BYTE
-DIM SHARED SprX(16) AS BYTE
-DIM SHARED SprColor(16) AS BYTE
-DIM SHARED SprShape(16) AS BYTE
+DIM SHARED SprY(NUM_SPRITES) AS BYTE
+DIM SHARED SprX(NUM_SPRITES) AS BYTE
+DIM SHARED SprColor(NUM_SPRITES) AS BYTE
+DIM SHARED SprShape(NUM_SPRITES) AS BYTE
 
 '*******************************************************************************
 ' PUBLIC INTERFACE END
@@ -21,13 +23,13 @@ CONST FALSE     = 0
 DIM _SprUpdate AS BYTE
 DIM _SprReUseNr AS BYTE FAST
 
-DIM _SprIdx(16) AS BYTE FAST
-DIM _SprNext(16) AS BYTE
+DIM _SprIdx(NUM_SPRITES) AS BYTE FAST
+DIM _SprNext(NUM_SPRITES) AS BYTE
 
-DIM _SprY(17) AS BYTE
-DIM _SprX(16) AS BYTE
-DIM _SprColor(16) AS BYTE
-DIM _SprShape(16) AS BYTE
+DIM _SprY(NUM_SPRITES) AS BYTE
+DIM _SprX(NUM_SPRITES) AS BYTE
+DIM _SprColor(NUM_SPRITES) AS BYTE
+DIM _SprShape(NUM_SPRITES) AS BYTE
 
 'Initialize sprite multiplexer
 SYSTEM INTERRUPT OFF        'This is mandatory
@@ -78,7 +80,7 @@ SPRITE_FP       = $07f8
 SPRITE_HEIGHT   = 21
 SETUP_LEAD      = 4
 TRIGGER_LEAD    = 1
-MAXSPR          = 16
+MAXSPR          = 32
 MIN_SEPARATION  = SPRITE_HEIGHT + 5
 
 ;------------------------------------------------------------
@@ -91,8 +93,12 @@ bank:           dc.b %11000000
 
 physicalsprtbl1:dc.b 0,1,2,3,4,5,6,7
                 dc.b 0,1,2,3,4,5,6,7
+                dc.b 0,1,2,3,4,5,6,7
+                dc.b 0,1,2,3,4,5,6,7
 
 physicalsprtbl2:dc.b 0,2,4,6,8,10,12,14
+                dc.b 0,2,4,6,8,10,12,14
+                dc.b 0,2,4,6,8,10,12,14
                 dc.b 0,2,4,6,8,10,12,14
 
 andtbl:         dc.b 255-1
@@ -175,10 +181,10 @@ Zone0_Update_CopyLoop
         ldy {_SprIdx},x
         lda {SprY},y
 
-        cmp #30                 ;2
-        bcc Zone0_Update_SkipSrc ;2
-        cmp #250                ;2
-        bcs Zone0_Update_SkipSrc ;2 = 8
+        cmp #30
+        bcc Zone0_Update_SkipSrc
+        cmp #250
+        bcs Zone0_Update_Disable
 
         stx Zone0_Update_SrcIdx
 
@@ -203,9 +209,9 @@ Zone0_Update_SkipSrc
         cpx #MAXSPR
         bne Zone0_Update_CopyLoop
 
-        ;---------------------------------
-        ;Zone0_Update_Disable
-        ;---------------------------------
+;---------------------------------
+Zone0_Update_Disable
+;---------------------------------
         lda #255
         ldx Zone0_Update_DstIdx
 Zone0_Update_DisableLoop

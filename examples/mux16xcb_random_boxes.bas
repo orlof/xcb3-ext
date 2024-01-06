@@ -1,8 +1,8 @@
 'Use only with the "lib_mux16asm.bas" library
-'OPTION FASTINTERRUPT
+OPTION FASTINTERRUPT
 
-'INCLUDE "../libs/lib_mux16asm.bas"
-INCLUDE "../libs/lib_mux16xcb.bas"
+INCLUDE "../libs/lib_mux16asm.bas"
+'INCLUDE "../libs/lib_mux16xcb.bas"
 INCLUDE "../libs/lib_rnd.bas"
 
 CONST TRUE = 255
@@ -29,8 +29,6 @@ NEXT i
 DO
     CALL SprUpdate()
     FOR i = 0 TO 15
-        DIM Tmp AS BYTE
-        Tmp = SprX(i)
         IF SprX(i) = 12 THEN
             Dx(i) = 1
         ELSE
