@@ -14,8 +14,9 @@ Welcome to Orlof's XC-Basic3 Libraries repository! Originally created for the xc
 - Multiplexer for 16 (or 24) Sprites -libraries
   - Pure XC=Basic version is for learning and light weight projects ([lib_mux16xcb.bas](libs/lib_mux16xcb.bas))
   - Assembly version is for more demanding applications ([lib_mux24asm.bas](libs/lib_mux24asm.bas))
-    - 12 sprites - very stable even in worst cases
-    - 24 sprites - stable in average applications
+    - Tested sprite constellations with 4 pixel y separation.  
+    - 12 sprites - very stable even in worst cases.
+    - 24 sprites - stable in average applications.
 
 ## Repository Organization
 - libs/ directory hosts all the library files ("lib_*.bas")
