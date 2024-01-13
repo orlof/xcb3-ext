@@ -1,5 +1,3 @@
-INCLUDE "../libs/lib_joy.bas"
-
 DIM SHARED Joystick AS BYTE
 DIM SHARED UiDelay AS BYTE
 DIM SHARED BorderFocusColor AS BYTE
@@ -13,6 +11,7 @@ REM *********************************
 ' SUM FOR SIMULTANEOUSLY OPEN PANELS: 2 * WIDTH * HEIGHT
 ' PANELS INITIALIZED WITH SaveBg=FALSE ARE IGNORED
 CONST UI_CACHE_SIZE         = 1024
+CONST MAX_STRING_LENGTH     = 40
 
 ' THE SCREEN CODES FOR THE PANEL DECORATIONS
 CONST TOP_LEFT_CORNER       = 85
@@ -31,6 +30,10 @@ CONST KEY_DOWN              = 17
 CONST KEY_LEFT              = 157
 CONST KEY_RIGHT             = 29
 CONST KEY_FIRE              = 13
+
+' NOT NEEDED IF lib_joy.bas is included
+'CONST JOY1                  = 0
+'CONST JOY2                  = 1
 
 ' THE JOYSTICK TO USE: JOY1 OR JOY2
 Joystick                    = JOY2
@@ -53,8 +56,10 @@ SHARED CONST EVENT_LEFT     = $04
 SHARED CONST EVENT_RIGHT    = $08
 SHARED CONST EVENT_FIRE     = $10
 
-CONST FALSE                 = 0
-CONST TRUE                  = 255
+SHARED CONST NO_SELECTION   = 255
+
+'CONST FALSE                 = 0
+'CONST TRUE                  = 255
 
 DECLARE SUB UiLattice(X AS BYTE, Y AS BYTE, Width AS BYTE, Height AS BYTE, SC0 AS BYTE, SC1 AS BYTE, C0 AS BYTE, C1 AS BYTE) SHARED STATIC
 DECLARE FUNCTION UiPetsciiToScreenCode AS BYTE(Petscii AS BYTE) SHARED STATIC
@@ -162,7 +167,7 @@ TYPE UiPanel
     Y AS BYTE
     Width AS BYTE
     Height AS BYTE
-    Title AS STRING*20
+    Title AS String*MAX_STRING_LENGTH
     SaveBg AS BYTE
 
     FocusRows AS LONG
@@ -282,7 +287,7 @@ TYPE UiPanel
     '   Width - THE WIDTH OF THE PANEL INCLUDING THE BORDERS
     '   Height - THE HEIGHT OF THE PANEL INCLUDING THE BORDERS
     '   SaveBg - IF TRUE, THE PANEL WILL SAVE THE SCREEN BEHIND IT AND CAN BE DISPOSED
-    SUB Init(Title AS String*20, X AS BYTE, Y AS BYTE, Width AS BYTE, Height AS BYTE, SaveBg AS BYTE) STATIC
+    SUB Init(Title AS String*MAX_STRING_LENGTH, X AS BYTE, Y AS BYTE, Width AS BYTE, Height AS BYTE, SaveBg AS BYTE) STATIC
         THIS.Title = LEFT$(Title, Width-2)
         THIS.X = X
         THIS.Y = Y
@@ -301,13 +306,13 @@ TYPE UiPanel
     END SUB
 
     ' INTERNAL
-    SUB _SetRowMode(Y AS BYTE, Set AS BYTE) STATIC
+    SUB _SetRowMode(Y AS BYTE, IsSelected AS BYTE) STATIC
         DIM Row AS BYTE
         Row = THIS.Y + Y + 1
         FOR Col AS BYTE = THIS.X + 1 TO THIS.X + THIS.Width - 2
             DIM Ptr AS WORD
             Ptr = _GetScreenPtr(Col, Row)
-            IF Set THEN
+            IF IsSelected THEN
                 POKE Ptr, PEEK(Ptr) OR 128
             ELSE
                 POKE Ptr, PEEK(Ptr) AND %01111111
@@ -315,8 +320,18 @@ TYPE UiPanel
         NEXT Col
     END SUB
 
+    SUB SetSelected(Selected AS BYTE) STATIC
+        IF THIS.Selected < 255 THEN
+            CALL THIS._SetRowMode(THIS.Selected, FALSE)
+        END IF
+        THIS.Selected = Selected
+        IF Selected < 255 THEN
+            CALL THIS._SetRowMode(THIS.Selected, TRUE)
+        END IF
+    END SUB
+
     ' INTERNAL
-    SUB _TextAt(X AS BYTE, Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC
+    SUB _TextAt(X AS BYTE, Y AS BYTE, Text AS String*MAX_STRING_LENGTH, TextColor AS BYTE, Focusable AS BYTE) STATIC
         DIM SC AS BYTE
         FOR Pos AS BYTE = 0 TO LEN(Text) - 1
             SC = UiPetsciiToScreenCode(PEEK(@Text+Pos+1))
@@ -327,7 +342,7 @@ TYPE UiPanel
             IF Y = THIS.Selected THEN CALL THIS._SetRowMode(Y, TRUE)
             THIS.FocusRows = (THIS.FocusRows OR SHL(CLONG(1), Y))
         ELSE
-            THIS.FocusRows = (THIS.FocusRows AND SHL($7ffffe, Y))
+            THIS.FocusRows = (THIS.FocusRows AND (SHL(CLONG(1), Y) XOR $7fffff))
         END IF
     END SUB
 
@@ -338,7 +353,7 @@ TYPE UiPanel
     '   Focusable
     '       IF TRUE, THE TEXT CAN BE SELECTED
     '       IF FALSE, THE TEXT IS NON SELECTABLE LABEL
-    SUB Left(Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
+    SUB Left(Y AS BYTE, Text AS String*MAX_STRING_LENGTH, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
         CALL THIS._TextAt(0, Y, Text, TextColor, Focusable)
     END SUB
 
@@ -350,7 +365,7 @@ TYPE UiPanel
     '   Focusable
     '       IF TRUE, THE TEXT CAN BE SELECTED
     '       IF FALSE, THE TEXT IS NON SELECTABLE LABEL
-    SUB Left(X AS BYTE, Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
+    SUB Left(X AS BYTE, Y AS BYTE, Text AS String*MAX_STRING_LENGTH, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
         CALL THIS._TextAt(X, Y, Text, TextColor, Focusable)
     END SUB
 
@@ -361,7 +376,7 @@ TYPE UiPanel
     '   Focusable
     '       IF TRUE, THE TEXT CAN BE SELECTED
     '       IF FALSE, THE TEXT IS NON SELECTABLE LABEL
-    SUB Right(Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
+    SUB Right(Y AS BYTE, Text AS String*MAX_STRING_LENGTH, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
         CALL THIS._TextAt(THIS.Width - LEN(Text) - 2, Y, Text, TextColor, Focusable)
     END SUB
 
@@ -373,7 +388,7 @@ TYPE UiPanel
     '   Focusable
     '       IF TRUE, THE TEXT CAN BE SELECTED
     '       IF FALSE, THE TEXT IS NON SELECTABLE LABEL
-    SUB Right(X AS BYTE, Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
+    SUB Right(X AS BYTE, Y AS BYTE, Text AS String*MAX_STRING_LENGTH, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
         CALL THIS._TextAt(X + 1 - LEN(Text), Y, Text, TextColor, Focusable)
     END SUB
 
@@ -384,7 +399,7 @@ TYPE UiPanel
     '   Focusable
     '       IF TRUE, THE TEXT CAN BE SELECTED
     '       IF FALSE, THE TEXT IS NON SELECTABLE LABEL
-    SUB Center(Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
+    SUB Center(Y AS BYTE, Text AS String*MAX_STRING_LENGTH, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
         CALL THIS._TextAt((THIS.Width - LEN(Text) - 2) / 2, Y, Text, TextColor, Focusable)
     END SUB
 
@@ -396,7 +411,7 @@ TYPE UiPanel
     '   Focusable
     '       IF TRUE, THE TEXT CAN BE SELECTED
     '       IF FALSE, THE TEXT IS NON SELECTABLE LABEL
-    SUB Center(X AS BYTE, Y AS BYTE, Text AS String*20, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
+    SUB Center(X AS BYTE, Y AS BYTE, Text AS String*MAX_STRING_LENGTH, TextColor AS BYTE, Focusable AS BYTE) STATIC OVERLOAD
         CALL THIS._TextAt(X - (LEN(Text) / 2), Y, Text, TextColor, Focusable)
     END SUB
 
