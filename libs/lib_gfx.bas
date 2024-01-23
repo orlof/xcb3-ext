@@ -1865,7 +1865,9 @@ _hdraw_start_mask
 
         ; load counter
         ldx {ZP_B3}
-        beq _hdraw_end
+        bne _hdraw_start_loop
+
+        and {ZP_B4}
 
 _hdraw_start_loop
         ; draw byte
