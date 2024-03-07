@@ -3,9 +3,9 @@
 Welcome to Orlof's XC-Basic3 Libraries repository! Originally created for the xcb-gfx bitmap graphics library, this repository has expanded its scope to encompass a variety of useful libraries for XC-Basic3.
 
 ## Contents
-- [Bitmap Graphics Library](https://github.com/orlof/xcb3-gfx/wiki/Bitmap-Graphics-Library) ([lib_gfx.bas](libs/lib_gfx.bas))
+- [Bitmap Graphics Library](https://github.com/orlof/xcb3-ext/wiki/Bitmap-Graphics-Library) ([lib_gfx.bas](libs/lib_gfx.bas))
   - The original graphics library designed for bitmap manipulation.
-- [Character Mode UI Library](https://github.com/orlof/xcb3-gfx/wiki/Character-Mode-UI-Library) ([lib_ui.bas](libs/lib_ui.bas))
+- [Character Mode UI Library](https://github.com/orlof/xcb3-ext/wiki/Character-Mode-UI-Library) ([lib_ui.bas](libs/lib_ui.bas))
   - A library facilitating the creation of character mode user interfaces.
 - High Performance Random Number Generator Library ([lib_rnd.bas](libs/lib_rnd.bas))
   - Enhance your projects with a high-performance random number generator.
@@ -23,7 +23,7 @@ Welcome to Orlof's XC-Basic3 Libraries repository! Originally created for the xc
 - examples/ subdirectory provides illustrative code for each library
 
 ## Documentation
-Find detailed documentation for each library in the [Wiki](https://github.com/orlof/xcb3-gfx/wiki).
+Find detailed documentation for each library in the [Wiki](https://github.com/orlof/xcb3-ext/wiki).
 
 ## Contribution
 I welcome contributions to the XCB3-EXT libraries. Feel free to reach out!
