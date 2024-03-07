@@ -11,6 +11,9 @@ Y(0) = 100
 X(1) = 200
 Y(1) = 100
 
+PRINT "Press joy2 fire to start"
+CALL JoyWaitClick(JOY2)
+
 DO
     SPRITE 0 AT X(0),Y(0) SHAPE 255 ON
     SPRITE 1 AT X(1),Y(1) SHAPE 255 ON
