@@ -9,7 +9,7 @@ Welcome to Orlof's XC-Basic3 Libraries repository! Originally created for the xc
   - A library facilitating the creation of character mode user interfaces.
 - High Performance Random Number Generator Library ([lib_rnd.bas](libs/lib_rnd.bas))
   - Enhance your projects with a high-performance random number generator.
-- Joystick Library ([lib_joy.bas](libs/lib_joy.bas))
+- [Joystick Library](https://github.com/orlof/xcb3-ext/wiki/Joystick-Library) ([lib_joy.bas](libs/lib_joy.bas))
   - Simple interface for reading the joystick inputs.
 - Multiplexer for 16 (or 24) Sprites -libraries
   - Pure XC=Basic version is for learning and light weight projects ([lib_mux16xcb.bas](libs/lib_mux16xcb.bas))
