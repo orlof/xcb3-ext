@@ -1403,8 +1403,6 @@ SUB HDrawMC(x0 AS BYTE, x1 AS BYTE, y AS BYTE, Ink AS BYTE) SHARED STATIC
     ' B4 Ink pattern
     ' B5 Mask & Ink pattern
     ASM
-        sta $400
-
         lda {x0}
         cmp {x1}
         bcs _hdrawmc_start_x1
