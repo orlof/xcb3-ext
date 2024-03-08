@@ -11,6 +11,8 @@ Welcome to Orlof's XC-Basic3 Libraries repository! Originally created for the xc
   - Enhance your projects with a high-performance random number generator.
 - [Joystick Library](https://github.com/orlof/xcb3-ext/wiki/Joystick-Library) ([lib_joy.bas](libs/lib_joy.bas))
   - Simple interface for reading the joystick inputs.
+- [ZX0 Decompress Library](https://github.com/orlof/xcb3-ext/wiki/ZX0-Decopress-Library) ([lib_zx0.bas](libs/lib_zx0.bas))
+  - Decompressor for ZX0 compressed data
 - Multiplexer for 16 (or 24) Sprites -libraries
   - Pure XC=Basic version is for learning and light weight projects ([lib_mux16xcb.bas](libs/lib_mux16xcb.bas))
   - Assembly version is for more demanding applications ([lib_mux24asm.bas](libs/lib_mux24asm.bas))
