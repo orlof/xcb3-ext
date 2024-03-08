@@ -1,7 +1,19 @@
+' DEFINE AVAILABLE ZERO-PAGE ADDRESSES FOR VARIABLES
 DIM _SrcAddr AS WORD FAST
 DIM _DstAddr AS WORD FAST
 DIM _Length AS WORD FAST
 DIM _Offset AS WORD FAST
+
+ASM
+;
+; Data usage is 8 bytes of zero-page.
+;
+
+zx0_srcptr      =       {_SrcAddr}              ; 1 word.
+zx0_dstptr      =       {_DstAddr}              ; 1 word.
+zx0_length      =       {_Length}               ; 1 word.
+zx0_offset      =       {_Offset}               ; 1 word.
+END ASM
 
 SUB DecompressZX0(SrcAddr AS WORD, DstAddr AS WORD) STATIC SHARED
     _SrcAddr = SrcAddr
@@ -10,8 +22,6 @@ SUB DecompressZX0(SrcAddr AS WORD, DstAddr AS WORD) STATIC SHARED
         jsr zx0_unpack
     END ASM
 END SUB
-
-CALL DecompressZX0(@SkipAsm, $20000)
 
 GOTO SkipAsm
 ASM
@@ -39,15 +49,6 @@ ASM
 ;
 ; ***************************************************************************
 ; ***************************************************************************
-;
-; Data usage is 8 bytes of zero-page.
-;
-
-zx0_srcptr      =       {_SrcAddr}              ; 1 word.
-zx0_dstptr      =       {_DstAddr}              ; 1 word.
-zx0_length      =       {_Length}               ; 1 word.
-zx0_offset      =       {_Offset}               ; 1 word.
-
 
 
 ; ***************************************************************************
