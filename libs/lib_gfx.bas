@@ -286,7 +286,7 @@ END SUB
 SUB ScreenOff() SHARED STATIC
     ASM
         lda $d011
-        and #%11101111
+        and #%01101111
         sta $d011
     END ASM
 END SUB
@@ -294,6 +294,7 @@ END SUB
 SUB ScreenOn() SHARED STATIC
     ASM
         lda $d011
+        and #%01111111
         ora #%00010000
         sta $d011
     END ASM
@@ -997,7 +998,7 @@ SUB SetGraphicsMode(Mode AS BYTE) SHARED STATIC
         sta {ZP_B0}
 
         lda $d011
-        and #%10011111
+        and #%00011111
         ora {ZP_B0}
         sta $d011
 
