@@ -1,10 +1,3 @@
-ASM
-    MAC VALUE_TOO_LARGE
-
-    ENDM
-
-END ASM
-
 DECLARE FUNCTION RndQByte AS BYTE() SHARED STATIC
 DECLARE FUNCTION RndByte AS BYTE(min AS BYTE, max AS BYTE) SHARED STATIC
 DECLARE FUNCTION RndQWord AS WORD() SHARED STATIC
@@ -161,6 +154,33 @@ _rndword_mask_exit
 
 ;---------------------------------------
 
+    IFCONST ALLOW_BIAS
+        jsr _tinyrand8
+        and {Mask}
+        sta {RndWord}
+        jsr _tinyrand8
+        and {Mask}+1
+        sta {RndWord}+1
+
+        cmp {Range}+1
+        bcc _rndword_exit
+        bne _rndword_value_subtract
+
+        lda {RndWord}
+        cmp {Range}
+        bcc _rndword_exit
+        beq _rndword_exit
+
+_rndword_value_subtract
+        sec
+        lda {RndWord}
+        sbc {Range}
+        sta {RndWord}
+
+        lda {RndWord}+1
+        sbc {Range}+1
+        sta {RndWord}+1
+    ELSE
 _rndword_value
         jsr _tinyrand8
         and {Mask}+1
@@ -182,6 +202,7 @@ _rndword_value
 _rndword_value_exit
         jsr _tinyrand8
         sta {RndWord}
+    ENDIF
 
 _rndword_exit
         clc
@@ -247,6 +268,34 @@ _rndint_mask_exit
 
 ;---------------------------------------
 
+    IFCONST ALLOW_BIAS
+        jsr _tinyrand8
+        and {Mask}
+        sta {RndInt}
+
+        jsr _tinyrand8
+        and {Mask}+1
+        sta {RndInt}+1
+
+        cmp {Range}+1
+        bcc _rndint_exit
+        bne _rndint_value_subtract
+
+        lda {RndInt}
+        cmp {Range}
+        bcc _rndint_exit
+        beq _rndint_exit
+
+_rndint_value_subtract
+        sec
+        lda {RndInt}
+        sbc {Range}
+        sta {RndInt}
+
+        lda {RndInt}+1
+        sbc {Range}+1
+        sta {RndInt}+1
+    ELSE
 _rndint_value
         jsr _tinyrand8
         and {Mask}+1
@@ -268,6 +317,7 @@ _rndint_value
 _rndint_value_exit
         jsr _tinyrand8
         sta {RndInt}
+    ENDIF
 
 _rndint_exit
         clc
@@ -348,6 +398,47 @@ _rndlong_mask_exit
 
 ;---------------------------------------
 
+    IFCONST ALLOW_BIAS
+        jsr _tinyrand8
+        and {Mask}
+        sta {RndLong}
+
+        jsr _tinyrand8
+        and {Mask}+1
+        sta {RndLong}+1
+
+        jsr _tinyrand8
+        and {Mask}+2
+        sta {RndLong}+2
+
+        cmp {Range}+2
+        bcc _rndlong_exit
+        bne _rndlong_value_subtract
+
+        lda {RndLong}+1
+        cmp {Range}+1
+        bcc _rndlong_exit
+        bne _rndlong_value_subtract
+
+        lda {RndLong}
+        cmp {Range}
+        bcc _rndlong_exit
+        beq _rndlong_exit
+
+_rndlong_value_subtract
+        sec
+        lda {RndLong}
+        sbc {Range}
+        sta {RndLong}
+
+        lda {RndLong}+1
+        sbc {Range}+1
+        sta {RndLong}+1
+
+        lda {RndLong}+2
+        sbc {Range}+2
+        sta {RndLong}+2
+    ELSE
 _rndlong_value
         jsr _tinyrand8
         and {Mask}+2
@@ -380,6 +471,7 @@ _rndlong_value_exit1
 _rndlong_value_exit2
         jsr _tinyrand8
         sta {RndLong}
+    ENDIF
 
 _rndlong_exit
         clc
