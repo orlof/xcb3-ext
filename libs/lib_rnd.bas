@@ -1,3 +1,10 @@
+ASM
+    MAC VALUE_TOO_LARGE
+
+    ENDM
+
+END ASM
+
 DECLARE FUNCTION RndQByte AS BYTE() SHARED STATIC
 DECLARE FUNCTION RndByte AS BYTE(min AS BYTE, max AS BYTE) SHARED STATIC
 DECLARE FUNCTION RndQWord AS WORD() SHARED STATIC
@@ -66,24 +73,19 @@ FUNCTION RndByte AS BYTE(min AS BYTE, max AS BYTE) SHARED STATIC
         sbc {Min}
         sta {Range}
 
-        lda #2
-        sta {Mask}
-        jmp _rndbyte_loop1_compare
-
+        lda #1
 _rndbyte_loop1
         clc
-        rol {Mask}
+        rol
         bcs _rndbyte_loop1_exit
 
 _rndbyte_loop1_compare
-        lda {Range}
-        cmp {Mask}
-        bcc _rndbyte_loop1_exit
-        bcs _rndbyte_loop1
+        cmp {Range}
+        bcc _rndbyte_loop1
+        beq _rndbyte_loop1
 _rndbyte_loop1_exit
 
-        sec
-        lda {Mask}
+        ;sec
         sbc #1
         sta {Mask}
 
@@ -92,7 +94,12 @@ _rndbyte_loop4
         and {Mask}
         cmp {Range}
         bcc _rndbyte_loop4_exit
-        bne _rndbyte_loop4
+        beq _rndbyte_loop4_exit
+        IFCONST ALLOW_BIAS
+            sbc {Range}
+        ELSE
+            jmp _rndbyte_loop4
+        ENDIF
 _rndbyte_loop4_exit
 
         clc
@@ -110,7 +117,7 @@ FUNCTION RndQWord AS WORD() SHARED STATIC
     END ASM
 END FUNCTION
 
-FUNCTION RndWord AS WORD(min AS WORD, max AS WORD) SHARED STATIC
+FUNCTION RndWord AS WORD(Min AS WORD, Max AS WORD) SHARED STATIC
     ASM
         sec
         lda {Max}
@@ -120,28 +127,29 @@ FUNCTION RndWord AS WORD(min AS WORD, max AS WORD) SHARED STATIC
         sbc {Min}+1
         sta {Range}+1
 
-        lda #1
+;---------------------------------------
+
+_rndword_mask
+        lda #2
         sta {Mask}
         lda #0
         sta {Mask}+1
-        jmp _rndword_loop1_compare
 
-_rndword_loop1
+_rndword_mask_loop
         clc
         rol {Mask}
         rol {Mask}+1
-        bcs _rndword_loop1_exit
+        bcs _rndword_mask_exit
 
-_rndword_loop1_compare
         lda {Range}+1
         cmp {Mask}+1
-        bcc _rndword_loop1_exit
-        bne _rndword_loop1
+        bcc _rndword_mask_exit
+        bne _rndword_mask_loop
+
         lda {Range}
         cmp {Mask}
-        bcc _rndword_loop1_exit
-        bcs _rndword_loop1
-_rndword_loop1_exit
+        bcs _rndword_mask_loop
+_rndword_mask_exit
 
         sec
         lda {Mask}
@@ -151,24 +159,33 @@ _rndword_loop1_exit
         sbc #0
         sta {Mask}+1
 
-_rndword_loop3
+;---------------------------------------
+
+_rndword_value
         jsr _tinyrand8
         and {Mask}+1
         cmp {Range}+1
-        bcc _rndword_loop3_exit
-        bne _rndword_loop3
-_rndword_loop3_exit
         sta {RndWord}+1
 
-_rndword_loop4
+        bcc _rndword_value_exit
+        bne _rndword_value
+
         jsr _tinyrand8
         and {Mask}
         cmp {Range}
-        bcc _rndword_loop4_exit
-        bne _rndword_loop4
-_rndword_loop4_exit
+        sta {RndWord}
 
+        bcc _rndword_exit
+        beq _rndword_exit
+        jmp _rndword_value
+
+_rndword_value_exit
+        jsr _tinyrand8
+        sta {RndWord}
+
+_rndword_exit
         clc
+        lda {RndWord}
         adc {Min}
         sta {RndWord}
         lda {RndWord}+1
@@ -186,7 +203,7 @@ FUNCTION RndQInt AS INT() SHARED STATIC
     END ASM
 END FUNCTION
 
-FUNCTION RndInt AS INT(min AS INT, max AS INT) SHARED STATIC
+FUNCTION RndInt AS INT(Min AS INT, Max AS INT) SHARED STATIC
     ASM
         sec
         lda {Max}
@@ -196,28 +213,29 @@ FUNCTION RndInt AS INT(min AS INT, max AS INT) SHARED STATIC
         sbc {Min}+1
         sta {Range}+1
 
-        lda #1
+;---------------------------------------
+
+_rndint_mask
+        lda #2
         sta {Mask}
         lda #0
         sta {Mask}+1
-        jmp _rndint_loop1_compare
 
-_rndint_loop1
+_rndint_mask_loop
         clc
         rol {Mask}
         rol {Mask}+1
-        bcs _rndint_loop1_exit
+        bcs _rndint_mask_exit
 
-_rndint_loop1_compare
         lda {Range}+1
         cmp {Mask}+1
-        bcc _rndint_loop1_exit
-        bne _rndint_loop1
+        bcc _rndint_mask_exit
+        bne _rndint_mask_loop
+
         lda {Range}
         cmp {Mask}
-        bcc _rndint_loop1_exit
-        bcs _rndint_loop1
-_rndint_loop1_exit
+        bcs _rndint_mask_loop
+_rndint_mask_exit
 
         sec
         lda {Mask}
@@ -227,24 +245,33 @@ _rndint_loop1_exit
         sbc #0
         sta {Mask}+1
 
-_rndint_loop3
+;---------------------------------------
+
+_rndint_value
         jsr _tinyrand8
         and {Mask}+1
         cmp {Range}+1
-        bcc _rndint_loop3_exit
-        bne _rndint_loop3
-_rndint_loop3_exit
         sta {RndInt}+1
 
-_rndint_loop4
+        bcc _rndint_value_exit
+        bne _rndint_value
+
         jsr _tinyrand8
         and {Mask}
         cmp {Range}
-        bcc _rndint_loop4_exit
-        bne _rndint_loop4
-_rndint_loop4_exit
+        sta {RndInt}
 
+        bcc _rndint_exit
+        beq _rndint_exit
+        jmp _rndint_value
+
+_rndint_value_exit
+        jsr _tinyrand8
+        sta {RndInt}
+
+_rndint_exit
         clc
+        lda {RndInt}
         adc {Min}
         sta {RndInt}
         lda {RndInt}+1
@@ -264,7 +291,7 @@ FUNCTION RndQLong AS LONG() SHARED STATIC
     END ASM
 END FUNCTION
 
-FUNCTION RndLong AS LONG(min AS LONG, max AS LONG) SHARED STATIC
+FUNCTION RndLong AS LONG(Min AS LONG, Max AS LONG) SHARED STATIC
     ASM
         sec
         lda {Max}
@@ -277,35 +304,36 @@ FUNCTION RndLong AS LONG(min AS LONG, max AS LONG) SHARED STATIC
         sbc {Min}+2
         sta {Range}+2
 
-        lda #1
+;---------------------------------------
+
+_rndlong_mask
+        lda #2
         sta {Mask}
         lda #0
         sta {Mask}+1
         sta {Mask}+2
 
-        jmp _rndlong_loop1_compare
-
-_rndlong_loop1
+_rndlong_mask_loop
         clc
         rol {Mask}
         rol {Mask}+1
         rol {Mask}+2
-        bcs _rndlong_loop1_exit
+        bcs _rndlong_mask_exit
 
-_rndlong_loop1_compare
         lda {Range}+2
         cmp {Mask}+2
-        bcc _rndlong_loop1_exit
-        bne _rndlong_loop1
+        bcc _rndlong_mask_exit
+        bne _rndlong_mask_loop
+
         lda {Range}+1
         cmp {Mask}+1
-        bcc _rndlong_loop1_exit
-        bne _rndlong_loop1
+        bcc _rndlong_mask_exit
+        bne _rndlong_mask_loop
+
         lda {Range}
         cmp {Mask}
-        bcc _rndlong_loop1_exit
-        bcs _rndlong_loop1
-_rndlong_loop1_exit
+        bcs _rndlong_mask_loop
+_rndlong_mask_exit
 
         sec
         lda {Mask}
@@ -318,41 +346,49 @@ _rndlong_loop1_exit
         sbc #0
         sta {Mask}+2
 
-_rndlong_loop2
+;---------------------------------------
+
+_rndlong_value
         jsr _tinyrand8
         and {Mask}+2
         cmp {Range}+2
-        bcc _rndlong_loop2_exit
-        bne _rndlong_loop2
-_rndlong_loop2_exit
         sta {RndLong}+2
 
-_rndlong_loop3
+        bcc _rndlong_value_exit1
+        bne _rndlong_value
+
         jsr _tinyrand8
         and {Mask}+1
         cmp {Range}+1
-        bcc _rndlong_loop3_exit
-        bne _rndlong_loop3
-_rndlong_loop3_exit
         sta {RndLong}+1
 
-_rndlong_loop4
+        bcc _rndlong_value_exit2
+        bne _rndlong_value
+
         jsr _tinyrand8
         and {Mask}
         cmp {Range}
-        bcc _rndlong_loop4_exit
-        bne _rndlong_loop4
-_rndlong_loop4_exit
+        sta {RndLong}
 
+        bcc _rndlong_exit
+        beq _rndlong_exit
+        jmp _rndlong_value
+
+_rndlong_value_exit1
+        jsr _tinyrand8
+        sta {RndLong}+1
+_rndlong_value_exit2
+        jsr _tinyrand8
+        sta {RndLong}
+
+_rndlong_exit
         clc
+        lda {RndLong}
         adc {Min}
         sta {RndLong}
         lda {RndLong}+1
         adc {Min}+1
         sta {RndLong}+1
-        lda {RndLong}+2
-        adc {Min}+2
-        sta {RndLong}+2
     END ASM
 END FUNCTION
 
