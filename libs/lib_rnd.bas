@@ -7,6 +7,7 @@ DECLARE FUNCTION RndInt AS INT(min AS INT, max AS INT) SHARED STATIC
 DECLARE FUNCTION RndQLong AS LONG() SHARED STATIC
 DECLARE FUNCTION RndLong AS LONG(min AS LONG, max AS LONG) SHARED STATIC
 
+DIM MaskValue AS BYTE @_MASK_VALUE
 DIM Range AS LONG
 DIM Mask AS LONG
 
@@ -66,20 +67,8 @@ FUNCTION RndByte AS BYTE(min AS BYTE, max AS BYTE) SHARED STATIC
         sbc {Min}
         sta {Range}
 
-        lda #1
-_rndbyte_loop1
-        clc
-        rol
-        bcs _rndbyte_loop1_exit
-
-_rndbyte_loop1_compare
-        cmp {Range}
-        bcc _rndbyte_loop1
-        beq _rndbyte_loop1
-_rndbyte_loop1_exit
-
-        ;sec
-        sbc #1
+        tay
+        lda {MaskValue},y
         sta {Mask}
 
 _rndbyte_loop4
@@ -88,11 +77,11 @@ _rndbyte_loop4
         cmp {Range}
         bcc _rndbyte_loop4_exit
         beq _rndbyte_loop4_exit
-        IFCONST ALLOW_BIAS
-            sbc {Range}
-        ELSE
-            jmp _rndbyte_loop4
-        ENDIF
+    IFCONST ALLOW_BIAS
+        sbc {Range}
+    ELSE
+        jmp _rndbyte_loop4
+    ENDIF
 _rndbyte_loop4_exit
 
         clc
@@ -121,39 +110,29 @@ FUNCTION RndWord AS WORD(Min AS WORD, Max AS WORD) SHARED STATIC
         sta {Range}+1
 
 ;---------------------------------------
+        beq _rndword_mask_lo
 
-_rndword_mask
-        lda #2
-        sta {Mask}
-        lda #0
+_rndword_mask_hi
+        ;ldy {Range}+1
+        tay
+        lda {MaskValue},y
         sta {Mask}+1
 
-_rndword_mask_loop
-        clc
-        rol {Mask}
-        rol {Mask}+1
-        bcs _rndword_mask_exit
-
-        lda {Range}+1
-        cmp {Mask}+1
-        bcc _rndword_mask_exit
-        bne _rndword_mask_loop
-
-        lda {Range}
-        cmp {Mask}
-        bcs _rndword_mask_loop
-_rndword_mask_exit
-
-        sec
-        lda {Mask}
-        sbc #1
+        lda #255
         sta {Mask}
-        lda {Mask}+1
-        sbc #0
+
+        jmp _rndword_value
+
+_rndword_mask_lo
+        ;lda #0
         sta {Mask}+1
 
+        ldy {Range}
+        lda {MaskValue},y
+        sta {Mask}
 ;---------------------------------------
 
+_rndword_value
     IFCONST ALLOW_BIAS
         jsr _tinyrand8
         and {Mask}
@@ -181,7 +160,6 @@ _rndword_value_subtract
         sbc {Range}+1
         sta {RndWord}+1
     ELSE
-_rndword_value
         jsr _tinyrand8
         and {Mask}+1
         cmp {Range}+1
@@ -235,44 +213,33 @@ FUNCTION RndInt AS INT(Min AS INT, Max AS INT) SHARED STATIC
         sta {Range}+1
 
 ;---------------------------------------
+        beq _rndint_mask_lo
 
-_rndint_mask
-        lda #2
-        sta {Mask}
-        lda #0
+_rndint_mask_hi
+        ;ldy {Range}+1
+        tay
+        lda {MaskValue},y
         sta {Mask}+1
 
-_rndint_mask_loop
-        clc
-        rol {Mask}
-        rol {Mask}+1
-        bcs _rndint_mask_exit
-
-        lda {Range}+1
-        cmp {Mask}+1
-        bcc _rndint_mask_exit
-        bne _rndint_mask_loop
-
-        lda {Range}
-        cmp {Mask}
-        bcs _rndint_mask_loop
-_rndint_mask_exit
-
-        sec
-        lda {Mask}
-        sbc #1
+        lda #255
         sta {Mask}
-        lda {Mask}+1
-        sbc #0
+
+        jmp _rndint_value
+
+_rndint_mask_lo
+        ;lda #0
         sta {Mask}+1
 
+        ldy {Range}
+        lda {MaskValue},y
+        sta {Mask}
 ;---------------------------------------
 
+_rndint_value
     IFCONST ALLOW_BIAS
         jsr _tinyrand8
         and {Mask}
         sta {RndInt}
-
         jsr _tinyrand8
         and {Mask}+1
         sta {RndInt}+1
@@ -296,7 +263,6 @@ _rndint_value_subtract
         sbc {Range}+1
         sta {RndInt}+1
     ELSE
-_rndint_value
         jsr _tinyrand8
         and {Mask}+1
         cmp {Range}+1
@@ -355,49 +321,49 @@ FUNCTION RndLong AS LONG(Min AS LONG, Max AS LONG) SHARED STATIC
         sta {Range}+2
 
 ;---------------------------------------
+        ;lda {Range}+2
+        bne _rndlong_mask_hi
+        lda {Range}+1
+        bne _rndlong_mask_med
 
-_rndlong_mask
-        lda #2
+_rndlong_mask_lo
+        ;lda #0
+        sta {Mask}+2
+        sta {Mask}+1
+
+        ldy {Range}
+        lda {MaskValue},y
+        sta {Mask}
+
+        jmp _rndlong_value
+
+_rndlong_mask_med
+        tay ;ldy {Range}+1
+        lda {MaskValue},y
+        sta {Mask}+1
+
+        lda #255
         sta {Mask}
         lda #0
-        sta {Mask}+1
         sta {Mask}+2
 
-_rndlong_mask_loop
-        clc
-        rol {Mask}
-        rol {Mask}+1
-        rol {Mask}+2
-        bcs _rndlong_mask_exit
+        jmp _rndlong_value
 
-        lda {Range}+2
-        cmp {Mask}+2
-        bcc _rndlong_mask_exit
-        bne _rndlong_mask_loop
+_rndlong_mask_hi
+        tay ;ldy {Range}+2
+        lda {MaskValue},y
+        sta {Mask}+2
 
-        lda {Range}+1
-        cmp {Mask}+1
-        bcc _rndlong_mask_exit
-        bne _rndlong_mask_loop
-
-        lda {Range}
-        cmp {Mask}
-        bcs _rndlong_mask_loop
-_rndlong_mask_exit
-
-        sec
-        lda {Mask}
-        sbc #1
+        lda #255
         sta {Mask}
-        lda {Mask}+1
-        sbc #0
         sta {Mask}+1
-        lda {Mask}+2
-        sbc #0
-        sta {Mask}+2
+
+        ;jmp _rndlong_value
+
 
 ;---------------------------------------
 
+_rndlong_value
     IFCONST ALLOW_BIAS
         jsr _tinyrand8
         and {Mask}
@@ -439,28 +405,27 @@ _rndlong_value_subtract
         sbc {Range}+2
         sta {RndLong}+2
     ELSE
-_rndlong_value
         jsr _tinyrand8
         and {Mask}+2
-        cmp {Range}+2
         sta {RndLong}+2
 
+        cmp {Range}+2
         bcc _rndlong_value_exit1
         bne _rndlong_value
 
         jsr _tinyrand8
         and {Mask}+1
-        cmp {Range}+1
         sta {RndLong}+1
 
+        cmp {Range}+1
         bcc _rndlong_value_exit2
         bne _rndlong_value
 
         jsr _tinyrand8
         and {Mask}
-        cmp {Range}
         sta {RndLong}
 
+        cmp {Range}
         bcc _rndlong_exit
         beq _rndlong_exit
         jmp _rndlong_value
@@ -468,6 +433,7 @@ _rndlong_value
 _rndlong_value_exit1
         jsr _tinyrand8
         sta {RndLong}+1
+
 _rndlong_value_exit2
         jsr _tinyrand8
         sta {RndLong}
@@ -481,6 +447,26 @@ _rndlong_exit
         lda {RndLong}+1
         adc {Min}+1
         sta {RndLong}+1
+        lda {RndLong}+2
+        adc {Min}+2
+        sta {RndLong}+2
     END ASM
 END FUNCTION
 
+_MASK_VALUE:
+DATA AS BYTE 0, 1, 3, 3, 7, 7, 7, 7, 15, 15, 15, 15, 15, 15, 15, 15
+DATA AS BYTE 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31
+DATA AS BYTE 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63
+DATA AS BYTE 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63
+DATA AS BYTE 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127
+DATA AS BYTE 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127
+DATA AS BYTE 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127
+DATA AS BYTE 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127
+DATA AS BYTE 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+DATA AS BYTE 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+DATA AS BYTE 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+DATA AS BYTE 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+DATA AS BYTE 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+DATA AS BYTE 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+DATA AS BYTE 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
+DATA AS BYTE 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
